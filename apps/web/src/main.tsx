@@ -19,7 +19,7 @@ function App() {
 
 		const controller = new AbortController();
 
-		fetch(`${API_URL}/health`, { signal: controller.signal })
+		fetch(`${API_URL}/api/health`, { signal: controller.signal })
 			.then(async (res) => {
 				if (!res.ok) throw new Error(`HTTP ${res.status}`);
 				return (await res.json()) as Health;
