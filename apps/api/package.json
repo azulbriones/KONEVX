@@ -7,7 +7,7 @@
 	},
 	"dependencies": {
 		"express": "^5.2.1",
-		"cors":"2.8.6"
+		"cors": "2.8.6"
 	},
 	"devDependencies": {
 		"@types/express": "^4.17.21",
