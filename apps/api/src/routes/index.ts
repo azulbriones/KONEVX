@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { HttpError } from "../lib/httpError.js";
 import { validateBody } from "../middlewares/validate.js";
 
 export const router = Router();
@@ -14,4 +15,7 @@ const EchoSchema = z.object({
 
 router.post("/echo", validateBody(EchoSchema), (req, res) => {
 	res.json({ ok: true, data: req.body });
+});
+router.get("/demo/conflict", (_req, _res) => {
+	throw new HttpError(409, "EVENT_FULL", "Event capacity reached");
 });
