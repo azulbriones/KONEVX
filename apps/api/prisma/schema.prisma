@@ -1,0 +1,25 @@
+generator client {
+    provider = "prisma-client"
+    output   = "../src/generated/prisma"
+}
+
+datasource db {
+    provider = "postgresql"
+}
+
+enum ContactRequirement {
+    EMAIL
+    PHONE
+}
+
+model Event {
+    id                 Int                @id @default(autoincrement())
+    name               String
+    slug               String             @unique
+    capacity           Int
+    contactRequirement ContactRequirement
+    isPublished        Boolean            @default(false)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}

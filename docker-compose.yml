@@ -12,9 +12,12 @@ services:
             - pgdata:/var/lib/postgresql/data
 
     api:
-        image: node:20-alpine
+        image: node:20-bookworm-slim
         working_dir: /app
-        command: sh -c "npm install && npm run dev"
+        command: sh -lc "apt-get update -y &&
+            apt-get install -y openssl &&
+            npm install &&
+            npm run dev"
         env_file: .env
         environment:
             PORT: ${API_PORT}
@@ -29,7 +32,7 @@ services:
             - db
 
     web:
-        image: node:20-alpine
+        image: node:20-bookworm-slim
         working_dir: /app
         command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
         env_file: .env
