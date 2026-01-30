@@ -1,7 +1,5 @@
 import { Router } from "express";
-import { z } from "zod";
-import { HttpError } from "../lib/httpError.js";
-import { validateBody } from "../middlewares/validate.js";
+import { prisma } from "../db/prisma.js";
 
 export const router = Router();
 
@@ -9,13 +7,23 @@ router.get("/health", (_req, res) => {
 	res.json({ ok: true, service: "api" });
 });
 
-const EchoSchema = z.object({
-	message: z.string().min(1),
-});
+router.get("/events", async (_req, res, next) => {
+	try {
+		const events = await prisma.event.findMany({
+			orderBy: { createdAt: "desc" },
+			select: {
+				id: true,
+				name: true,
+				slug: true,
+				capacity: true,
+				contactRequirement: true,
+				isPublished: true,
+				createdAt: true,
+			},
+		});
 
-router.post("/echo", validateBody(EchoSchema), (req, res) => {
-	res.json({ ok: true, data: req.body });
-});
-router.get("/demo/conflict", (_req, _res) => {
-	throw new HttpError(409, "EVENT_FULL", "Event capacity reached");
+		res.json({ ok: true, data: events });
+	} catch (err) {
+		next(err);
+	}
 });
