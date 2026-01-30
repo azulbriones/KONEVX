@@ -2,3 +2,5 @@ node_modules
 .env
 dist
 .vite
+# Prisma generated client (Prisma v7 output)
+apps/api/src/generated/prisma
