@@ -1,0 +1,81 @@
+import { z } from "zod";
+
+export const FieldTypeSchema = z.enum([
+	"TEXT",
+	"NUMBER",
+	"DATE",
+	"SELECT",
+	"MULTI_SELECT",
+	"CHECKBOX",
+]);
+
+export const EventFieldInputSchema = z.object({
+	key: z
+		.string()
+		.min(1)
+		.max(80)
+		.regex(/^[a-z0-9]+(?:_[a-z0-9]+)*$/, "key must be snake_case"),
+	label: z.string().min(1).max(200),
+	type: FieldTypeSchema,
+	required: z.boolean().default(false),
+	order: z.number().int().min(0),
+	options: z.any().optional(),
+});
+
+export const ReplaceEventFieldsSchema = z
+	.object({
+		fields: z.array(EventFieldInputSchema).max(100),
+	})
+	.superRefine(
+		(
+			val: { fields: any[] },
+			ctx: {
+				addIssue: (arg0: {
+					code: any;
+					path: string[] | any[];
+					message: string;
+				}) => void;
+			},
+		) => {
+			const keys = val.fields.map((f) => f.key);
+			const dup = keys.find((k, i) => keys.indexOf(k) !== i);
+			if (dup) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					path: ["fields"],
+					message: `Duplicate key: ${dup}`,
+				});
+			}
+
+			for (const [i, f] of val.fields.entries()) {
+				const isSelect =
+					f.type === "SELECT" || f.type === "MULTI_SELECT";
+				if (isSelect) {
+					const ok =
+						Array.isArray(f.options) &&
+						f.options.length > 0 &&
+						f.options.every(
+							(o: string | any[]) =>
+								typeof o === "string" && o.length > 0,
+						);
+					if (!ok) {
+						ctx.addIssue({
+							code: z.ZodIssueCode.custom,
+							path: ["fields", i, "options"],
+							message:
+								"options must be a non-empty string[] for SELECT/MULTI_SELECT",
+						});
+					}
+				} else if (f.options !== undefined) {
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						path: ["fields", i, "options"],
+						message:
+							"options is only allowed for SELECT/MULTI_SELECT",
+					});
+				}
+			}
+		},
+	);
+
+export type ReplaceEventFieldsInput = z.infer<typeof ReplaceEventFieldsSchema>;
