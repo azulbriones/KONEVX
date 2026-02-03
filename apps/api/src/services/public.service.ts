@@ -20,8 +20,19 @@ export async function getPublicEventBySlug(slug: string) {
 	if (!event.isPublished)
 		throw new HttpError(404, "EVENT_NOT_FOUND", "Event not found");
 
-	return {
-		event,
-		fields: [] as Array<unknown>,
-	};
+	const fields = await prisma.eventField.findMany({
+		where: { eventId: event.id },
+		orderBy: { order: "asc" },
+		select: {
+			id: true,
+			key: true,
+			label: true,
+			type: true,
+			required: true,
+			order: true,
+			options: true,
+		},
+	});
+
+	return { event, fields };
 }
