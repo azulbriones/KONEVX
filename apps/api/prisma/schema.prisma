@@ -13,15 +13,17 @@ enum ContactRequirement {
 }
 
 model Event {
-    id                 Int                @id @default(autoincrement())
+    id                 Int                      @id @default(autoincrement())
     name               String
-    slug               String             @unique
+    slug               String                   @unique
     capacity           Int
     contactRequirement ContactRequirement
-    isPublished        Boolean            @default(false)
+    isPublished        Boolean                  @default(false)
     fields             EventField[]
-    createdAt          DateTime           @default(now())
-    updatedAt          DateTime           @updatedAt
+    registrations      Registration[]
+    values             RegistrationFieldValue[]
+    createdAt          DateTime                 @default(now())
+    updatedAt          DateTime                 @updatedAt
 }
 
 enum FieldType {
@@ -45,9 +47,62 @@ model EventField {
 
     event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    createdAt               DateTime                 @default(now())
+    updatedAt               DateTime                 @updatedAt
+    registrationFieldValues RegistrationFieldValue[]
 
     @@unique([eventId, key])
     @@index([eventId, order])
+}
+
+enum RegistrationStatus {
+    REGISTERED
+    CANCELLED
+    CONFIRMED
+    ATTENDED
+    NO_SHOW
+}
+
+model Participant {
+    id              Int     @id @default(autoincrement())
+    emailNormalized String? @unique
+    phoneNormalized String? @unique
+
+    registrations Registration[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model Registration {
+    id            Int                @id @default(autoincrement())
+    eventId       Int
+    participantId Int
+    status        RegistrationStatus @default(REGISTERED)
+
+    event       Event                    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    participant Participant              @relation(fields: [participantId], references: [id], onDelete: Cascade)
+    fieldValues RegistrationFieldValue[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([eventId, participantId])
+    @@index([eventId, status])
+    @@index([participantId])
+}
+
+model RegistrationFieldValue {
+    id             Int  @id @default(autoincrement())
+    registrationId Int
+    eventFieldId   Int
+    value          Json
+
+    registration Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+    eventField   EventField   @relation(fields: [eventFieldId], references: [id], onDelete: Cascade)
+    event        Event?       @relation(fields: [eventId], references: [id])
+    eventId      Int?
+
+    @@unique([registrationId, eventFieldId])
+    @@index([eventFieldId])
 }
