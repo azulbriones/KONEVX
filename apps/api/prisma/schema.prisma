@@ -19,7 +19,35 @@ model Event {
     capacity           Int
     contactRequirement ContactRequirement
     isPublished        Boolean            @default(false)
+    fields             EventField[]
+    createdAt          DateTime           @default(now())
+    updatedAt          DateTime           @updatedAt
+}
+
+enum FieldType {
+    TEXT
+    NUMBER
+    DATE
+    SELECT
+    MULTI_SELECT
+    CHECKBOX
+}
+
+model EventField {
+    id       Int       @id @default(autoincrement())
+    eventId  Int
+    key      String
+    label    String
+    type     FieldType
+    required Boolean   @default(false)
+    order    Int
+    options  Json?
+
+    event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
+
+    @@unique([eventId, key])
+    @@index([eventId, order])
 }
