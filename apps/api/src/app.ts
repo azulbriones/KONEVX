@@ -1,3 +1,4 @@
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import { errorMiddleware } from "./middlewares/error.js";
@@ -11,10 +12,11 @@ app.use(
 	cors({
 		origin: [WEB_ORIGIN],
 		methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-		credentials: false,
+		credentials: true,
 	}),
 );
 
+app.use(cookieParser());
 app.use(express.json());
 
 app.use("/api", router);
