@@ -4,3 +4,6 @@ dist
 .vite
 # Prisma generated client (Prisma v7 output)
 apps/api/src/generated/prisma
+# curl cookie jars (dev)
+cookies.txt
+*.cookies.txt
