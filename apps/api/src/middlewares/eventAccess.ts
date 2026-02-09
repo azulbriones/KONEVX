@@ -28,6 +28,24 @@ function parseEventId(raw?: string): number {
 	return id;
 }
 
+async function enforceDemoScope(user: { demo?: boolean }, eventId: number) {
+	if (!user.demo) return;
+
+	const demoSlug = process.env.DEMO_EVENT_SLUG ?? "demo-event";
+	const ev = await prisma.event.findUnique({
+		where: { id: eventId },
+		select: { slug: true },
+	});
+
+	if (!ev || ev.slug !== demoSlug) {
+		throw new HttpError(
+			403,
+			"DEMO_SCOPE",
+			"Demo user can only access demo event",
+		);
+	}
+}
+
 /**
  * 3. Middleware Factory
  * Genera el middleware de validación basado en el rol mínimo requerido.
@@ -52,30 +70,12 @@ const requireEventPermission = (
 			}
 
 			const eventId = parseEventId(req.params.eventId);
+			await enforceDemoScope(user, eventId);
 
 			if (user.role === UserRole.SUPER_ADMIN) {
 				res.locals.eventRole = "SUPER_ADMIN";
 				res.locals.eventId = eventId;
 				return next();
-			}
-
-			const demoSlug = process.env.DEMO_EVENT_SLUG ?? "demo-event";
-
-			if (user.demo) {
-				const eventId = parseEventId(req.params.eventId);
-				const ev = await prisma.event.findUnique({
-					where: { id: eventId },
-					select: { slug: true },
-				});
-				if (!ev || ev.slug !== demoSlug) {
-					return next(
-						new HttpError(
-							403,
-							"DEMO_SCOPE",
-							"Demo user can only access demo event",
-						),
-					);
-				}
 			}
 
 			const member = await prisma.eventMember.findUnique({

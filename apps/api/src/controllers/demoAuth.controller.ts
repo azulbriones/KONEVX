@@ -73,9 +73,16 @@ export const demoLoginHandler: RequestHandler = async (
 				"Demo user not seeded",
 			);
 
-		const tokens = await issueTokensForUser(user, true);
-		setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+		const tokens = await issueTokensForUser(
+			{
+				id: user.id,
+				role: user.role,
+				email: "",
+			},
+			true,
+		);
 
+		setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
 		res.json({ ok: true, data: { user, mode: "demo" } });
 	} catch (err) {
 		next(err);
