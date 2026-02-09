@@ -5,7 +5,29 @@ const slug = process.env.DEMO_EVENT_SLUG ?? "demo-event";
 const email = process.env.DEMO_EDITOR_EMAIL ?? "demo_editor@eventplanner.demo";
 const password = process.env.DEMO_EDITOR_PASSWORD ?? "ChangeMe123!";
 
+const shouldReset = process.argv.includes("--reset");
+
+async function resetDemoEvent(eventId: number) {
+	await prisma.$transaction([
+		prisma.registrationFieldValue.deleteMany({ where: { eventId } }),
+		prisma.registration.deleteMany({ where: { eventId } }),
+		prisma.eventField.deleteMany({ where: { eventId } }),
+		prisma.eventMember.deleteMany({ where: { eventId } }),
+	]);
+}
+
 async function main() {
+	// 0) Buscar evento demo si existe
+	const existingEvent = await prisma.event.findUnique({
+		where: { slug },
+		select: { id: true, slug: true },
+	});
+
+	if (shouldReset && existingEvent) {
+		await resetDemoEvent(existingEvent.id);
+		console.log("🧹 Demo reset ok for event:", slug);
+	}
+
 	// 1) Usuario demo
 	const existingUser = await prisma.user.findUnique({ where: { email } });
 	const user =
@@ -16,10 +38,10 @@ async function main() {
 				passwordHash: await hashPassword(password),
 				role: "EVENT_ADMIN",
 			},
+			select: { id: true, email: true, role: true },
 		}));
 
 	// 2) Evento demo publicado
-	const existingEvent = await prisma.event.findUnique({ where: { slug } });
 	const event =
 		existingEvent ??
 		(await prisma.event.create({
@@ -30,6 +52,7 @@ async function main() {
 				contactRequirement: "EMAIL",
 				isPublished: true,
 			},
+			select: { id: true, slug: true, name: true },
 		}));
 
 	// 3) Membership por evento: EDITOR
@@ -75,9 +98,8 @@ async function main() {
 		});
 	}
 
-	console.log("✅ Demo seeded");
+	console.log("✅ Demo seeded:", { slug });
 	console.log("Demo editor:", { email, password });
-	console.log("Demo event slug:", slug);
 }
 
 main()
