@@ -13,3 +13,10 @@ export const demoLimiter = rateLimit({
 	standardHeaders: "draft-7",
 	legacyHeaders: false,
 });
+
+export const writeLimiter = rateLimit({
+	windowMs: 60 * 1000,
+	limit: 60, // 60 requests per minute
+	standardHeaders: "draft-7",
+	legacyHeaders: false,
+});
