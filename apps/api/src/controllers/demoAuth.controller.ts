@@ -1,4 +1,5 @@
 import type { RequestHandler, Response } from "express";
+import { prisma } from "../db/prisma.js";
 import {
 	ACCESS_COOKIE,
 	CSRF_COOKIE,
@@ -8,7 +9,7 @@ import {
 } from "../lib/cookies.js";
 import { generateCsrfToken } from "../lib/crypto.js";
 import { HttpError } from "../lib/httpError.js";
-import { loginWithEmailPassword } from "../services/auth.service.js";
+import { issueTokensForUser } from "../services/auth.service.js";
 
 const ACCESS_TOKEN_AGE_MS = 15 * 60 * 1000;
 const REFRESH_TOKEN_AGE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -60,12 +61,22 @@ export const demoLoginHandler: RequestHandler = async (
 
 		const email =
 			process.env.DEMO_EDITOR_EMAIL ?? "demo_editor@eventplanner.demo";
-		const password = process.env.DEMO_EDITOR_PASSWORD ?? "ChangeMe123!";
 
-		const result = await loginWithEmailPassword(email, password);
+		const user = await prisma.user.findUnique({
+			where: { email },
+			select: { id: true, email: true, role: true },
+		});
+		if (!user)
+			throw new HttpError(
+				500,
+				"DEMO_USER_MISSING",
+				"Demo user not seeded",
+			);
 
-		setAuthCookies(res, result.accessToken, result.refreshToken);
-		res.json({ ok: true, data: { user: result.user, mode: "demo" } });
+		const tokens = await issueTokensForUser(user, true);
+		setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+
+		res.json({ ok: true, data: { user, mode: "demo" } });
 	} catch (err) {
 		next(err);
 	}

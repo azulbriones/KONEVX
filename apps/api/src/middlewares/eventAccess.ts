@@ -14,6 +14,7 @@ enum EventRole {
 interface AuthenticatedRequest extends Request {
 	params: any;
 	user?: {
+		demo: any;
 		id: number;
 		role: string;
 	};
@@ -56,6 +57,25 @@ const requireEventPermission = (
 				res.locals.eventRole = "SUPER_ADMIN";
 				res.locals.eventId = eventId;
 				return next();
+			}
+
+			const demoSlug = process.env.DEMO_EVENT_SLUG ?? "demo-event";
+
+			if (user.demo) {
+				const eventId = parseEventId(req.params.eventId);
+				const ev = await prisma.event.findUnique({
+					where: { id: eventId },
+					select: { slug: true },
+				});
+				if (!ev || ev.slug !== demoSlug) {
+					return next(
+						new HttpError(
+							403,
+							"DEMO_SCOPE",
+							"Demo user can only access demo event",
+						),
+					);
+				}
 			}
 
 			const member = await prisma.eventMember.findUnique({
