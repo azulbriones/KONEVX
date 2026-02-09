@@ -24,6 +24,7 @@ model Event {
     values             RegistrationFieldValue[]
     createdAt          DateTime                 @default(now())
     updatedAt          DateTime                 @updatedAt
+    eventMembers       EventMember[]
 }
 
 enum FieldType {
@@ -120,8 +121,9 @@ model User {
 
     sessions Session[]
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    createdAt   DateTime      @default(now())
+    updatedAt   DateTime      @updatedAt
+    memberships EventMember[]
 }
 
 model Session {
@@ -137,4 +139,23 @@ model Session {
 
     @@index([userId])
     @@index([expiresAt])
+}
+
+enum EventRole {
+    EDITOR
+    VIEWER
+}
+
+model EventMember {
+    eventId Int
+    userId  Int
+    role    EventRole @default(VIEWER)
+
+    event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+
+    @@id([eventId, userId])
+    @@index([userId])
 }

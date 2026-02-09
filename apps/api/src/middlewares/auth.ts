@@ -7,7 +7,7 @@ import { HttpError } from "../lib/httpError.js";
 
 assertAuthEnv();
 
-export type AuthUser = { id: number; role: string };
+export type AuthUser = { id: number; role: string; demo?: boolean };
 
 declare global {
 	namespace Express {
@@ -30,7 +30,11 @@ export const requireAuth: RequestHandler = (
 
 	try {
 		const payload: any = jwt.verify(token, authConfig.accessSecret);
-		req.user = { id: Number(payload.sub), role: String(payload.role) };
+		req.user = {
+			id: Number(payload.sub),
+			role: String(payload.role),
+			demo: !!payload.demo,
+		};
 		return next();
 	} catch {
 		return next(

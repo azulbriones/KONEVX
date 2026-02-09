@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { prisma } from "../db/prisma.js";
 import { assertAuthEnv, authConfig } from "../lib/authConfig.js";
 import { hashToken, verifyPassword } from "../lib/crypto.js";
@@ -9,18 +9,27 @@ const REFRESH_EXP_MS = 7 * 24 * 60 * 60 * 1000;
 
 assertAuthEnv();
 
-function signAccessToken(user: { id: number; role: string }) {
-	const payload: JwtPayload = { sub: String(user.id), role: user.role };
+function signAccessToken(user: { id: number; role: string; demo?: boolean }) {
+	const payload = {
+		sub: String(user.id),
+		role: user.role,
+		demo: !!user.demo,
+	};
 	return jwt.sign(payload, authConfig.accessSecret, {
 		expiresIn: authConfig.accessTtl,
 	});
 }
 
 function signRefreshToken(
-	user: { id: number; role: string },
+	user: { id: number; role: string; demo?: boolean },
 	sessionId: string,
 ) {
-	const payload = { sub: String(user.id), role: user.role, sid: sessionId };
+	const payload = {
+		sub: String(user.id),
+		role: user.role,
+		sid: sessionId,
+		demo: !!user.demo,
+	};
 	return jwt.sign(payload, authConfig.refreshSecret, {
 		expiresIn: authConfig.refreshTtl,
 	});
@@ -148,4 +157,33 @@ export async function logoutSession(refreshToken: string | null) {
 			.delete({ where: { id: sessionId } })
 			.catch(() => {});
 	} catch {}
+}
+
+export async function issueTokensForUser(
+	user: { id: number; email: string; role: string },
+	demo = false,
+) {
+	const sessionId = crypto.randomUUID();
+
+	const accessToken = signAccessToken({ id: user.id, role: user.role, demo });
+	const refreshToken = signRefreshToken(
+		{ id: user.id, role: user.role, demo },
+		sessionId,
+	);
+
+	const decoded = jwt.decode(refreshToken) as any;
+	const expiresAt = decoded?.exp
+		? new Date(decoded.exp * 1000)
+		: new Date(Date.now() + REFRESH_EXP_MS);
+
+	await prisma.session.create({
+		data: {
+			id: sessionId,
+			userId: user.id,
+			refreshTokenHash: hashToken(refreshToken),
+			expiresAt,
+		},
+	});
+
+	return { accessToken, refreshToken };
 }
