@@ -1,12 +1,20 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
+import helmet from "helmet";
 import { errorMiddleware } from "./middlewares/error.js";
+import { httpLogger } from "./middlewares/httpLogger.js";
+import { requestId } from "./middlewares/requestId.js";
 import { router } from "./routes/index.js";
 
 export const app = express();
 
 const WEB_ORIGIN = process.env.WEB_ORIGIN ?? "http://localhost:5173";
+
+app.set("trust proxy", 1);
+app.use(helmet());
+app.use(requestId);
+app.use(httpLogger);
 
 app.use(
 	cors({
