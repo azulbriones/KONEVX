@@ -12,7 +12,7 @@ export const demoResetHandler: RequestHandler = async (
 			throw new HttpError(404, "NOT_FOUND", "Not found");
 		}
 
-		const data = await resetAndSeedDemo({ reset: true });
+		const data = await resetAndSeedDemo();
 		res.json({ ok: true, data });
 	} catch (e) {
 		next(e);

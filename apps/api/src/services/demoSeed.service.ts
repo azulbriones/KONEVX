@@ -5,28 +5,22 @@ const slug = process.env.DEMO_EVENT_SLUG ?? "demo-event";
 const email = process.env.DEMO_EDITOR_EMAIL ?? "demo_editor@eventplanner.demo";
 const password = process.env.DEMO_EDITOR_PASSWORD ?? "ChangeMe123!";
 
+async function resetDemoEvent(eventId: number) {
+	await prisma.$transaction([
+		prisma.registrationFieldValue.deleteMany({ where: { eventId } }),
+		prisma.registration.deleteMany({ where: { eventId } }),
+		prisma.eventField.deleteMany({ where: { eventId } }),
+		prisma.eventMember.deleteMany({ where: { eventId } }),
+	]);
+}
+
 export async function resetAndSeedDemo() {
 	const existingEvent = await prisma.event.findUnique({
 		where: { slug },
 		select: { id: true },
 	});
 
-	if (existingEvent) {
-		await prisma.$transaction([
-			prisma.registrationFieldValue.deleteMany({
-				where: { eventId: existingEvent.id },
-			}),
-			prisma.registration.deleteMany({
-				where: { eventId: existingEvent.id },
-			}),
-			prisma.eventField.deleteMany({
-				where: { eventId: existingEvent.id },
-			}),
-			prisma.eventMember.deleteMany({
-				where: { eventId: existingEvent.id },
-			}),
-		]);
-	}
+	if (existingEvent) await resetDemoEvent(existingEvent.id);
 
 	const existingUser = await prisma.user.findUnique({ where: { email } });
 	const user =
@@ -41,7 +35,10 @@ export async function resetAndSeedDemo() {
 		}));
 
 	const event =
-		existingEvent ??
+		(await prisma.event.findUnique({
+			where: { slug },
+			select: { id: true, slug: true, name: true },
+		})) ??
 		(await prisma.event.create({
 			data: {
 				name: "Demo EventPlanner",
@@ -53,30 +50,20 @@ export async function resetAndSeedDemo() {
 			select: { id: true, slug: true, name: true },
 		}));
 
-	const eventFull =
-		"id" in event
-			? await prisma.event.findUnique({
-					where: { slug },
-					select: { id: true, slug: true, name: true },
-				})
-			: null;
-
-	const finalEvent = eventFull ?? (event as any);
-
 	await prisma.eventMember.upsert({
-		where: { eventId_userId: { eventId: finalEvent.id, userId: user.id } },
+		where: { eventId_userId: { eventId: event.id, userId: user.id } },
 		update: { role: "EDITOR" },
-		create: { eventId: finalEvent.id, userId: user.id, role: "EDITOR" },
+		create: { eventId: event.id, userId: user.id, role: "EDITOR" },
 	});
 
 	const countFields = await prisma.eventField.count({
-		where: { eventId: finalEvent.id },
+		where: { eventId: event.id },
 	});
 	if (countFields === 0) {
 		await prisma.eventField.createMany({
 			data: [
 				{
-					eventId: finalEvent.id,
+					eventId: event.id,
 					key: "empresa",
 					label: "Empresa",
 					type: "TEXT",
@@ -84,7 +71,7 @@ export async function resetAndSeedDemo() {
 					order: 0,
 				},
 				{
-					eventId: finalEvent.id,
+					eventId: event.id,
 					key: "rol",
 					label: "Rol",
 					type: "TEXT",
@@ -92,7 +79,7 @@ export async function resetAndSeedDemo() {
 					order: 1,
 				},
 				{
-					eventId: finalEvent.id,
+					eventId: event.id,
 					key: "talla",
 					label: "Talla",
 					type: "SELECT",
@@ -104,10 +91,5 @@ export async function resetAndSeedDemo() {
 		});
 	}
 
-	return {
-		slug,
-		demoEditor: { email },
-		event: finalEvent,
-		resetPerformed: !!existingEvent,
-	};
+	return { slug: event.slug, eventId: event.id, demoEditorEmail: email };
 }
