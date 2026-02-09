@@ -15,10 +15,15 @@ import { registrationsPdfRouter } from "./registrationsPdf.routes.js";
 
 export const eventsRouter = Router();
 
-eventsRouter.get("/", listEventsHandler);
-eventsRouter.post("/", validateBody(CreateEventSchema), createEventHandler);
+eventsRouter.get("/", requireAuth, listEventsHandler);
+eventsRouter.post(
+	"/",
+	requireAuth,
+	validateBody(CreateEventSchema),
+	createEventHandler,
+);
 
-// Fields (read for members, write protegido dentro del router con CSRF+write)
+// Fields management (read/write)
 eventsRouter.use(
 	"/:eventId/fields",
 	requireAuth,
@@ -34,7 +39,7 @@ eventsRouter.use(
 	registrationsRouter,
 );
 
-// Registrations status update (write protegido dentro del router con CSRF+write)
+// Registrations status update
 eventsRouter.use(
 	"/:eventId/registrations",
 	requireAuth,
