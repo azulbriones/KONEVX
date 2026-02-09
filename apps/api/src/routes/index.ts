@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authRouter } from "./auth.routes.js";
+import { demoRouter } from "./demo.routes.js";
 import { demoAuthRouter } from "./demoAuth.routes.js";
 import { eventsRouter } from "./events.routes.js";
 import { publicRouter } from "./public.routes.js";
@@ -15,3 +16,5 @@ router.use("/auth", demoAuthRouter);
 router.use("/events", eventsRouter);
 router.use("/public", publicRouter);
 eventsRouter.use("/:eventId/registrations", registrationsRouter);
+
+router.use("/demo", demoRouter);
