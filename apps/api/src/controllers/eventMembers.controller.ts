@@ -155,20 +155,34 @@ export const updateEventMemberRoleHandler: RequestHandler = async (
 				parsed.error.flatten(),
 			);
 
-		const updated = await prisma.eventMember.update({
-			where: { eventId_userId: { eventId, userId } },
-			data: { role: parsed.data.role },
-			select: { role: true, user: { select: { id: true, email: true } } },
-		});
+		try {
+			const updated = await prisma.eventMember.update({
+				where: { eventId_userId: { eventId, userId } },
+				data: { role: parsed.data.role },
+				select: {
+					role: true,
+					user: { select: { id: true, email: true } },
+				},
+			});
 
-		res.json({
-			ok: true,
-			data: {
-				userId: updated.user.id,
-				email: updated.user.email,
-				eventRole: updated.role,
-			},
-		});
+			return res.json({
+				ok: true,
+				data: {
+					userId: updated.user.id,
+					email: updated.user.email,
+					eventRole: updated.role,
+				},
+			});
+		} catch (e: any) {
+			if (e?.code === "P2025") {
+				throw new HttpError(
+					404,
+					"MEMBER_NOT_FOUND",
+					"Member not found",
+				);
+			}
+			throw e;
+		}
 	} catch (e) {
 		next(e);
 	}
@@ -183,9 +197,20 @@ export const removeEventMemberHandler: RequestHandler = async (
 		const eventId = parseEventId(req.params.eventId);
 		const userId = parseUserId(req.params.userId);
 
-		await prisma.eventMember.delete({
-			where: { eventId_userId: { eventId, userId } },
-		});
+		try {
+			await prisma.eventMember.delete({
+				where: { eventId_userId: { eventId, userId } },
+			});
+		} catch (e: any) {
+			if (e?.code === "P2025") {
+				throw new HttpError(
+					404,
+					"MEMBER_NOT_FOUND",
+					"Member not found",
+				);
+			}
+			throw e;
+		}
 
 		res.json({ ok: true });
 	} catch (e) {
