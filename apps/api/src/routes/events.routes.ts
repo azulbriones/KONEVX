@@ -8,6 +8,7 @@ import { requireEventRead } from "../middlewares/eventAccess.js";
 import { validateBody } from "../middlewares/validate.js";
 import { CreateEventSchema } from "../schemas/events.schema.js";
 import { eventFieldsRouter } from "./eventFields.routes.js";
+import { eventMembersRouter } from "./eventMembers.routes.js";
 import { registrationStatusRouter } from "./registrationStatus.routes.js";
 import { registrationsRouter } from "./registrations.routes.js";
 import { registrationsExportRouter } from "./registrationsExport.routes.js";
@@ -46,6 +47,8 @@ eventsRouter.use(
 	requireEventRead,
 	registrationStatusRouter,
 );
+
+eventsRouter.use("/:eventId/members", eventMembersRouter);
 
 // Reports (read)
 eventsRouter.use(
