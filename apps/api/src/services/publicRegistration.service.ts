@@ -3,158 +3,134 @@ import { HttpError } from "../lib/httpError.js";
 import { normalizeEmail, normalizePhone } from "../lib/normalize.js";
 import type { PublicRegisterInput } from "../schemas/publicRegistration.schema.js";
 
+type FieldDefinition = {
+	label: string;
+	id: number;
+	key: string;
+	type: "TEXT" | "NUMBER" | "DATE" | "SELECT" | "MULTI_SELECT" | "CHECKBOX";
+	required: boolean;
+	options: unknown;
+};
+
 function validateAndPickValues(
-	fields: Array<{
-		id: number;
-		key: string;
-		type:
-			| "TEXT"
-			| "NUMBER"
-			| "DATE"
-			| "SELECT"
-			| "MULTI_SELECT"
-			| "CHECKBOX";
-		required: boolean;
-		options: unknown;
-	}>,
+	fields: FieldDefinition[],
 	answers: Record<string, unknown>,
 ) {
 	const allowedKeys = new Set(fields.map((f) => f.key));
-
 	for (const key of Object.keys(answers)) {
 		if (!allowedKeys.has(key)) {
 			throw new HttpError(400, "UNKNOWN_FIELD", `Unknown field: ${key}`);
 		}
 	}
 
-	// 2) required
+	const values: Array<{ eventFieldId: number; value: any }> = [];
+
 	for (const f of fields) {
-		if (
-			f.required &&
-			(answers[f.key] === undefined ||
-				answers[f.key] === null ||
-				answers[f.key] === "")
-		) {
+		const val = answers[f.key];
+
+		const isEmpty = val === undefined || val === null || val === "";
+		if (f.required && isEmpty) {
 			throw new HttpError(
 				400,
 				"MISSING_REQUIRED_FIELD",
-				`Missing required field: ${f.key}`,
+				`Missing required field: ${f.label || f.key}`,
 			);
 		}
-	}
 
-	const values: Array<{ eventFieldId: number; value: unknown }> = [];
-
-	for (const f of fields) {
-		const v = answers[f.key];
-		if (v === undefined) continue;
+		if (val === undefined || val === null) continue;
 
 		switch (f.type) {
-			case "TEXT": {
-				if (typeof v !== "string")
+			case "TEXT":
+				if (typeof val !== "string")
 					throw new HttpError(
 						400,
-						"INVALID_FIELD_VALUE",
-						`${f.key} must be string`,
+						"INVALID_VALUE",
+						`${f.key} must be text`,
 					);
-				values.push({ eventFieldId: f.id, value: v });
+				values.push({ eventFieldId: f.id, value: val });
 				break;
-			}
-			case "NUMBER": {
-				if (typeof v !== "number" || !Number.isFinite(v))
+
+			case "NUMBER":
+				if (typeof val !== "number" || !Number.isFinite(val))
 					throw new HttpError(
 						400,
-						"INVALID_FIELD_VALUE",
-						`${f.key} must be number`,
+						"INVALID_VALUE",
+						`${f.key} must be a number`,
 					);
-				values.push({ eventFieldId: f.id, value: v });
+				values.push({ eventFieldId: f.id, value: val });
 				break;
-			}
-			case "DATE": {
-				if (typeof v !== "string")
+
+			case "DATE":
+				if (typeof val !== "string" || Number.isNaN(Date.parse(val))) {
 					throw new HttpError(
 						400,
-						"INVALID_FIELD_VALUE",
-						`${f.key} must be date string`,
-					);
-				const d = new Date(v);
-				if (Number.isNaN(d.getTime()))
-					throw new HttpError(
-						400,
-						"INVALID_FIELD_VALUE",
-						`${f.key} invalid date`,
-					);
-				values.push({ eventFieldId: f.id, value: v });
-				break;
-			}
-			case "CHECKBOX": {
-				if (typeof v !== "boolean")
-					throw new HttpError(
-						400,
-						"INVALID_FIELD_VALUE",
-						`${f.key} must be boolean`,
-					);
-				values.push({ eventFieldId: f.id, value: v });
-				break;
-			}
-			case "SELECT": {
-				if (typeof v !== "string")
-					throw new HttpError(
-						400,
-						"INVALID_FIELD_VALUE",
-						`${f.key} must be string`,
-					);
-				const opts = Array.isArray(f.options) ? f.options : null;
-				if (!opts || !opts.every((o) => typeof o === "string")) {
-					throw new HttpError(
-						500,
-						"FIELD_OPTIONS_INVALID",
-						`Field options misconfigured: ${f.key}`,
+						"INVALID_VALUE",
+						`${f.key} must be a valid date`,
 					);
 				}
-				if (!opts.includes(v))
+				values.push({ eventFieldId: f.id, value: val });
+				break;
+
+			case "CHECKBOX":
+				if (typeof val !== "boolean")
 					throw new HttpError(
 						400,
-						"INVALID_FIELD_VALUE",
-						`${f.key} must be one of options`,
+						"INVALID_VALUE",
+						`${f.key} must be true/false`,
 					);
-				values.push({ eventFieldId: f.id, value: v });
+				values.push({ eventFieldId: f.id, value: val });
+				break;
+
+			case "SELECT": {
+				if (typeof val !== "string")
+					throw new HttpError(
+						400,
+						"INVALID_VALUE",
+						`${f.key} must be text`,
+					);
+				const opts = Array.isArray(f.options)
+					? (f.options as string[])
+					: [];
+				if (!opts.includes(val))
+					throw new HttpError(
+						400,
+						"INVALID_OPTION",
+						`Invalid option for ${f.key}`,
+					);
+				values.push({ eventFieldId: f.id, value: val });
 				break;
 			}
+
 			case "MULTI_SELECT": {
 				if (
-					!Array.isArray(v) ||
-					!v.every((x) => typeof x === "string")
+					!Array.isArray(val) ||
+					!val.every((v) => typeof v === "string")
 				) {
 					throw new HttpError(
 						400,
-						"INVALID_FIELD_VALUE",
-						`${f.key} must be string[]`,
+						"INVALID_VALUE",
+						`${f.key} must be an array of strings`,
 					);
 				}
-				const opts = Array.isArray(f.options) ? f.options : null;
-				if (!opts || !opts.every((o) => typeof o === "string")) {
-					throw new HttpError(
-						500,
-						"FIELD_OPTIONS_INVALID",
-						`Field options misconfigured: ${f.key}`,
-					);
-				}
-				for (const item of v) {
+				const opts = Array.isArray(f.options)
+					? (f.options as string[])
+					: [];
+				for (const item of val) {
 					if (!opts.includes(item))
 						throw new HttpError(
 							400,
-							"INVALID_FIELD_VALUE",
-							`${f.key} has invalid option`,
+							"INVALID_OPTION",
+							`Invalid option '${item}' for ${f.key}`,
 						);
 				}
-				values.push({ eventFieldId: f.id, value: v });
+				values.push({ eventFieldId: f.id, value: val });
 				break;
 			}
+
 			default:
 				throw new HttpError(
 					500,
-					"FIELD_TYPE_INVALID",
+					"CONFIG_ERROR",
 					`Unsupported field type: ${f.type}`,
 				);
 		}
@@ -183,8 +159,6 @@ export async function registerPublicBySlug(
 			where: { slug },
 			select: {
 				id: true,
-				slug: true,
-				name: true,
 				capacity: true,
 				contactRequirement: true,
 				isPublished: true,
@@ -216,6 +190,7 @@ export async function registerPublicBySlug(
 			select: {
 				id: true,
 				key: true,
+				label: true,
 				type: true,
 				required: true,
 				options: true,
@@ -224,67 +199,64 @@ export async function registerPublicBySlug(
 
 		const answerValues = validateAndPickValues(fields, input.answers ?? {});
 
-		let participant =
-			(emailNormalized
-				? await tx.participant.findUnique({
-						where: { emailNormalized },
-					})
-				: null) ??
-			(phoneNormalized
-				? await tx.participant.findUnique({
-						where: { phoneNormalized },
-					})
-				: null);
+		let participant = null;
 
-		if (emailNormalized && phoneNormalized) {
-			const pByEmail = await tx.participant.findUnique({
-				where: { emailNormalized },
-			});
-			const pByPhone = await tx.participant.findUnique({
-				where: { phoneNormalized },
-			});
-			if (pByEmail && pByPhone && pByEmail.id !== pByPhone.id) {
-				throw new HttpError(
-					409,
-					"CONTACT_CONFLICT",
-					"Email and phone belong to different participants",
-				);
-			}
-			participant = pByEmail ?? pByPhone ?? participant;
+		const pByEmail = emailNormalized
+			? await tx.participant.findUnique({ where: { emailNormalized } })
+			: null;
+		const pByPhone = phoneNormalized
+			? await tx.participant.findUnique({ where: { phoneNormalized } })
+			: null;
+
+		if (pByEmail && pByPhone && pByEmail.id !== pByPhone.id) {
+			throw new HttpError(
+				409,
+				"CONTACT_CONFLICT",
+				"The provided email and phone belong to different users.",
+			);
 		}
+
+		participant = pByEmail ?? pByPhone;
 
 		if (!participant) {
 			participant = await tx.participant.create({
 				data: { emailNormalized, phoneNormalized },
 			});
 		} else {
-			participant = await tx.participant.update({
-				where: { id: participant.id },
-				data: {
-					emailNormalized:
-						participant.emailNormalized ?? emailNormalized,
-					phoneNormalized:
-						participant.phoneNormalized ?? phoneNormalized,
-				},
-			});
+			const needsUpdate =
+				(emailNormalized && !participant.emailNormalized) ||
+				(phoneNormalized && !participant.phoneNormalized);
+
+			if (needsUpdate) {
+				participant = await tx.participant.update({
+					where: { id: participant.id },
+					data: {
+						emailNormalized:
+							emailNormalized || participant.emailNormalized,
+						phoneNormalized:
+							phoneNormalized || participant.phoneNormalized,
+					},
+				});
+			}
 		}
 
-		const existing = await tx.registration.findUnique({
+		const existingRegistration = await tx.registration.findUnique({
 			where: {
 				eventId_participantId: {
 					eventId: event.id,
 					participantId: participant.id,
 				},
 			},
-			select: { id: true, status: true, createdAt: true },
 		});
 
-		if (existing) {
+		if (existingRegistration) {
 			return {
 				status: "EXISTS" as const,
-				registration: existing,
+				registration: existingRegistration,
 			};
 		}
+
+		await tx.$queryRaw`SELECT id FROM "Event" WHERE id = ${event.id} FOR UPDATE`;
 
 		const activeCount = await tx.registration.count({
 			where: { eventId: event.id, status: { not: "CANCELLED" } },
@@ -299,23 +271,17 @@ export async function registerPublicBySlug(
 				eventId: event.id,
 				participantId: participant.id,
 				status: "REGISTERED",
+				fieldValues: {
+					create: answerValues.map((v) => ({
+						eventFieldId: v.eventFieldId,
+						eventId: event.id,
+						value: v.value,
+					})),
+				},
 			},
 			select: { id: true, status: true, createdAt: true },
 		});
 
-		if (answerValues.length > 0) {
-			await tx.registrationFieldValue.createMany({
-				data: answerValues.map((v) => ({
-					registrationId: registration.id,
-					eventFieldId: v.eventFieldId,
-					value: v.value,
-				})),
-			});
-		}
-
-		return {
-			status: "CREATED" as const,
-			registration,
-		};
+		return { status: "CREATED" as const, registration };
 	});
 }
