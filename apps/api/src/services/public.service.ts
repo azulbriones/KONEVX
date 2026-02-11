@@ -34,5 +34,21 @@ export async function getPublicEventBySlug(slug: string) {
 		},
 	});
 
-	return { event, fields };
+	const activeCount = await prisma.registration.count({
+		where: { eventId: event.id, status: { not: "CANCELLED" } },
+	});
+
+	const remaining = Math.max(0, event.capacity - activeCount);
+
+	return {
+		event: {
+			id: event.id,
+			name: event.name,
+			slug: event.slug,
+			capacity: event.capacity,
+			remaining,
+			contactRequirement: event.contactRequirement,
+		},
+		fields,
+	};
 }
