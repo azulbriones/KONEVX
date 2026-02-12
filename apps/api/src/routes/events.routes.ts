@@ -2,10 +2,16 @@ import { Router } from "express";
 import {
 	createEventHandler,
 	listEventsHandler,
+	setPublishHandler,
 } from "../controllers/events.controller.js";
-import { requireAuth } from "../middlewares/auth.js";
-import { requireEventRead } from "../middlewares/eventAccess.js";
+import { requireAuth, requireCsrf } from "../middlewares/auth.js";
+import {
+	requireEventRead,
+	requireEventWrite,
+} from "../middlewares/eventAccess.js";
+import { writeLimiter } from "../middlewares/rateLimiters.js";
 import { validateBody } from "../middlewares/validate.js";
+import { SetPublishSchema } from "../schemas/eventPublish.schema.js";
 import { CreateEventSchema } from "../schemas/events.schema.js";
 import { eventFieldsRouter } from "./eventFields.routes.js";
 import { eventMembersRouter } from "./eventMembers.routes.js";
@@ -49,6 +55,16 @@ eventsRouter.use(
 );
 
 eventsRouter.use("/:eventId/members", eventMembersRouter);
+
+eventsRouter.patch(
+	"/:eventId/publish",
+	writeLimiter,
+	requireAuth,
+	requireCsrf,
+	requireEventWrite,
+	validateBody(SetPublishSchema),
+	setPublishHandler,
+);
 
 // Reports (read)
 eventsRouter.use(
