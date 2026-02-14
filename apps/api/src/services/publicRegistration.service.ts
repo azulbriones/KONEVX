@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "../db/prisma.js";
 import { HttpError } from "../lib/httpError.js";
 import { normalizeEmail, normalizePhone } from "../lib/normalize.js";
@@ -154,7 +155,7 @@ export async function registerPublicBySlug(
 		);
 	}
 
-	return prisma.$transaction(async (tx) => {
+	return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
 		const event = await tx.event.findUnique({
 			where: { slug },
 			select: {

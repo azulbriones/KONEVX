@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import type {
 	ErrorRequestHandler,
 	NextFunction,
@@ -5,7 +6,6 @@ import type {
 	Response,
 } from "express";
 import { ZodError } from "zod";
-import { Prisma } from "../generated/prisma/client.js";
 import { HttpError } from "../lib/httpError.js";
 
 declare module "express-serve-static-core" {

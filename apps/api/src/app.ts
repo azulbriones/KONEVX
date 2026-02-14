@@ -11,21 +11,32 @@ export const app = express();
 
 const WEB_ORIGIN = process.env.WEB_ORIGIN ?? "http://localhost:5173";
 
-app.set("trust proxy", 1);
-app.use(helmet());
+if (process.env.TRUST_PROXY === "true") {
+	app.set("trust proxy", 1);
+}
+
+app.use(
+	helmet({
+		contentSecurityPolicy: false,
+		crossOriginResourcePolicy: { policy: "cross-origin" },
+	}),
+);
+
 app.use(requestId);
 app.use(httpLogger);
+
+app.use(cookieParser());
+app.use(express.json());
 
 app.use(
 	cors({
 		origin: [WEB_ORIGIN],
-		methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+		methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 		credentials: true,
+		allowedHeaders: ["Content-Type", "X-CSRF-Token"],
+		optionsSuccessStatus: 204,
 	}),
 );
-
-app.use(cookieParser());
-app.use(express.json());
 
 app.use("/api", router);
 

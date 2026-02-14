@@ -47,7 +47,6 @@ export async function listRegistrationsByEvent(
 		}),
 	]);
 
-	// Convertimos fieldValues a un objeto por key (más fácil para UI/reportes)
 	const items = rows.map((r) => ({
 		id: r.id,
 		status: r.status,

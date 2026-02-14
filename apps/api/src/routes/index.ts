@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { authLimiter } from "../middlewares/rateLimiters.js";
 import { authRouter } from "./auth.routes.js";
 import { demoRouter } from "./demo.routes.js";
 import { demoAuthRouter } from "./demoAuth.routes.js";
@@ -11,13 +12,17 @@ export const router = Router();
 
 router.get("/health", (_req, res) => res.json({ ok: true, service: "api" }));
 
-router.use("/auth", authRouter);
-router.use("/auth", demoAuthRouter);
-
 router.use("/users", usersRouter);
 
 router.use("/events", eventsRouter);
 router.use("/public", publicRouter);
 eventsRouter.use("/:eventId/registrations", registrationsRouter);
 
-router.use("/demo", demoRouter);
+const demoEnabled = process.env.DEMO_MODE === "true";
+
+router.use("/auth", authLimiter, authRouter);
+
+if (demoEnabled) {
+	router.use("/auth", authLimiter, demoAuthRouter);
+	router.use("/demo", demoRouter);
+}

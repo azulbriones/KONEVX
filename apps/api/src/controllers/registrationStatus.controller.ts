@@ -1,35 +1,45 @@
 import type { RequestHandler } from "express";
+import { z } from "zod";
 import { HttpError } from "../lib/httpError.js";
+import { parseId } from "../lib/parser.js";
 import { UpdateRegistrationStatusSchema } from "../schemas/registrationStatus.schema.js";
 import { updateRegistrationStatus } from "../services/registrationStatus.service.js";
 
-function parseId(raw: string, code: string) {
-	const n = Number(raw);
-	if (!Number.isInteger(n) || n <= 0)
-		throw new HttpError(400, code, "Invalid id");
-	return n;
-}
+type UpdateStatusBody = z.infer<typeof UpdateRegistrationStatusSchema>;
 
-export const updateRegistrationStatusHandler: RequestHandler = async (
-	req: { params: { eventId: string; registrationId: string }; body: any },
-	res,
-	next: (arg0: unknown) => void,
-) => {
+// ==========================================
+// HANDLER
+// ==========================================
+
+export const updateRegistrationStatusHandler: RequestHandler<
+	{ eventId: string; registrationId: string },
+	any,
+	UpdateStatusBody
+> = async (req, res, next) => {
 	try {
-		const eventId = parseId(req.params.eventId, "INVALID_EVENT_ID");
+		const eventId = parseId(req.params.eventId, "event");
 		const registrationId = parseId(
 			req.params.registrationId,
-			"INVALID_REGISTRATION_ID",
+			"registration",
 		);
 
 		const parsed = UpdateRegistrationStatusSchema.safeParse(req.body);
-		if (!parsed.success) return next(parsed.error);
+
+		if (!parsed.success) {
+			throw new HttpError(
+				400,
+				"VALIDATION_ERROR",
+				"Invalid status data",
+				parsed.error.flatten().fieldErrors,
+			);
+		}
 
 		const updated = await updateRegistrationStatus(
 			eventId,
 			registrationId,
 			parsed.data,
 		);
+
 		res.json({ ok: true, data: updated });
 	} catch (err) {
 		next(err);

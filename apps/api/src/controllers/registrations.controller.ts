@@ -1,18 +1,12 @@
+import { Prisma } from "@prisma/client";
 import type { RequestHandler } from "express";
 import { z } from "zod";
 import { prisma } from "../db/prisma.js";
-import { Prisma } from "../generated/prisma/client.js";
 import { HttpError } from "../lib/httpError.js";
+import { parseId } from "../lib/parser.js";
 import { RegistrationsQuerySchema } from "../schemas/registrationsQuery.schema.js";
 
 type RegistrationQuery = z.infer<typeof RegistrationsQuerySchema>;
-
-const parseId = (raw: string): number => {
-	const id = Number(raw);
-	if (!Number.isSafeInteger(id) || id <= 0)
-		throw new HttpError(400, "INVALID_ID", "Invalid ID");
-	return id;
-};
 
 export const listRegistrationsHandler: RequestHandler<
 	{ eventId: string },

@@ -14,13 +14,23 @@ async function resetDemoEvent(eventId: number) {
 	]);
 }
 
-export async function resetAndSeedDemo() {
+type ResetAndSeedOptions = {
+	reset?: boolean;
+};
+
+export async function resetAndSeedDemo(options: ResetAndSeedOptions = {}) {
+	const reset = options.reset ?? true;
+
 	const existingEvent = await prisma.event.findUnique({
 		where: { slug },
 		select: { id: true },
 	});
 
-	if (existingEvent) await resetDemoEvent(existingEvent.id);
+	let resetPerformed = false;
+	if (reset && existingEvent) {
+		await resetDemoEvent(existingEvent.id);
+		resetPerformed = true;
+	}
 
 	const existingUser = await prisma.user.findUnique({ where: { email } });
 	const user =
@@ -91,5 +101,15 @@ export async function resetAndSeedDemo() {
 		});
 	}
 
-	return { slug: event.slug, eventId: event.id, demoEditorEmail: email };
+	return {
+		slug: event.slug,
+		eventId: event.id,
+		resetPerformed,
+		demoEditorEmail: email,
+		demoEditor: {
+			email,
+			password,
+			role: user.role,
+		},
+	};
 }

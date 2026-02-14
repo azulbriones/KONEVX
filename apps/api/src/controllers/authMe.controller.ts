@@ -1,27 +1,54 @@
-import type { RequestHandler } from "express";
+import type { NextFunction, Request, RequestHandler, Response } from "express";
 import { prisma } from "../db/prisma.js";
 import { HttpError } from "../lib/httpError.js";
 
+interface AuthUser {
+	id: number;
+	role: string;
+	demo?: boolean;
+}
+
+interface AuthenticatedRequest extends Request {
+	user?: AuthUser;
+}
+
 export const meHandler: RequestHandler = async (
-	req: { user: any },
-	res: { json: (arg0: { ok: boolean; data: { user: any } }) => void },
-	next: (arg0: unknown) => void,
+	req: AuthenticatedRequest,
+	res: Response,
+	next: NextFunction,
 ) => {
 	try {
 		const user = req.user;
-		if (!user)
+		if (!user?.id) {
 			throw new HttpError(401, "UNAUTHENTICATED", "Not authenticated");
+		}
 
 		const dbUser = await prisma.user.findUnique({
 			where: { id: user.id },
-			select: { id: true, email: true, role: true },
+			select: {
+				id: true,
+				email: true,
+				role: true,
+				createdAt: true,
+			},
 		});
-		if (!dbUser)
-			throw new HttpError(401, "UNAUTHENTICATED", "User not found");
+
+		if (!dbUser) {
+			throw new HttpError(
+				401,
+				"USER_NOT_FOUND",
+				"User account no longer exists",
+			);
+		}
 
 		res.json({
 			ok: true,
-			data: { user: { ...dbUser, demo: !!user.demo } },
+			data: {
+				user: {
+					...dbUser,
+					isDemo: Boolean(user.demo),
+				},
+			},
 		});
 	} catch (e) {
 		next(e);
