@@ -48,18 +48,22 @@ export const requireAuth: RequestHandler = (
 };
 
 export const requireCsrf: RequestHandler = (req, _res, next) => {
+	const method = req.method.toUpperCase();
+	const needs = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+	if (!needs) return next();
+
 	const csrfCookie = req.cookies?.[CSRF_COOKIE];
 	const csrfHeader = req.header("x-csrf-token");
 
 	if (!csrfCookie || !csrfHeader) {
-		return next(new HttpError(403, "CSRF_INVALID", "CSRF token missing"));
+		return next(new HttpError(403, "CSRF_MISSING", "Missing CSRF token"));
 	}
 
+	// timing-safe compare
 	const a = Buffer.from(csrfCookie);
 	const b = Buffer.from(csrfHeader);
-
 	if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-		return next(new HttpError(403, "CSRF_INVALID", "CSRF token invalid"));
+		return next(new HttpError(403, "CSRF_INVALID", "Invalid CSRF token"));
 	}
 
 	return next();

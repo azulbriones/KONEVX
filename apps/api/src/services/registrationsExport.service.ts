@@ -47,24 +47,32 @@ export async function exportRegistrationsCsv(eventId: number) {
 		...dynamicKeys,
 	];
 
-	const records = rows.map((r) => {
-		const answersByKey: Record<string, string> = {};
+	const records = rows.map(
+		(r: {
+			fieldValues: any;
+			id: any;
+			status: any;
+			createdAt: { toISOString: () => any };
+			participant: { emailNormalized: any; phoneNormalized: any };
+		}) => {
+			const answersByKey: Record<string, string> = {};
 
-		for (const fv of r.fieldValues) {
-			const v = fv.value;
-			answersByKey[fv.eventField.key] =
-				typeof v === "string" ? v : JSON.stringify(v);
-		}
+			for (const fv of r.fieldValues) {
+				const v = fv.value;
+				answersByKey[fv.eventField.key] =
+					typeof v === "string" ? v : JSON.stringify(v);
+			}
 
-		return [
-			r.id,
-			r.status,
-			r.createdAt.toISOString(),
-			r.participant.emailNormalized ?? "",
-			r.participant.phoneNormalized ?? "",
-			...dynamicKeys.map((k) => answersByKey[k] ?? ""),
-		];
-	});
+			return [
+				r.id,
+				r.status,
+				r.createdAt.toISOString(),
+				r.participant.emailNormalized ?? "",
+				r.participant.phoneNormalized ?? "",
+				...dynamicKeys.map((k) => answersByKey[k] ?? ""),
+			];
+		},
+	);
 
 	return { eventName: event.name, header, records };
 }

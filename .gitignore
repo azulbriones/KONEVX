@@ -1,9 +1,24 @@
 node_modules
-.env
 dist
 .vite
-# Prisma generated client (Prisma v7 output)
-apps/api/src/generated/prisma
+
+# Env files
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Prisma generated client
+apps/api/generated/
+apps/api/src/generated/
+
 # curl cookie jars (dev)
 cookies.txt
 *.cookies.txt
+cookiejar.txt
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*

@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "../db/prisma.js";
 import { HttpError } from "../lib/httpError.js";
 import type { ReplaceEventFieldsInput } from "../schemas/eventFields.schema.js";
@@ -28,7 +29,7 @@ export async function replaceEventFields(
 	eventId: number,
 	input: ReplaceEventFieldsInput,
 ) {
-	return prisma.$transaction(async (tx) => {
+	return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
 		const exists = await tx.event.findUnique({
 			where: { id: eventId },
 			select: { id: true },

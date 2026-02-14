@@ -1,37 +1,58 @@
 import type { RequestHandler } from "express";
+import { z } from "zod";
+import { HttpError } from "../lib/httpError.js";
+import { parseId } from "../lib/parser.js";
+import { EventFieldInputSchema } from "../schemas/eventFields.schema.js";
 import {
 	listEventFields,
 	replaceEventFields,
 } from "../services/eventFields.service.js";
 
-function parseEventId(raw: string): number {
-	const id = Number(raw);
-	if (!Number.isInteger(id) || id <= 0) throw new Error("Invalid eventId");
-	return id;
-}
+const ReplaceEventFieldsBodySchema = z.array(EventFieldInputSchema);
 
-export const listEventFieldsHandler: RequestHandler = async (
-	req: { params: { eventId: string } },
-	res,
-	next: (arg0: unknown) => void,
-) => {
+type ReplaceEventFieldsBody = z.infer<typeof ReplaceEventFieldsBodySchema>;
+
+// ==========================================
+// HANDLERS
+// ==========================================
+
+export const listEventFieldsHandler: RequestHandler<{
+	eventId: string;
+}> = async (req, res, next) => {
 	try {
-		const eventId = parseEventId(req.params.eventId);
+		const eventId = parseId(req.params.eventId);
+
 		const fields = await listEventFields(eventId);
+
 		res.json({ ok: true, data: fields });
 	} catch (err) {
 		next(err);
 	}
 };
 
-export const replaceEventFieldsHandler: RequestHandler = async (
-	req: { params: { eventId: string }; body: any },
-	res,
-	next: (arg0: unknown) => void,
-) => {
+export const replaceEventFieldsHandler: RequestHandler<
+	{ eventId: string },
+	any,
+	ReplaceEventFieldsBody
+> = async (req, res, next) => {
 	try {
-		const eventId = parseEventId(req.params.eventId);
-		const fields = await replaceEventFields(eventId, req.body);
+		const eventId = parseId(req.params.eventId);
+
+		const parsed = ReplaceEventFieldsBodySchema.safeParse(req.body);
+
+		if (!parsed.success) {
+			throw new HttpError(
+				400,
+				"VALIDATION_ERROR",
+				"Invalid fields structure",
+				parsed.error.flatten().fieldErrors,
+			);
+		}
+
+		const fields = await replaceEventFields(eventId, {
+			fields: parsed.data,
+		});
+
 		res.json({ ok: true, data: fields });
 	} catch (err) {
 		next(err);

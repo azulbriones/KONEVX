@@ -1,5 +1,5 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "../db/prisma.js";
-import { Prisma } from "../generated/prisma/client";
 import { HttpError } from "../lib/httpError.js";
 import type { CreateEventInput } from "../schemas/events.schema.js";
 
@@ -24,10 +24,7 @@ export async function createEvent(input: CreateEventInput) {
 			},
 		});
 	} catch (err: unknown) {
-		if (
-			err instanceof Prisma.PrismaClientKnownRequestError &&
-			err.code === "P2002"
-		) {
+		if (err instanceof Prisma.PrismaClientKnownRequestError) {
 			throw new HttpError(409, "SLUG_TAKEN", "Slug already exists");
 		}
 		throw err;

@@ -2,6 +2,7 @@ import type { RequestHandler } from "express";
 import { z } from "zod";
 import { prisma } from "../db/prisma.js";
 import { HttpError } from "../lib/httpError.js";
+import { parseId } from "../lib/parser.js";
 import { SetPublishSchema } from "../schemas/eventPublish.schema.js";
 import { createEvent } from "../services/events.service.js";
 
@@ -16,13 +17,6 @@ const EVENT_LIST_SELECT = {
 } as const;
 
 type SetPublishBody = z.infer<typeof SetPublishSchema>;
-
-const parseId = (raw: string): number => {
-	const id = Number(raw);
-	if (!Number.isSafeInteger(id) || id <= 0)
-		throw new HttpError(400, "INVALID_ID", "Invalid ID");
-	return id;
-};
 
 // ==========================================
 // HANDLERS
@@ -95,7 +89,7 @@ export const setPublishHandler: RequestHandler<
 		});
 
 		res.json({ ok: true, data: { event: updated } });
-	} catch (e) {
+	} catch (e: any) {
 		if (e?.code === "P2025") {
 			return next(
 				new HttpError(404, "EVENT_NOT_FOUND", "Event not found"),

@@ -1,7 +1,7 @@
+import { Prisma } from "@prisma/client";
 import type { RequestHandler } from "express";
 import { z } from "zod";
 import { prisma } from "../db/prisma.js";
-import { Prisma } from "../generated/prisma/client.js";
 import { hashPassword } from "../lib/crypto.js";
 import { HttpError } from "../lib/httpError.js";
 import { generateTempPassword } from "../lib/tempPassword.js";
@@ -11,8 +11,6 @@ import {
 } from "../schemas/users.schema.js";
 
 type CreateUserBody = z.infer<typeof CreateUserSchema>;
-type ListUsersQuery = z.infer<typeof ListUsersQuerySchema>;
-
 // ==========================================
 // CREATE USER HANDLER
 // ==========================================
@@ -58,10 +56,7 @@ export const createUserHandler: RequestHandler<
 				data: { user, tempPassword },
 			});
 		} catch (dbError) {
-			if (
-				dbError instanceof Prisma.PrismaClientKnownRequestError &&
-				dbError.code === "P2002"
-			) {
+			if (dbError instanceof Prisma.PrismaClientKnownRequestError) {
 				throw new HttpError(409, "USER_EXISTS", "User already exists");
 			}
 			throw dbError;
@@ -75,12 +70,7 @@ export const createUserHandler: RequestHandler<
 // LIST USERS HANDLER
 // ==========================================
 
-export const listUsersHandler: RequestHandler<
-	unknown,
-	unknown,
-	unknown,
-	ListUsersQuery
-> = async (req, res, next) => {
+export const listUsersHandler: RequestHandler = async (req, res, next) => {
 	try {
 		const parsed = ListUsersQuerySchema.safeParse(req.query);
 		if (!parsed.success) {
@@ -92,7 +82,7 @@ export const listUsersHandler: RequestHandler<
 			);
 		}
 
-		const { search, limit = 10, page = 1 } = parsed.data as any;
+		const { search, limit = 10, page = 1 } = parsed.data;
 
 		const skip = (page - 1) * limit;
 

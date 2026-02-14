@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import jwt from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 import { prisma } from "../db/prisma.js";
 import { assertAuthEnv, authConfig } from "../lib/authConfig.js";
 import { hashToken, verifyPassword } from "../lib/crypto.js";
@@ -16,7 +16,7 @@ function signAccessToken(user: { id: number; role: string; demo?: boolean }) {
 		demo: !!user.demo,
 	};
 	return jwt.sign(payload, authConfig.accessSecret, {
-		expiresIn: authConfig.accessTtl,
+		expiresIn: authConfig.accessTtl as SignOptions["expiresIn"],
 	});
 }
 
@@ -31,7 +31,7 @@ function signRefreshToken(
 		demo: !!user.demo,
 	};
 	return jwt.sign(payload, authConfig.refreshSecret, {
-		expiresIn: authConfig.refreshTtl,
+		expiresIn: authConfig.refreshTtl as SignOptions["expiresIn"],
 	});
 }
 

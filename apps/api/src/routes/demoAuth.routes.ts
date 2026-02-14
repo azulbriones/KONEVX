@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { demoLoginHandler } from "../controllers/demoAuth.controller";
-import { demoLimiter } from "../middlewares/rateLimiters";
+import { demoLoginHandler } from "../controllers/demoAuth.controller.js";
+import { demoLimiter } from "../middlewares/rateLimiters.js";
 
 export const demoAuthRouter = Router();
 

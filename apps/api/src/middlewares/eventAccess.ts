@@ -14,7 +14,7 @@ enum EventRole {
 interface AuthenticatedRequest extends Request {
 	params: any;
 	user?: {
-		demo: any;
+		demo?: boolean;
 		id: number;
 		role: string;
 	};

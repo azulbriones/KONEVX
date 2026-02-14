@@ -1,24 +1,35 @@
 import { prisma } from "../db/prisma.js";
 import { hashPassword } from "../lib/crypto.js";
 
-const email = process.env.SEED_ADMIN_EMAIL ?? "admin@eventplanner.dev";
-const password = process.env.SEED_ADMIN_PASSWORD ?? "12345!";
-const role = "SUPER_ADMIN" as const;
+const email =
+	process.env.SEED_ADMIN_EMAIL ??
+	process.env.DEMO_EDITOR_EMAIL ?? // fallback en demo si quieres
+	"admin@eventplanner.demo";
+
+const password =
+	process.env.SEED_ADMIN_PASSWORD ??
+	process.env.DEMO_EDITOR_PASSWORD ?? // fallback en demo si quieres
+	"ChangeMe123!";
 
 async function main() {
-	const existing = await prisma.user.findUnique({ where: { email } });
-	if (existing) {
-		console.log("Admin already exists:", email);
-		return;
-	}
-
+	const emailNorm = email.trim().toLowerCase();
 	const passwordHash = await hashPassword(password);
 
-	await prisma.user.create({
-		data: { email, passwordHash, role },
+	const user = await prisma.user.upsert({
+		where: { email: emailNorm },
+		update: {
+			passwordHash,
+			role: "SUPER_ADMIN",
+		},
+		create: {
+			email: emailNorm,
+			passwordHash,
+			role: "SUPER_ADMIN",
+		},
+		select: { id: true, email: true, role: true },
 	});
 
-	console.log("Seeded admin:", { email, password });
+	console.log("✅ Admin ensured:", user);
 }
 
 main()
