@@ -1,43 +1,58 @@
+# ---------- base ----------
+FROM node:20-bookworm-slim AS base
+WORKDIR /app
+
+# Prisma engines need OpenSSL + certs
+RUN apt-get update -y \
+  && apt-get install -y openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
 # ---------- deps ----------
-	FROM node:20-bookworm-slim AS deps
-	WORKDIR /app
+FROM base AS deps
+COPY apps/api/package.json apps/api/package-lock.json ./
+RUN npm ci
 
-	# Prisma (openssl) + certs
-	RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+# ---------- dev ----------
+FROM base AS dev
+ENV NODE_ENV=development
 
-	COPY package*.json ./
-	COPY apps/api/package*.json ./apps/api/
-	RUN npm ci
+COPY --from=deps /app/node_modules ./node_modules
+COPY apps/api ./apps/api
 
-	# ---------- build ----------
-	FROM node:20-bookworm-slim AS build
-	WORKDIR /app
-	RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+WORKDIR /app/apps/api
+EXPOSE 3001
+CMD ["npm","run","dev"]
 
-	COPY --from=deps /app/node_modules ./node_modules
-	COPY . .
+# ---------- build ----------
+FROM base AS build
+ENV NODE_ENV=production
 
-	WORKDIR /app/apps/api
+COPY --from=deps /app/node_modules ./node_modules
+COPY apps/api ./apps/api
 
-	RUN npm run prisma:generate
-	RUN npm run build
+WORKDIR /app/apps/api
 
-	# ---------- runtime ----------
-	FROM node:20-bookworm-slim AS runtime
-	WORKDIR /app
-	RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+RUN npx prisma generate
 
-	ENV NODE_ENV=production
+RUN npm run build
 
-	COPY --from=build /app/node_modules ./node_modules
-	COPY --from=build /app/apps/api/package*.json ./apps/api/
-	COPY --from=build /app/apps/api/dist ./apps/api/dist
-	COPY --from=build /app/apps/api/prisma ./apps/api/prisma
-	COPY --from=build /app/apps/api/docker/entrypoint.sh ./apps/api/docker/entrypoint.sh
+# ---------- runtime ----------
+FROM base AS runtime
+ENV NODE_ENV=production
 
-	WORKDIR /app/apps/api
+COPY --from=deps /app/node_modules ./node_modules
 
-	RUN chmod +x ./docker/entrypoint.sh
+COPY --from=build /app/apps/api/dist ./apps/api/dist
+COPY --from=build /app/apps/api/package*.json ./apps/api/
+COPY --from=build /app/apps/api/prisma ./apps/api/prisma
+COPY --from=build /app/apps/api/prisma.config.ts ./apps/api/prisma.config.ts
 
-	EXPOSE 3001
-	ENTRYPOINT ["./docker/entrypoint.sh"]
+# Entrypoint
+COPY apps/api/docker/entrypoint.sh ./apps/api/docker/entrypoint.sh
+
+WORKDIR /app/apps/api
+RUN chmod +x ./docker/entrypoint.sh
+
+EXPOSE 3001
+ENTRYPOINT ["./docker/entrypoint.sh"]
