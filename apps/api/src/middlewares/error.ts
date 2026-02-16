@@ -8,19 +8,13 @@ import type {
 import { ZodError } from "zod";
 import { HttpError } from "../lib/httpError.js";
 
-declare module "express-serve-static-core" {
-	interface Request {
-		requestId?: string;
-	}
-}
-
 export const errorMiddleware: ErrorRequestHandler = (
 	err: any,
 	req: Request,
 	res: Response,
 	next: NextFunction,
 ) => {
-	const rid = (req as any).requestId ?? "-";
+	const rid = (res.locals.requestId as string | undefined) ?? "-";
 
 	if (err instanceof ZodError) {
 		res.status(400).json({

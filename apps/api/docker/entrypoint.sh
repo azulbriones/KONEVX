@@ -36,10 +36,13 @@ else
   log "⏭️ skipping migrations"
 fi
 
-if [ "$RUN_SEEDS" = "true" ] && [ "$DEMO_MODE" = "true" ]; then
+if [ "$RUN_SEEDS" = "true" ]; then
   log "🌱 seed admin (best-effort)"
-  npm run seed:admin || log "⚠️ seed:admin failed (continuing)"
+  pnpm seed:admin || log "⚠️ seed:admin failed (continuing)"
+fi
 
+# ✅ Seed demo solo en modo demo
+if [ "$RUN_SEEDS" = "true" ] && [ "$DEMO_MODE" = "true" ]; then
   if [ "$SEED_DEMO_RESET" = "true" ]; then
     log "🎭 seed demo (reset + seed)"
     node dist/scripts/seedDemo.js --reset || log "⚠️ seed:demo failed (continuing)"
@@ -50,4 +53,4 @@ if [ "$RUN_SEEDS" = "true" ] && [ "$DEMO_MODE" = "true" ]; then
 fi
 
 log "🚀 starting API"
-exec npm run start
+exec pnpm run start
