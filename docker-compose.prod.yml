@@ -39,8 +39,6 @@ services:
         depends_on:
             db:
                 condition: service_healthy
-        ports:
-            - "3001:3001"
         healthcheck:
             test:
                 [
@@ -62,7 +60,7 @@ services:
             api:
                 condition: service_healthy
         ports:
-            - "8080:80"
+            - "80:80"
         healthcheck:
             test: ["CMD-SHELL", "wget -qO- http://localhost/ || exit 1"]
             interval: 10s

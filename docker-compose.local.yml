@@ -24,31 +24,31 @@ services:
         build:
             context: .
             dockerfile: apps/api/Dockerfile
-            target: dev
+            target: runtime
         env_file: .env
         environment:
+            NODE_ENV: production
             DATABASE_URL: ${DATABASE_URL}
             WEB_ORIGIN: ${WEB_ORIGIN}
-            COOKIE_SECURE: ${COOKIE_SECURE}
-            COOKIE_SAMESITE: ${COOKIE_SAMESITE}
+            TRUST_PROXY: "false"
+
+            RUN_MIGRATIONS: "true"
+            RUN_SEEDS: "true"
+            DEMO_MODE: ${DEMO_MODE}
+            SEED_DEMO_RESET: "true"
+
+            COOKIE_SECURE: "false"
+            COOKIE_SAMESITE: "lax"
+
             AUTH_ACCESS_TOKEN_SECRET: ${AUTH_ACCESS_TOKEN_SECRET}
             AUTH_REFRESH_TOKEN_SECRET: ${AUTH_REFRESH_TOKEN_SECRET}
             AUTH_ACCESS_TOKEN_TTL: ${AUTH_ACCESS_TOKEN_TTL}
             AUTH_REFRESH_TOKEN_TTL: ${AUTH_REFRESH_TOKEN_TTL}
-            TRUST_PROXY: "false"
-            DEMO_MODE: "false"
-            RUN_MIGRATIONS: "false"
-            RUN_SEEDS: "false"
-        volumes:
-            - ./apps/api:/app/apps/api
-            - /app/apps/api/node_modules
-            - /app/node_modules
-        ports:
-            - "3001:3001"
         depends_on:
             db:
                 condition: service_healthy
-        command: sh -c "npx prisma generate && npm run dev"
+        ports:
+            - "3001:3001"
 
     web:
         build:
