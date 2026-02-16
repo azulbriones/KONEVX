@@ -1,0 +1,160 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+}
+
+enum ContactRequirement {
+    EMAIL
+    PHONE
+}
+
+model Event {
+    id                 Int                      @id @default(autoincrement())
+    name               String
+    slug               String                   @unique
+    capacity           Int
+    contactRequirement ContactRequirement
+    isPublished        Boolean                  @default(false)
+    fields             EventField[]
+    registrations      Registration[]
+    values             RegistrationFieldValue[]
+    createdAt          DateTime                 @default(now())
+    updatedAt          DateTime                 @updatedAt
+    eventMembers       EventMember[]
+}
+
+enum FieldType {
+    TEXT
+    NUMBER
+    DATE
+    SELECT
+    MULTI_SELECT
+    CHECKBOX
+}
+
+model EventField {
+    id       Int       @id @default(autoincrement())
+    eventId  Int
+    key      String
+    label    String
+    type     FieldType
+    required Boolean   @default(false)
+    order    Int
+    options  Json?
+
+    event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+    createdAt               DateTime                 @default(now())
+    updatedAt               DateTime                 @updatedAt
+    registrationFieldValues RegistrationFieldValue[]
+
+    @@unique([eventId, key])
+    @@index([eventId, order])
+}
+
+enum RegistrationStatus {
+    REGISTERED
+    CANCELLED
+    CONFIRMED
+    ATTENDED
+    NO_SHOW
+}
+
+model Participant {
+    id              Int     @id @default(autoincrement())
+    emailNormalized String? @unique
+    phoneNormalized String? @unique
+
+    registrations Registration[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model Registration {
+    id            Int                @id @default(autoincrement())
+    eventId       Int
+    participantId Int
+    status        RegistrationStatus @default(REGISTERED)
+
+    event       Event                    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    participant Participant              @relation(fields: [participantId], references: [id], onDelete: Cascade)
+    fieldValues RegistrationFieldValue[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([eventId, participantId])
+    @@index([eventId, status])
+    @@index([participantId])
+}
+
+model RegistrationFieldValue {
+    id             Int  @id @default(autoincrement())
+    registrationId Int
+    eventFieldId   Int
+    value          Json
+
+    registration Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+    eventField   EventField   @relation(fields: [eventFieldId], references: [id], onDelete: Cascade)
+    event        Event?       @relation(fields: [eventId], references: [id])
+    eventId      Int?
+
+    @@unique([registrationId, eventFieldId])
+    @@index([eventFieldId])
+}
+
+enum UserRole {
+    SUPER_ADMIN
+    EVENT_ADMIN
+}
+
+model User {
+    id           Int      @id @default(autoincrement())
+    email        String   @unique
+    passwordHash String
+    role         UserRole @default(EVENT_ADMIN)
+
+    sessions Session[]
+
+    createdAt   DateTime      @default(now())
+    updatedAt   DateTime      @updatedAt
+    memberships EventMember[]
+}
+
+model Session {
+    id               String   @id @default(cuid())
+    userId           Int
+    refreshTokenHash String
+    expiresAt        DateTime
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([userId])
+    @@index([expiresAt])
+}
+
+enum EventRole {
+    EDITOR
+    VIEWER
+}
+
+model EventMember {
+    eventId Int
+    userId  Int
+    role    EventRole @default(VIEWER)
+
+    event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+
+    @@id([eventId, userId])
+    @@index([userId])
+}

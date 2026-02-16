@@ -1,0 +1,9 @@
+{
+	"editor.formatOnPaste": true,
+	"editor.autoIndentOnPaste": true,
+	"editor.bracketPairColorization.independentColorPoolPerBracketType": true,
+	"terminal.explorerKind": "integrated",
+	"terminal.integrated.accessibleViewFocusOnCommandExecution": false,
+	"terminal.integrated.accessibleViewPreserveCursorPosition": false,
+	"terminal.integrated.defaultProfile.osx": "bash"
+}
