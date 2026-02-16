@@ -1,58 +1,58 @@
 # ---------- base ----------
-FROM node:20-bookworm-slim AS base
-WORKDIR /app
+	FROM node:20-bookworm-slim AS base
+	WORKDIR /app
 
-# Prisma engines need OpenSSL + certs
-RUN apt-get update -y \
-  && apt-get install -y openssl ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
+	RUN apt-get update -y \
+	  && apt-get install -y openssl ca-certificates wget \
+	  && rm -rf /var/lib/apt/lists/*
 
-# ---------- deps ----------
-FROM base AS deps
-COPY apps/api/package.json apps/api/package-lock.json ./
-RUN npm ci
+	RUN corepack enable && corepack prepare pnpm@9.15.2 --activate
 
-# ---------- dev ----------
-FROM base AS dev
-ENV NODE_ENV=development
+	# ---------- deps ----------
+	FROM base AS deps
+	WORKDIR /app/apps/api
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY apps/api ./apps/api
+	COPY apps/api/package.json apps/api/pnpm-lock.yaml* ./
+	RUN pnpm install --frozen-lockfile || pnpm install
 
-WORKDIR /app/apps/api
-EXPOSE 3001
-CMD ["npm","run","dev"]
+	# ---------- dev ----------
+	FROM base AS dev
+	ENV NODE_ENV=development
+	WORKDIR /app/apps/api
 
-# ---------- build ----------
-FROM base AS build
-ENV NODE_ENV=production
+	COPY --from=deps /app/apps/api/node_modules ./node_modules
+	COPY apps/api ./
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY apps/api ./apps/api
+	EXPOSE 3001
+	CMD ["pnpm","dev"]
 
-WORKDIR /app/apps/api
+	# ---------- build ----------
+	FROM base AS build
+	ENV NODE_ENV=production
+	WORKDIR /app/apps/api
 
-ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
-RUN npx prisma generate
+	COPY --from=deps /app/apps/api/node_modules ./node_modules
+	COPY apps/api ./
 
-RUN npm run build
+	# tu prisma.config.ts requiere DATABASE_URL en build
+	ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+	RUN pnpm prisma:generate
 
-# ---------- runtime ----------
-FROM base AS runtime
-ENV NODE_ENV=production
+	RUN pnpm build
 
-COPY --from=deps /app/node_modules ./node_modules
+	# ---------- runtime ----------
+	FROM base AS runtime
+	ENV NODE_ENV=production
+	WORKDIR /app/apps/api
 
-COPY --from=build /app/apps/api/dist ./apps/api/dist
-COPY --from=build /app/apps/api/package*.json ./apps/api/
-COPY --from=build /app/apps/api/prisma ./apps/api/prisma
-COPY --from=build /app/apps/api/prisma.config.ts ./apps/api/prisma.config.ts
+	COPY --from=deps /app/apps/api/node_modules ./node_modules
+	COPY --from=build /app/apps/api/dist ./dist
+	COPY --from=build /app/apps/api/package.json ./package.json
+	COPY --from=build /app/apps/api/prisma ./prisma
+	COPY --from=build /app/apps/api/prisma.config.ts ./prisma.config.ts
 
-# Entrypoint
-COPY apps/api/docker/entrypoint.sh ./apps/api/docker/entrypoint.sh
+	COPY apps/api/docker/entrypoint.sh ./docker/entrypoint.sh
+	RUN chmod +x ./docker/entrypoint.sh
 
-WORKDIR /app/apps/api
-RUN chmod +x ./docker/entrypoint.sh
-
-EXPOSE 3001
-ENTRYPOINT ["./docker/entrypoint.sh"]
+	EXPOSE 3001
+	ENTRYPOINT ["./docker/entrypoint.sh"]
