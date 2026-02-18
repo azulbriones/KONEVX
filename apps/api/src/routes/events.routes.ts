@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
 	createEventHandler,
+	getEventHandler,
 	listEventsHandler,
 	setPublishHandler,
 } from "../controllers/events.controller.js";
@@ -29,6 +30,8 @@ eventsRouter.post(
 	validateBody(CreateEventSchema),
 	createEventHandler,
 );
+
+eventsRouter.get("/:eventId", requireAuth, requireEventRead, getEventHandler);
 
 // Fields management (read/write)
 eventsRouter.use(

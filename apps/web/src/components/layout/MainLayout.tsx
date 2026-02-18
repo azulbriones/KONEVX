@@ -1,7 +1,6 @@
 import { useLogout, useUser } from "@/features/auth/hooks/useAuth";
 import {
 	Dashboard as DashboardIcon,
-	Event as EventIcon,
 	Logout as LogoutIcon,
 	Person as PersonIcon,
 } from "@mui/icons-material";
@@ -26,14 +25,9 @@ import { Outlet, Link as RouterLink, useLocation } from "react-router-dom";
 
 const NAV_LINKS = [
 	{
-		label: "Dashboard",
+		label: "Mis Eventos",
 		path: "/",
 		icon: <DashboardIcon sx={{ mr: 1, fontSize: 20 }} />,
-	},
-	{
-		label: "Eventos",
-		path: "/events",
-		icon: <EventIcon sx={{ mr: 1, fontSize: 20 }} />,
 	},
 ];
 
@@ -45,13 +39,9 @@ export function MainLayout() {
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const open = Boolean(anchorEl);
 
-	const handleMenuOpen = (event: MouseEvent<HTMLElement>) => {
+	const handleMenuOpen = (event: MouseEvent<HTMLElement>) =>
 		setAnchorEl(event.currentTarget);
-	};
-
-	const handleMenuClose = () => {
-		setAnchorEl(null);
-	};
+	const handleMenuClose = () => setAnchorEl(null);
 
 	const handleLogout = () => {
 		handleMenuClose();
@@ -81,22 +71,33 @@ export function MainLayout() {
 			>
 				<Container maxWidth="lg">
 					<Toolbar disableGutters sx={{ height: 64 }}>
-						{/* LOGO */}
-						<Typography
-							variant="h6"
-							fontWeight={800}
-							color="primary"
+						<RouterLink
+							to="/"
+							style={{
+								textDecoration: "none",
+								color: "inherit",
+								display: "flex",
+								alignItems: "center",
+							}}
+						>
+							<Typography
+								variant="h6"
+								fontWeight={800}
+								color="primary"
+								sx={{ mr: 4 }}
+							>
+								EventPlanner
+							</Typography>
+						</RouterLink>
+
+						<Box
 							sx={{
-								mr: 4,
+								flexGrow: 1,
 								display: "flex",
 								alignItems: "center",
 								gap: 1,
 							}}
 						>
-							EventPlanner
-						</Typography>
-
-						<Box sx={{ flexGrow: 1, display: "flex", gap: 1 }}>
 							{NAV_LINKS.map((link) => {
 								const isActive =
 									location.pathname === link.path;
@@ -109,8 +110,11 @@ export function MainLayout() {
 										sx={{
 											textTransform: "none",
 											fontWeight: isActive ? 700 : 500,
-											opacity: isActive ? 1 : 0.7,
+											color: isActive
+												? "primary.main"
+												: "text.secondary",
 										}}
+										startIcon={link.icon}
 									>
 										{link.label}
 									</Button>
@@ -127,7 +131,7 @@ export function MainLayout() {
 									alignItems="center"
 									spacing={1}
 									sx={{
-										mr: 2,
+										mr: 1,
 										display: { xs: "none", sm: "flex" },
 									}}
 								>
@@ -151,7 +155,6 @@ export function MainLayout() {
 								<IconButton
 									onClick={handleMenuOpen}
 									size="small"
-									sx={{ ml: 1 }}
 									aria-controls={
 										open ? "account-menu" : undefined
 									}
@@ -164,6 +167,7 @@ export function MainLayout() {
 											height: 36,
 											bgcolor: "primary.main",
 											fontSize: 16,
+											fontWeight: "bold",
 										}}
 									>
 										{userInitials}
