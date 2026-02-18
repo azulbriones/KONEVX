@@ -56,7 +56,7 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
 // --- Interceptor de Response (Manejo de Errores) ---
 api.interceptors.response.use(
-	(response) => response,
+	(response: any) => response,
 	async (error: AxiosError) => {
 		if (!error.response) {
 			return Promise.reject({
@@ -69,9 +69,19 @@ api.interceptors.response.use(
 			} as ApiErrorPayload);
 		}
 
+		if (error.response.status === 401) {
+			const isLoginRequest = error.config?.url?.includes("/login");
+			const isLoginPage = window.location.pathname.includes("/login");
+
+			if (!isLoginRequest && !isLoginPage) {
+				window.location.href = "/login";
+				return new Promise(() => {});
+			}
+		}
+
 		if (error.response.status === 403) {
 			console.warn(
-				"Acceso denegado (posible CSRF o permisos):",
+				"Acceso denegado (posible CSRF o falta de permisos):",
 				error.config?.url,
 			);
 		}
