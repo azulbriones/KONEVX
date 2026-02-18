@@ -45,9 +45,12 @@ export const useSetPublish = (eventId: number) => {
 	return useMutation({
 		mutationFn: (isPublished: boolean) => setPublish(eventId, isPublished),
 
-		onMutate: async (newStatus: any) => {
+		onMutate: async (newStatus: boolean) => {
 			await qc.cancelQueries({ queryKey: eventsKeys.detail(eventId) });
-			const previousData = qc.getQueryData(eventsKeys.detail(eventId));
+			const previousData = qc.getQueryData<{
+				event: EventDetail;
+				stats: EventStats;
+			}>(eventsKeys.detail(eventId));
 
 			qc.setQueryData(
 				eventsKeys.detail(eventId),
