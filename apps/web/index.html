@@ -1,13 +1,98 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
 	<head>
 		<meta charset="UTF-8" />
-		<link rel="icon" type="image/svg+xml" href="/vite.svg" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>web</title>
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1, viewport-fit=cover"
+		/>
+
+		<title>EventPlanner</title>
+		<meta
+			name="description"
+			content="EventPlanner: administra eventos, registros y asistentes de forma eficiente."
+		/>
+		<meta name="theme-color" content="#2563eb" />
+
+		<link rel="icon" href="/favicon.ico?v=2   " />
+
+		<meta property="og:title" content="EventPlanner" />
+		<meta
+			property="og:description"
+			content="Administra eventos, registros y asistentes."
+		/>
+		<meta property="og:type" content="website" />
+		<meta property="og:url" content="https://eventplanner.app/" />
+
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content="EventPlanner" />
+		<meta
+			name="twitter:description"
+			content="Administra eventos, registros y asistentes."
+		/>
+
+		<style>
+			body {
+				margin: 0;
+				padding: 0;
+				background-color: #f8fafc;
+			}
+			.initial-loader {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				height: 100vh;
+				font-family:
+					system-ui,
+					-apple-system,
+					sans-serif;
+			}
+			.spinner {
+				width: 40px;
+				height: 40px;
+				border: 4px solid #e2e8f0;
+				border-top: 4px solid #2563eb; /* primary.main */
+				border-radius: 50%;
+				animation: spin 1s linear infinite;
+				margin-bottom: 16px;
+			}
+			.loading-text {
+				color: #64748b;
+				font-size: 0.875rem;
+				font-weight: 500;
+				animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+			}
+			@keyframes spin {
+				0% {
+					transform: rotate(0deg);
+				}
+				100% {
+					transform: rotate(360deg);
+				}
+			}
+			@keyframes pulse {
+				0%,
+				100% {
+					opacity: 1;
+				}
+				50% {
+					opacity: 0.5;
+				}
+			}
+		</style>
 	</head>
+
 	<body>
-		<div id="root"></div>
+		<noscript>Necesitas habilitar JavaScript para usar esta app.</noscript>
+
+		<div id="root">
+			<div class="initial-loader">
+				<div class="spinner"></div>
+				<div class="loading-text">Cargando EventPlanner...</div>
+			</div>
+		</div>
+
 		<script type="module" src="/src/main.tsx"></script>
 	</body>
 </html>
