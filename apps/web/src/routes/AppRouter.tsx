@@ -2,10 +2,11 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { LoginPage } from "@/features/auth/components/LoginPage";
 import { DashboardPage } from "@/features/dashboard/components/DashboardPage";
 import { NotFoundPage } from "@/features/dashboard/components/NotFoundPage";
+import { EventLayout } from "@/features/events/layouts/EventLayout";
 import { CreateEventPage } from "@/features/events/pages/CreateEventPage";
 import { EventFieldsPage } from "@/features/events/pages/EventFieldsPage";
 import { EventMembersPage } from "@/features/events/pages/EventMembersPage";
-import { EventPage } from "@/features/events/pages/EventPage";
+import { EventOverviewPage } from "@/features/events/pages/EventOverviewPage";
 import { EventRegistrationsPage } from "@/features/events/pages/EventRegistrationsPage";
 import {
 	createBrowserRouter,
@@ -27,18 +28,25 @@ const router = createBrowserRouter([
 
 					{ path: "/events/new", element: <CreateEventPage /> },
 
-					{ path: "/events/:eventId", element: <EventPage /> },
 					{
-						path: "/events/:eventId/registrations",
-						element: <EventRegistrationsPage />,
-					},
-					{
-						path: "/events/:eventId/fields",
-						element: <EventFieldsPage />,
-					},
-					{
-						path: "/events/:eventId/members",
-						element: <EventMembersPage />,
+						path: "/events/:eventId",
+						element: <EventLayout />,
+						children: [
+							{
+								index: true,
+								element: <Navigate to="overview" replace />,
+							},
+							{
+								path: "overview",
+								element: <EventOverviewPage />,
+							},
+							{
+								path: "registrations",
+								element: <EventRegistrationsPage />,
+							},
+							{ path: "fields", element: <EventFieldsPage /> },
+							{ path: "members", element: <EventMembersPage /> },
+						],
 					},
 
 					{ path: "/events", element: <Navigate to="/" replace /> },
