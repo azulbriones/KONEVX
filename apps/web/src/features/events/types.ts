@@ -34,3 +34,12 @@ export type CreateEventInput = {
 	contactRequirement: ContactRequirement;
 	isPublished?: boolean;
 };
+
+export type Ctx = {
+	event: { capacity: number };
+	stats: {
+		fieldsCount: number;
+		registrationsCount: number;
+		occupancy: number | null;
+	};
+};
