@@ -1,5 +1,7 @@
 import react from "@vitejs/plugin-react";
+import path from "path";
 import { defineConfig } from "vite";
+import { OPTIMIZE_DEPS } from "./src/config/optimize-deps";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -16,5 +18,13 @@ export default defineConfig({
 	},
 	build: {
 		target: "esnext",
+	},
+	resolve: {
+		alias: {
+			"@": path.resolve(__dirname, "./src"),
+		},
+	},
+	optimizeDeps: {
+		include: OPTIMIZE_DEPS,
 	},
 });
