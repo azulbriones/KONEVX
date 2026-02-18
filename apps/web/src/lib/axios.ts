@@ -1,0 +1,93 @@
+import { env } from "@/config/env";
+import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
+
+export type ApiErrorPayload = {
+	ok: false;
+	error: {
+		code: string;
+		message: string;
+		details?: unknown;
+		rid?: string;
+	};
+};
+
+export function isApiErrorPayload(x: any): x is ApiErrorPayload {
+	return (
+		x &&
+		typeof x === "object" &&
+		x.ok === false &&
+		x.error &&
+		typeof x.error.code === "string" &&
+		typeof x.error.message === "string"
+	);
+}
+
+// --- Utilidad para leer Cookies (CSRF) ---
+function readCookie(name: string): string | null {
+	if (typeof document === "undefined") return null;
+	const match = document.cookie.match(new RegExp(`(^| )${name}=([^;]+)`));
+	return match ? decodeURIComponent(match[2]) : null;
+}
+
+const CSRF_COOKIE_NAME = "ep_csrf";
+
+// --- Instancia de Axios ---
+export const api = axios.create({
+	baseURL: env.API_BASE_URL,
+	withCredentials: true,
+	headers: { "Content-Type": "application/json" },
+	timeout: 10000,
+});
+
+// --- Interceptor de Request (CSRF Token) ---
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+	const method = config.method?.toUpperCase() || "GET";
+	const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+
+	if (isMutation) {
+		const csrfToken = readCookie(CSRF_COOKIE_NAME);
+		if (csrfToken) {
+			config.headers.set("x-csrf-token", csrfToken);
+		}
+	}
+
+	return config;
+});
+
+// --- Interceptor de Response (Manejo de Errores) ---
+api.interceptors.response.use(
+	(response) => response,
+	async (error: AxiosError) => {
+		if (!error.response) {
+			return Promise.reject({
+				ok: false,
+				error: {
+					code: "NETWORK_ERROR",
+					message:
+						"No se pudo conectar con el servidor. Verifica tu conexión.",
+				},
+			} as ApiErrorPayload);
+		}
+
+		if (error.response.status === 403) {
+			console.warn(
+				"Acceso denegado (posible CSRF o permisos):",
+				error.config?.url,
+			);
+		}
+
+		const errorData = error.response.data;
+
+		if (isApiErrorPayload(errorData)) {
+			return Promise.reject(errorData);
+		}
+
+		return Promise.reject({
+			ok: false,
+			error: {
+				code: `HTTP_${error.response.status}`,
+				message: error.message || "Ocurrió un error inesperado",
+			},
+		} as ApiErrorPayload);
+	},
+);
