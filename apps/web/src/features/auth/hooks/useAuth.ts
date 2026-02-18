@@ -36,7 +36,7 @@ export const useLogout = () => {
 		onSuccess: () => {
 			queryClient.setQueryData(authKeys.user(), null);
 			queryClient.clear();
-			navigate("/login");
+			navigate("/login", { replace: true });
 		},
 	});
 };
