@@ -30,18 +30,3 @@ export async function createEvent(input: CreateEventInput) {
 		throw err;
 	}
 }
-
-export async function listEvents() {
-	return prisma.event.findMany({
-		orderBy: { createdAt: "desc" },
-		select: {
-			id: true,
-			name: true,
-			slug: true,
-			capacity: true,
-			contactRequirement: true,
-			isPublished: true,
-			createdAt: true,
-		},
-	});
-}

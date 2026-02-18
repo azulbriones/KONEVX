@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import type { RequestHandler } from "express";
 import { z } from "zod";
 import { prisma } from "../db/prisma.js";
@@ -95,6 +96,77 @@ export const setPublishHandler: RequestHandler<
 				new HttpError(404, "EVENT_NOT_FOUND", "Event not found"),
 			);
 		}
+		next(e);
+	}
+};
+
+const EVENT_DETAIL_SELECT = {
+	id: true,
+	name: true,
+	slug: true,
+	isPublished: true,
+	capacity: true,
+	contactRequirement: true,
+	createdAt: true,
+	updatedAt: true,
+} as const;
+
+export const getEventHandler: RequestHandler<{ eventId: string }> = async (
+	req,
+	res,
+	next,
+) => {
+	try {
+		const user = req.user as { id: number; role: string } | undefined;
+
+		if (!user) {
+			throw new HttpError(401, "UNAUTHENTICATED", "No autenticado");
+		}
+
+		const eventId = parseId(req.params.eventId);
+
+		const whereClause: Prisma.EventWhereInput =
+			user.role === "SUPER_ADMIN"
+				? { id: eventId }
+				: {
+						id: eventId,
+						eventMembers: { some: { userId: user.id } },
+					};
+
+		const event = await prisma.event.findFirst({
+			where: whereClause,
+			select: EVENT_DETAIL_SELECT,
+		});
+		console.log(event);
+		if (!event) {
+			throw new HttpError(
+				404,
+				"EVENT_NOT_FOUND",
+				"Evento no encontrado o sin acceso",
+			);
+		}
+
+		const [fieldsCount, registrationsCount] = await Promise.all([
+			prisma.eventField.count({ where: { eventId } }),
+			prisma.registration.count({ where: { eventId } }),
+		]);
+
+		res.json({
+			ok: true,
+			data: {
+				event,
+				stats: {
+					fieldsCount,
+					registrationsCount,
+					occupancy: event.capacity
+						? Math.round(
+								(registrationsCount / event.capacity) * 100,
+							)
+						: null,
+				},
+			},
+		});
+	} catch (e) {
 		next(e);
 	}
 };
