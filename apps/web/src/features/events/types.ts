@@ -44,13 +44,6 @@ export type Ctx = {
 	};
 };
 
-export type RegistrationStatus =
-	| "REGISTERED"
-	| "CANCELLED"
-	| "CONFIRMED"
-	| "ATTENDED"
-	| "NO_SHOW";
-
 export type RegistrationListItem = {
 	id: number;
 	status: RegistrationStatus;
@@ -67,11 +60,6 @@ export type RegistrationsMeta = {
 	limit: number;
 	total: number;
 	totalPages: number;
-};
-
-export type RegistrationsListResponse = {
-	meta: RegistrationsMeta;
-	items: RegistrationListItem[];
 };
 
 export type ListRegistrationsQuery = {
@@ -97,4 +85,32 @@ export type EventField = {
 	required: boolean;
 	order: number;
 	options?: string[];
+};
+
+export type RegistrationStatus =
+	| "REGISTERED"
+	| "CANCELLED"
+	| "CONFIRMED"
+	| "ATTENDED"
+	| "NO_SHOW";
+
+export type RegistrationItem = {
+	id: number;
+	status: RegistrationStatus;
+	createdAt: string;
+	participant: {
+		id: number;
+		emailNormalized: string;
+		phoneNormalized: string;
+	};
+};
+
+export type RegistrationsListResponse = {
+	meta: {
+		page: number;
+		limit: number;
+		total: number;
+		totalPages: number;
+	};
+	items: RegistrationItem[];
 };
