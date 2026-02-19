@@ -1,6 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
-import { listRegistrations } from "../api/registrations.service";
-import type { ListRegistrationsQuery } from "../types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+	listRegistrations,
+	updateRegistrationStatus,
+} from "../api/registrations.service";
+import type { ListRegistrationsQuery, RegistrationStatus } from "../types";
 import { eventsKeys } from "./useEvents";
 
 export const registrationsKeys = {
@@ -19,5 +22,25 @@ export function useRegistrations(
 		queryFn: () => listRegistrations(eventId, query),
 		enabled: Number.isFinite(eventId) && eventId > 0,
 		staleTime: 15_000,
+	});
+}
+
+export function useUpdateRegistrationStatus(eventId: number) {
+	const qc = useQueryClient();
+
+	return useMutation({
+		mutationFn: (input: {
+			registrationId: number;
+			status: RegistrationStatus;
+		}) =>
+			updateRegistrationStatus(
+				eventId,
+				input.registrationId,
+				input.status,
+			),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: registrationsKeys.all(eventId) });
+			qc.invalidateQueries({ queryKey: eventsKeys.detail(eventId) });
+		},
 	});
 }
