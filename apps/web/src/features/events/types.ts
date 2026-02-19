@@ -80,3 +80,21 @@ export type ListRegistrationsQuery = {
 	status?: RegistrationStatus;
 	q?: string;
 };
+
+export type FieldType =
+	| "TEXT"
+	| "NUMBER"
+	| "DATE"
+	| "SELECT"
+	| "MULTI_SELECT"
+	| "CHECKBOX";
+
+export type EventField = {
+	id: number;
+	key: string;
+	label: string;
+	type: FieldType;
+	required: boolean;
+	order: number;
+	options?: string[];
+};
