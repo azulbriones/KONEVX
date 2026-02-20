@@ -1,5 +1,26 @@
 export type ContactRequirement = "EMAIL" | "PHONE";
 
+export type EventMemberRole = "EDITOR" | "VIEWER";
+
+export type EventAccessScope = "SUPER_ADMIN" | "MEMBER" | "NONE";
+
+export type EventAccess = {
+	scope: EventAccessScope;
+	isSuperAdmin: boolean;
+	eventRole: EventMemberRole | null;
+	canRead: boolean;
+	canWrite: boolean;
+	canManageMembers: boolean;
+	canManageFields: boolean;
+	canExport: boolean;
+};
+
+export type EventOutletCtx = {
+	event: EventDetail;
+	stats: EventStats;
+	access: EventAccess;
+};
+
 export type EventListItem = {
 	id: number;
 	name: string;
@@ -8,6 +29,7 @@ export type EventListItem = {
 	capacity: number;
 	contactRequirement: ContactRequirement;
 	createdAt: string;
+	access: EventAccess;
 };
 
 export type EventDetail = {
@@ -27,6 +49,12 @@ export type EventStats = {
 	occupancy: number | null;
 };
 
+export type EventDetailResponse = {
+	event: EventDetail;
+	access: EventAccess;
+	stats: EventStats;
+};
+
 export type CreateEventInput = {
 	name: string;
 	slug: string;
@@ -36,15 +64,21 @@ export type CreateEventInput = {
 };
 
 export type Ctx = {
-	event: { capacity: number };
-	stats: {
-		fieldsCount: number;
-		registrationsCount: number;
-		occupancy: number | null;
-	};
+	event: EventDetail;
+	access: EventAccess;
+	stats: EventStats;
 };
 
-export type RegistrationListItem = {
+// -------------------- Registrations --------------------
+
+export type RegistrationStatus =
+	| "REGISTERED"
+	| "CANCELLED"
+	| "CONFIRMED"
+	| "ATTENDED"
+	| "NO_SHOW";
+
+export type RegistrationItem = {
 	id: number;
 	status: RegistrationStatus;
 	createdAt: string;
@@ -69,6 +103,13 @@ export type ListRegistrationsQuery = {
 	q?: string;
 };
 
+export type RegistrationsListResponse = {
+	meta: RegistrationsMeta;
+	items: RegistrationItem[];
+};
+
+// -------------------- Fields --------------------
+
 export type FieldType =
 	| "TEXT"
 	| "NUMBER"
@@ -87,30 +128,25 @@ export type EventField = {
 	options?: string[];
 };
 
-export type RegistrationStatus =
-	| "REGISTERED"
-	| "CANCELLED"
-	| "CONFIRMED"
-	| "ATTENDED"
-	| "NO_SHOW";
+// -------------------- Members --------------------
 
-export type RegistrationItem = {
-	id: number;
-	status: RegistrationStatus;
+export type EventMember = {
+	userId: number;
+	email: string;
+	globalRole: string;
+	eventRole: EventMemberRole;
 	createdAt: string;
-	participant: {
-		id: number;
-		emailNormalized: string;
-		phoneNormalized: string;
-	};
 };
 
-export type RegistrationsListResponse = {
-	meta: {
-		page: number;
-		limit: number;
-		total: number;
-		totalPages: number;
-	};
-	items: RegistrationItem[];
+export type AddEventMemberInput = {
+	email: string;
+	role: EventMemberRole;
+};
+
+export type UpdateEventMemberRoleInput = {
+	role: EventMemberRole;
+};
+
+export type ListEventMembersResponse = {
+	members: EventMember[];
 };

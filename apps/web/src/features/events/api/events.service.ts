@@ -2,49 +2,39 @@ import { api } from "@/lib/axios";
 import type { ApiResponse } from "@/types/api";
 import type {
 	CreateEventInput,
-	EventDetail,
+	EventDetailResponse,
 	EventListItem,
-	EventStats,
 } from "../types";
 
-export const listEvents = async (): Promise<EventListItem[]> => {
+export async function listEvents(): Promise<EventListItem[]> {
 	const { data } =
 		await api.get<ApiResponse<{ events: EventListItem[] }>>("/events");
 	if (!data.ok) throw data;
 	return data.data.events;
-};
+}
 
-export const getEventById = async (eventId: number) => {
-	const { data } = await api.get<
-		ApiResponse<{ event: EventDetail; stats: EventStats }>
-	>(`/events/${eventId}`);
-
-	if (!data.ok) throw data;
-	return data.data;
-};
-
-export const createEvent = async (
-	input: CreateEventInput,
-): Promise<EventListItem> => {
-	const { data } = await api.post<ApiResponse<EventListItem>>(
-		"/events",
-		input,
+export async function getEventById(
+	eventId: number,
+): Promise<EventDetailResponse> {
+	const { data } = await api.get<ApiResponse<EventDetailResponse>>(
+		`/events/${eventId}`,
 	);
-	``;
+
 	if (!data.ok) throw data;
 	return data.data;
-};
+}
 
-export const setPublish = async (eventId: number, isPublished: boolean) => {
-	const { data } = await api.patch<
-		ApiResponse<{
-			event: Pick<
-				EventDetail,
-				"id" | "slug" | "name" | "isPublished" | "updatedAt"
-			>;
-		}>
-	>(`/events/${eventId}/publish`, { isPublished });
-
+export async function createEvent(input: CreateEventInput) {
+	const { data } = await api.post<ApiResponse<any>>("/events", input);
 	if (!data.ok) throw data;
-	return data.data.event;
-};
+	return data.data;
+}
+
+export async function setPublish(eventId: number, isPublished: boolean) {
+	const { data } = await api.patch<ApiResponse<{ event: any }>>(
+		`/events/${eventId}/publish`,
+		{ isPublished },
+	);
+	if (!data.ok) throw data;
+	return data.data;
+}
