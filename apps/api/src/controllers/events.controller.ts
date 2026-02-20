@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import type { RequestHandler } from "express";
 import { z } from "zod";
 import { prisma } from "../db/prisma.js";
+import { buildEventAccess } from "../lib/eventAccess.js";
 import { HttpError } from "../lib/httpError.js";
 import { parseId } from "../lib/parser.js";
 import { SetPublishSchema } from "../schemas/eventPublish.schema.js";
@@ -25,35 +26,70 @@ type SetPublishBody = z.infer<typeof SetPublishSchema>;
 
 export const createEventHandler: RequestHandler = async (req, res, next) => {
 	try {
-		const created = await createEvent(req.body);
+		const user = req.user as { id: number; role: string } | undefined;
+		if (!user) {
+			throw new HttpError(401, "UNAUTHENTICATED", "No autenticado");
+		}
+
+		const created = await createEvent(req.body, user.id);
 
 		res.status(201).json({ ok: true, data: created });
 	} catch (err) {
 		next(err);
 	}
 };
-
 export const listEventsHandler: RequestHandler = async (req, res, next) => {
 	try {
 		const user = req.user as { id: number; role: string } | undefined;
-
-		if (!user) {
+		if (!user)
 			throw new HttpError(401, "UNAUTHENTICATED", "Not authenticated");
+
+		const isSuperAdmin = user.role === "SUPER_ADMIN";
+
+		if (isSuperAdmin) {
+			const events = await prisma.event.findMany({
+				orderBy: { createdAt: "desc" },
+				take: 50,
+				select: EVENT_LIST_SELECT,
+			});
+
+			const withAccess = events.map((e) => ({
+				...e,
+				access: buildEventAccess({ isSuperAdmin: true }),
+			}));
+
+			return res.json({ ok: true, data: { events: withAccess } });
 		}
 
-		const whereClause =
-			user.role === "SUPER_ADMIN"
-				? {}
-				: { eventMembers: { some: { userId: user.id } } };
-
 		const events = await prisma.event.findMany({
-			where: whereClause,
+			where: { eventMembers: { some: { userId: user.id } } },
 			orderBy: { createdAt: "desc" },
 			take: 50,
-			select: EVENT_LIST_SELECT,
+			select: {
+				...EVENT_LIST_SELECT,
+				eventMembers: {
+					where: { userId: user.id },
+					select: { role: true },
+					take: 1,
+				},
+			},
 		});
 
-		res.json({ ok: true, data: { events } });
+		const withAccess = events.map((e) => {
+			const memberRole = (e.eventMembers[0]?.role ?? null) as
+				| "EDITOR"
+				| "VIEWER"
+				| null;
+
+			const { eventMembers, ...rest } = e;
+
+			return {
+				...rest,
+				access: buildEventAccess({ isSuperAdmin: false, memberRole }),
+			};
+		});
+
+		return res.json({ ok: true, data: { events: withAccess } });
 	} catch (e) {
 		next(e);
 	}
@@ -65,15 +101,40 @@ export const setPublishHandler: RequestHandler<
 	SetPublishBody
 > = async (req, res, next) => {
 	try {
+		const user = req.user as { id: number; role: string } | undefined;
+		if (!user) {
+			throw new HttpError(401, "UNAUTHENTICATED", "No autenticado");
+		}
+
 		const eventId = parseId(req.params.eventId);
+		const isSuperAdmin = user.role === "SUPER_ADMIN";
 
 		const parsed = SetPublishSchema.safeParse(req.body);
 		if (!parsed.success) {
 			throw new HttpError(
 				400,
 				"VALIDATION_ERROR",
-				"Invalid data",
+				"Datos inválidos",
 				parsed.error.flatten().fieldErrors,
+			);
+		}
+
+		const event = await prisma.event.findFirst({
+			where: isSuperAdmin
+				? { id: eventId }
+				: {
+						id: eventId,
+						eventMembers: {
+							some: { userId: user.id, role: "EDITOR" },
+						},
+					},
+		});
+
+		if (!event) {
+			throw new HttpError(
+				403,
+				"FORBIDDEN",
+				"No tienes permisos para modificar este evento o no existe",
 			);
 		}
 
@@ -91,11 +152,6 @@ export const setPublishHandler: RequestHandler<
 
 		res.json({ ok: true, data: { event: updated } });
 	} catch (e: any) {
-		if (e?.code === "P2025") {
-			return next(
-				new HttpError(404, "EVENT_NOT_FOUND", "Event not found"),
-			);
-		}
 		next(e);
 	}
 };
@@ -118,26 +174,32 @@ export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 ) => {
 	try {
 		const user = req.user as { id: number; role: string } | undefined;
-
-		if (!user) {
+		if (!user)
 			throw new HttpError(401, "UNAUTHENTICATED", "No autenticado");
-		}
 
 		const eventId = parseId(req.params.eventId);
+		const isSuperAdmin = user.role === "SUPER_ADMIN";
 
-		const whereClause: Prisma.EventWhereInput =
-			user.role === "SUPER_ADMIN"
-				? { id: eventId }
-				: {
-						id: eventId,
-						eventMembers: { some: { userId: user.id } },
-					};
+		const whereClause: Prisma.EventWhereInput = isSuperAdmin
+			? { id: eventId }
+			: { id: eventId, eventMembers: { some: { userId: user.id } } };
 
 		const event = await prisma.event.findFirst({
 			where: whereClause,
-			select: EVENT_DETAIL_SELECT,
+			select: {
+				...EVENT_DETAIL_SELECT,
+				...(isSuperAdmin
+					? {}
+					: {
+							eventMembers: {
+								where: { userId: user.id },
+								select: { role: true },
+								take: 1,
+							},
+						}),
+			},
 		});
-		console.log(event);
+
 		if (!event) {
 			throw new HttpError(
 				404,
@@ -146,21 +208,36 @@ export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 			);
 		}
 
+		const memberRole = isSuperAdmin
+			? null
+			: (((event as any).eventMembers?.[0]?.role ?? null) as
+					| "EDITOR"
+					| "VIEWER"
+					| null);
+
+		const safeEvent = isSuperAdmin
+			? event
+			: (() => {
+					const { eventMembers, ...rest } = event as any;
+					return rest;
+				})();
+
 		const [fieldsCount, registrationsCount] = await Promise.all([
 			prisma.eventField.count({ where: { eventId } }),
 			prisma.registration.count({ where: { eventId } }),
 		]);
 
-		res.json({
+		return res.json({
 			ok: true,
 			data: {
-				event,
+				event: safeEvent,
+				access: buildEventAccess({ isSuperAdmin, memberRole }),
 				stats: {
 					fieldsCount,
 					registrationsCount,
-					occupancy: event.capacity
+					occupancy: safeEvent.capacity
 						? Math.round(
-								(registrationsCount / event.capacity) * 100,
+								(registrationsCount / safeEvent.capacity) * 100,
 							)
 						: null,
 				},

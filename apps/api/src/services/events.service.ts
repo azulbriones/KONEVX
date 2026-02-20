@@ -3,7 +3,7 @@ import { prisma } from "../db/prisma.js";
 import { HttpError } from "../lib/httpError.js";
 import type { CreateEventInput } from "../schemas/events.schema.js";
 
-export async function createEvent(input: CreateEventInput) {
+export async function createEvent(input: CreateEventInput, userId: number) {
 	try {
 		return await prisma.event.create({
 			data: {
@@ -12,6 +12,12 @@ export async function createEvent(input: CreateEventInput) {
 				capacity: input.capacity,
 				contactRequirement: input.contactRequirement,
 				isPublished: input.isPublished ?? false,
+				eventMembers: {
+					create: {
+						userId: userId,
+						role: "EDITOR",
+					},
+				},
 			},
 			select: {
 				id: true,
@@ -25,7 +31,13 @@ export async function createEvent(input: CreateEventInput) {
 		});
 	} catch (err: unknown) {
 		if (err instanceof Prisma.PrismaClientKnownRequestError) {
-			throw new HttpError(409, "SLUG_TAKEN", "Slug already exists");
+			if (err.code === "P2002") {
+				throw new HttpError(
+					409,
+					"SLUG_TAKEN",
+					"El slug ya está en uso",
+				);
+			}
 		}
 		throw err;
 	}
