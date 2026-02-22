@@ -5,7 +5,11 @@ import {
 	listEvents,
 	setPublish,
 } from "../api/events.service";
-import type { CreateEventInput, EventDetail, EventStats } from "../types";
+import type {
+	CreateEventInput,
+	EventDetailResponse,
+	EventListItem,
+} from "../types";
 
 export const eventsKeys = {
 	all: ["events"] as const,
@@ -47,51 +51,48 @@ export const useSetPublish = (eventId: number) => {
 
 		onMutate: async (newStatus: boolean) => {
 			await qc.cancelQueries({ queryKey: eventsKeys.detail(eventId) });
-			const previousData = qc.getQueryData<{
-				event: EventDetail;
-				stats: EventStats;
-			}>(eventsKeys.detail(eventId));
 
-			qc.setQueryData(
+			const previous = qc.getQueryData<EventDetailResponse>(
 				eventsKeys.detail(eventId),
-				(
-					old: { event: EventDetail; stats: EventStats } | undefined,
-				) => {
+			);
+
+			qc.setQueryData<EventDetailResponse | undefined>(
+				eventsKeys.detail(eventId),
+				(old) => {
 					if (!old) return old;
 					return {
 						...old,
-						event: {
-							...old.event,
-							isPublished: newStatus,
-						},
+						event: { ...old.event, isPublished: newStatus },
 					};
 				},
 			);
-			qc.setQueryData(eventsKeys.list(), (oldList: any[] | undefined) => {
-				if (!oldList) return oldList;
-				return oldList.map((ev) =>
-					ev.id === eventId ? { ...ev, isPublished: newStatus } : ev,
-				);
-			});
-			return { previousData };
+
+			qc.setQueryData<EventListItem[] | undefined>(
+				eventsKeys.list(),
+				(oldList: any[]) => {
+					if (!oldList) return oldList;
+					return oldList.map((ev) =>
+						ev.id === eventId
+							? { ...ev, isPublished: newStatus }
+							: ev,
+					);
+				},
+			);
+
+			return { previous };
 		},
 
-		onError: (
-			_err: any,
-			_newStatus: any,
-			context: { previousData: any },
-		) => {
-			if (context?.previousData) {
-				qc.setQueryData(
-					eventsKeys.detail(eventId),
-					context.previousData,
-				);
+		onError: (_err: any, _newStatus: any, ctx: { previous: any }) => {
+			if (ctx?.previous) {
+				qc.setQueryData(eventsKeys.detail(eventId), ctx.previous);
 			}
 		},
 
-		onSettled: () => {
-			qc.invalidateQueries({ queryKey: eventsKeys.detail(eventId) });
-			qc.invalidateQueries({ queryKey: eventsKeys.list() });
+		onSettled: async () => {
+			await qc.invalidateQueries({
+				queryKey: eventsKeys.detail(eventId),
+			});
+			await qc.invalidateQueries({ queryKey: eventsKeys.list() });
 		},
 	});
 };

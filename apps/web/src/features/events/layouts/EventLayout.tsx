@@ -19,13 +19,6 @@ import {
 	useParams,
 } from "react-router-dom";
 
-const TABS = [
-	{ label: "Resumen", path: "overview" },
-	{ label: "Registros", path: "registrations" },
-	{ label: "Campos", path: "fields" },
-	// { label: "Miembros", path: "members" },
-] as const;
-
 export function EventLayout() {
 	const { eventId } = useParams();
 	const id = Number(eventId);
@@ -34,9 +27,9 @@ export function EventLayout() {
 	const { data, isLoading, isError, error } = useEvent(id);
 	const publishMutation = useSetPublish(id);
 
-	const currentTab =
-		TABS.find((t) => location.pathname.endsWith(t.path))?.path ||
-		"overview";
+	if (!eventId || !Number.isFinite(id)) {
+		return <Typography color="error">ID de evento inválido</Typography>;
+	}
 
 	if (isLoading) {
 		return (
@@ -61,7 +54,20 @@ export function EventLayout() {
 
 	if (!data) return null;
 
-	const { event, stats } = data;
+	const { event, stats, access } = data;
+
+	const TABS = [
+		{ label: "Resumen", path: "overview", show: true },
+		{ label: "Registros", path: "registrations", show: access.canRead },
+		{ label: "Campos", path: "fields", show: access.canManageFields },
+		{ label: "Miembros", path: "members", show: access.canManageMembers },
+	] as const;
+
+	const visibleTabs = TABS.filter((t) => t.show);
+
+	const currentTab =
+		visibleTabs.find((t) => location.pathname.endsWith(t.path))?.path ||
+		"overview";
 
 	return (
 		<Stack spacing={0}>
@@ -102,20 +108,24 @@ export function EventLayout() {
 							/>
 						</Stack>
 
-						<Button
-							variant={
-								event.isPublished ? "outlined" : "contained"
-							}
-							color={event.isPublished ? "warning" : "primary"}
-							onClick={() =>
-								publishMutation.mutate(!event.isPublished)
-							}
-							disabled={publishMutation.isPending}
-						>
-							{event.isPublished
-								? "Pasar a borrador"
-								: "Publicar evento"}
-						</Button>
+						{access.canWrite && (
+							<Button
+								variant={
+									event.isPublished ? "outlined" : "contained"
+								}
+								color={
+									event.isPublished ? "warning" : "primary"
+								}
+								onClick={() =>
+									publishMutation.mutate(!event.isPublished)
+								}
+								disabled={publishMutation.isPending}
+							>
+								{event.isPublished
+									? "Pasar a borrador"
+									: "Publicar evento"}
+							</Button>
+						)}
 					</Stack>
 
 					<Tabs
@@ -123,7 +133,7 @@ export function EventLayout() {
 						textColor="primary"
 						indicatorColor="primary"
 					>
-						{TABS.map((tab) => (
+						{visibleTabs.map((tab) => (
 							<Tab
 								key={tab.path}
 								label={tab.label}
@@ -134,11 +144,25 @@ export function EventLayout() {
 							/>
 						))}
 					</Tabs>
+
+					{publishMutation.isError && (
+						<Typography color="error">
+							{getErrorMessage(publishMutation.error)}
+						</Typography>
+					)}
+
+					<Typography variant="body2" color="text.secondary">
+						slug: <b>{event.slug}</b> · capacidad:{" "}
+						<b>{event.capacity}</b> · contacto:{" "}
+						<b>{event.contactRequirement}</b> · fields:{" "}
+						<b>{stats.fieldsCount}</b> · regs:{" "}
+						<b>{stats.registrationsCount}</b>
+					</Typography>
 				</Stack>
 			</Paper>
 
 			<Box sx={{ p: { xs: 2, md: 4 } }}>
-				<Outlet context={{ event, stats }} />
+				<Outlet context={{ event, stats, access }} />
 			</Box>
 		</Stack>
 	);
