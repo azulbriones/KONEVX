@@ -9,7 +9,15 @@ import { getRegistrationsForPdf } from "../services/registrationsPdf.service.js"
 const generateRegistrationsPdf = (
 	res: Response,
 	eventName: string,
-	rows: any[],
+	rows: Array<{
+		id: number;
+		status: string;
+		createdAt: Date | string;
+		participant: {
+			emailNormalized: string | null;
+			phoneNormalized: string | null;
+		};
+	}>,
 ) => {
 	const doc = new PDFDocument({ size: "A4", margin: 40 });
 

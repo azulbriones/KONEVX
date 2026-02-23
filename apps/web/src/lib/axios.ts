@@ -1,5 +1,5 @@
 import { env } from "@/config/env";
-import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
+import axios, { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from "axios";
 
 export type ApiErrorPayload = {
 	ok: false;
@@ -11,14 +11,16 @@ export type ApiErrorPayload = {
 	};
 };
 
-export function isApiErrorPayload(x: any): x is ApiErrorPayload {
+export function isApiErrorPayload(x: unknown): x is ApiErrorPayload {
+	const payload = x as Record<string, unknown>;
+	if (!payload || typeof payload !== "object") return false;
+
+	const error = payload.error as Record<string, unknown>;
 	return (
-		x &&
-		typeof x === "object" &&
-		x.ok === false &&
-		x.error &&
-		typeof x.error.code === "string" &&
-		typeof x.error.message === "string"
+		payload.ok === false &&
+		!!error &&
+		typeof error.code === "string" &&
+		typeof error.message === "string"
 	);
 }
 
@@ -56,7 +58,7 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
 // --- Interceptor de Response (Manejo de Errores) ---
 api.interceptors.response.use(
-	(response: any) => response,
+	(response: AxiosResponse) => response,
 	async (error: AxiosError) => {
 		if (!error.response) {
 			return Promise.reject({

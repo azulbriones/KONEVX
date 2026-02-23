@@ -32,7 +32,7 @@ export const exportRegistrationsCsvHandler: RequestHandler<{
 
 		stringifier.pipe(res);
 
-		records.forEach((record: any) => stringifier.write(record));
+		records.forEach((record: unknown[]) => stringifier.write(record));
 
 		stringifier.end();
 

@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	createEvent,
-	getEventById,
-	listEvents,
-	setPublish,
+    createEvent,
+    getEventById,
+    listEvents,
+    setPublish,
 } from "../api/events.service";
 import type {
-	CreateEventInput,
-	EventDetailResponse,
-	EventListItem,
+    CreateEventInput,
+    EventDetailResponse,
+    EventListItem,
 } from "../types";
 
 export const eventsKeys = {
@@ -58,7 +58,7 @@ export const useSetPublish = (eventId: number) => {
 
 			qc.setQueryData<EventDetailResponse | undefined>(
 				eventsKeys.detail(eventId),
-				(old) => {
+				(old: EventDetailResponse | undefined) => {
 					if (!old) return old;
 					return {
 						...old,
@@ -69,7 +69,7 @@ export const useSetPublish = (eventId: number) => {
 
 			qc.setQueryData<EventListItem[] | undefined>(
 				eventsKeys.list(),
-				(oldList: any[]) => {
+				(oldList: EventListItem[] | undefined) => {
 					if (!oldList) return oldList;
 					return oldList.map((ev) =>
 						ev.id === eventId
@@ -82,7 +82,7 @@ export const useSetPublish = (eventId: number) => {
 			return { previous };
 		},
 
-		onError: (_err: any, _newStatus: any, ctx: { previous: any }) => {
+		onError: (_err: Error, _newStatus: boolean, ctx?: { previous: EventDetailResponse | undefined }) => {
 			if (ctx?.previous) {
 				qc.setQueryData(eventsKeys.detail(eventId), ctx.previous);
 			}

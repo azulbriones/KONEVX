@@ -18,7 +18,7 @@ export function useUpdateRegistrationStatus(eventId: number) {
 				input.status,
 			),
 
-		onMutate: async ({ registrationId, status }) => {
+		onMutate: async ({ registrationId, status }: { registrationId: number; status: RegistrationStatus }) => {
 			await qc.cancelQueries({
 				queryKey: registrationsKeys.all(eventId),
 			});
@@ -29,11 +29,11 @@ export function useUpdateRegistrationStatus(eventId: number) {
 
 			qc.setQueriesData(
 				{ queryKey: registrationsKeys.all(eventId) },
-				(old: any) => {
+				(old: { items?: Array<{ id: number; status: RegistrationStatus }> } | undefined) => {
 					if (!old?.items) return old;
 					return {
 						...old,
-						items: old.items.map((item: any) =>
+						items: old.items.map((item) =>
 							item.id === registrationId
 								? { ...item, status }
 								: item,
@@ -46,9 +46,9 @@ export function useUpdateRegistrationStatus(eventId: number) {
 		},
 
 		onError: (
-			_err: any,
-			_vars: any,
-			context: { previousData: [any, any][] },
+			_err: Error,
+			_vars: { registrationId: number; status: RegistrationStatus },
+			context?: { previousData: [readonly unknown[], unknown][] },
 		) => {
 			if (context?.previousData) {
 				context.previousData.forEach(([queryKey, data]) => {

@@ -49,11 +49,17 @@ export async function exportRegistrationsCsv(eventId: number) {
 
 	const records = rows.map(
 		(r: {
-			fieldValues: any;
-			id: any;
-			status: any;
-			createdAt: { toISOString: () => any };
-			participant: { emailNormalized: any; phoneNormalized: any };
+			fieldValues: Array<{
+				value: unknown;
+				eventField: { key: string; label: string };
+			}>;
+			id: number;
+			status: string;
+			createdAt: { toISOString: () => string };
+			participant: {
+				emailNormalized: string | null;
+				phoneNormalized: string | null;
+			};
 		}) => {
 			const answersByKey: Record<string, string> = {};
 

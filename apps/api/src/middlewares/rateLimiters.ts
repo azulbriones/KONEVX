@@ -1,3 +1,4 @@
+import type { Request } from "express";
 import rateLimit from "express-rate-limit";
 
 const jsonMessage = (code: string, message: string) => ({
@@ -5,7 +6,7 @@ const jsonMessage = (code: string, message: string) => ({
 	error: { code, message },
 });
 
-const keyByIp = (req: any) => {
+const keyByIp = (req: Request) => {
 	return req.ip ?? "unknown";
 };
 

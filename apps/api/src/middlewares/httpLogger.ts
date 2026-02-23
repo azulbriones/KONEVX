@@ -1,15 +1,15 @@
-import type { RequestHandler } from "express";
+import type { NextFunction, Request, RequestHandler, Response } from "express";
 
 export const httpLogger: RequestHandler = (
-	req: { method: any; originalUrl: any },
-	res: { on: (arg0: string, arg1: () => void) => void; statusCode: any },
-	next: () => void,
+	req: Request,
+	res: Response,
+	next: NextFunction,
 ) => {
 	const start = Date.now();
 
 	res.on("finish", () => {
 		const ms = Date.now() - start;
-		const rid = (req as any).requestId ?? "-";
+		const rid = (req as Request & { requestId?: string }).requestId ?? "-";
 		console.log(
 			JSON.stringify({
 				level: "info",

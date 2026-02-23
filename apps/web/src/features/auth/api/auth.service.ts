@@ -1,5 +1,6 @@
 import { api, isApiErrorPayload } from "@/lib/axios";
 import type { ApiResponse } from "@/types/api";
+import { isAxiosError } from "axios";
 import type { User } from "../types";
 
 export type LoginInput = {
@@ -11,10 +12,10 @@ export const getUser = async (): Promise<User | null> => {
 	try {
 		const { data } = await api.get<ApiResponse<{ user: User }>>("/auth/me");
 		return data.data.user;
-	} catch (e: any) {
-		const status = e?.response?.status;
+	} catch (e: unknown) {
 		const isCustom401 = isApiErrorPayload(e) && e.error.code === "HTTP_401";
-		if (status === 401 || isCustom401) {
+		const isNative401 = isAxiosError(e) && e.response?.status === 401;
+		if (isNative401 || isCustom401) {
 			return null;
 		}
 		throw e;

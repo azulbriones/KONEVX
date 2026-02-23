@@ -29,7 +29,7 @@ export const requireAuth: RequestHandler = (
 		);
 
 	try {
-		const payload: any = jwt.verify(token, authConfig.accessSecret);
+		const payload = jwt.verify(token, authConfig.accessSecret) as jwt.JwtPayload;
 		req.user = {
 			id: Number(payload.sub),
 			role: String(payload.role),

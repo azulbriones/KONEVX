@@ -1,6 +1,6 @@
 export type ApiOk<T> = { ok: true; data: T };
 export type ApiErr = {
-	response: any;
+	response: unknown;
 	ok: false;
 	error: { code: string; message: string; details?: unknown; rid?: string };
 };

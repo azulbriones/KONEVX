@@ -4,8 +4,8 @@ import { prisma } from "../db/prisma.js";
 import { HttpError } from "../lib/httpError.js";
 import { parseId } from "../lib/parser.js";
 import {
-	AddMemberSchema,
-	UpdateMemberRoleSchema,
+    AddMemberSchema,
+    UpdateMemberRoleSchema,
 } from "../schemas/eventMembers.schema.js";
 
 type AddMemberBody = z.infer<typeof AddMemberSchema>;
@@ -33,9 +33,9 @@ export const listEventMembersHandler: RequestHandler<{
 
 		const formattedMembers = members.map(
 			(m: {
-				user: { id: any; email: any; role: any };
-				role: any;
-				createdAt: any;
+				user: { id: number; email: string; role: string };
+				role: string;
+				createdAt: Date;
 			}) => ({
 				userId: m.user.id,
 				email: m.user.email,
@@ -146,8 +146,8 @@ export const updateEventMemberRoleHandler: RequestHandler<
 				eventRole: updated.role,
 			},
 		});
-	} catch (e: any) {
-		if (e.code === "P2025") {
+	} catch (e: unknown) {
+		if (e && typeof e === "object" && "code" in e && (e as { code?: string }).code === "P2025") {
 			return next(
 				new HttpError(
 					404,

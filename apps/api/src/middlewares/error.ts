@@ -1,15 +1,15 @@
 import { Prisma } from "@prisma/client";
 import type {
-	ErrorRequestHandler,
-	NextFunction,
-	Request,
-	Response,
+    ErrorRequestHandler,
+    NextFunction,
+    Request,
+    Response,
 } from "express";
 import { ZodError } from "zod";
 import { HttpError } from "../lib/httpError.js";
 
 export const errorMiddleware: ErrorRequestHandler = (
-	err: any,
+	err: unknown,
 	req: Request,
 	res: Response,
 	next: NextFunction,

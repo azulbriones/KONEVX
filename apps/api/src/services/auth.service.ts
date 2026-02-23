@@ -53,7 +53,7 @@ export async function loginWithEmailPassword(email: string, password: string) {
 		sessionId,
 	);
 
-	const decoded = jwt.decode(refreshToken) as any;
+	const decoded = jwt.decode(refreshToken) as jwt.JwtPayload | null;
 	const expiresAt = decoded?.exp
 		? new Date(decoded.exp * 1000)
 		: new Date(Date.now() + REFRESH_EXP_MS);
@@ -75,9 +75,9 @@ export async function loginWithEmailPassword(email: string, password: string) {
 }
 
 export async function refreshSession(refreshToken: string) {
-	let payload: any;
+	let payload: jwt.JwtPayload;
 	try {
-		payload = jwt.verify(refreshToken, authConfig.refreshSecret);
+		payload = jwt.verify(refreshToken, authConfig.refreshSecret) as jwt.JwtPayload;
 	} catch {
 		throw new HttpError(401, "INVALID_REFRESH", "Invalid refresh token");
 	}
@@ -121,7 +121,7 @@ export async function refreshSession(refreshToken: string) {
 		newSessionId,
 	);
 
-	const decoded = jwt.decode(newRefreshToken) as any;
+	const decoded = jwt.decode(newRefreshToken) as jwt.JwtPayload | null;
 	const expiresAt = decoded?.exp
 		? new Date(decoded.exp * 1000)
 		: new Date(Date.now() + REFRESH_EXP_MS);
@@ -150,7 +150,7 @@ export async function logoutSession(refreshToken: string | null) {
 	if (!refreshToken) return;
 
 	try {
-		const payload: any = jwt.verify(refreshToken, authConfig.refreshSecret);
+		const payload = jwt.verify(refreshToken, authConfig.refreshSecret) as jwt.JwtPayload;
 		const sessionId = String(payload.sid);
 
 		await prisma.session
@@ -171,7 +171,7 @@ export async function issueTokensForUser(
 		sessionId,
 	);
 
-	const decoded = jwt.decode(refreshToken) as any;
+	const decoded = jwt.decode(refreshToken) as jwt.JwtPayload | null;
 	const expiresAt = decoded?.exp
 		? new Date(decoded.exp * 1000)
 		: new Date(Date.now() + REFRESH_EXP_MS);

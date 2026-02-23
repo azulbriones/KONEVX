@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	addEventMember,
-	listEventMembers,
-	removeEventMember,
-	updateEventMemberRole,
+    addEventMember,
+    listEventMembers,
+    removeEventMember,
+    updateEventMemberRole,
 } from "../api/eventMembers.service";
 import type {
-	AddEventMemberInput,
-	EventMember,
-	EventMemberRole,
+    AddEventMemberInput,
+    EventMember,
+    EventMemberRole,
 } from "../types";
 import { eventsKeys } from "./useEvents";
 
@@ -23,7 +23,7 @@ export function useEventMembers(eventId: number) {
 		queryFn: () => listEventMembers(eventId),
 		enabled: Number.isFinite(eventId) && eventId > 0,
 		staleTime: 30_000,
-		placeholderData: (prev: any) => prev,
+		placeholderData: (prev) => prev,
 	});
 }
 
@@ -54,7 +54,7 @@ export function useUpdateEventMemberRole(eventId: number) {
 
 			qc.setQueryData<EventMember[] | undefined>(
 				membersKeys.all(eventId),
-				(old: any[]) => {
+				(old: EventMember[] | undefined) => {
 					if (!old) return old;
 					return old.map((m) =>
 						m.userId === userId ? { ...m, eventRole: role } : m,
@@ -65,7 +65,7 @@ export function useUpdateEventMemberRole(eventId: number) {
 			return { prev };
 		},
 
-		onError: (_err: any, _vars: any, ctx: { prev: any }) => {
+		onError: (_err: Error, _vars: { userId: number; role: EventMemberRole }, ctx?: { prev: EventMember[] | undefined }) => {
 			if (ctx?.prev) qc.setQueryData(membersKeys.all(eventId), ctx.prev);
 		},
 
@@ -81,7 +81,7 @@ export function useRemoveEventMember(eventId: number) {
 	return useMutation({
 		mutationFn: (userId: number) => removeEventMember(eventId, userId),
 
-		onMutate: async (userId: any) => {
+		onMutate: async (userId: number) => {
 			await qc.cancelQueries({ queryKey: membersKeys.all(eventId) });
 			const prev = qc.getQueryData<EventMember[]>(
 				membersKeys.all(eventId),
@@ -89,7 +89,7 @@ export function useRemoveEventMember(eventId: number) {
 
 			qc.setQueryData<EventMember[] | undefined>(
 				membersKeys.all(eventId),
-				(old: any[] | undefined) => {
+				(old: EventMember[] | undefined) => {
 					if (!old) return old;
 					return old.filter((m) => m.userId !== userId);
 				},
@@ -98,7 +98,7 @@ export function useRemoveEventMember(eventId: number) {
 			return { prev };
 		},
 
-		onError: (_err: any, _userId: any, ctx: { prev: any }) => {
+		onError: (_err: Error, _userId: number, ctx?: { prev: EventMember[] | undefined }) => {
 			if (ctx?.prev) qc.setQueryData(membersKeys.all(eventId), ctx.prev);
 		},
 

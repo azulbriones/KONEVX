@@ -151,7 +151,7 @@ export const setPublishHandler: RequestHandler<
 		});
 
 		res.json({ ok: true, data: { event: updated } });
-	} catch (e: any) {
+	} catch (e: unknown) {
 		next(e);
 	}
 };
@@ -210,7 +210,7 @@ export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 
 		const memberRole = isSuperAdmin
 			? null
-			: (((event as any).eventMembers?.[0]?.role ?? null) as
+			: (((event as { eventMembers?: Array<{ role: string }> }).eventMembers?.[0]?.role ?? null) as
 					| "EDITOR"
 					| "VIEWER"
 					| null);
@@ -218,7 +218,7 @@ export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 		const safeEvent = isSuperAdmin
 			? event
 			: (() => {
-					const { eventMembers, ...rest } = event as any;
+					const { eventMembers, ...rest } = event as typeof event & { eventMembers?: unknown };
 					return rest;
 				})();
 
