@@ -22,7 +22,8 @@ import {
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useOutletContext, useParams } from "react-router-dom";
+import { EventPermissionGate } from "../components/EventPermissionGate";
 import {
 	FieldDrawer,
 	type FieldDrawerResult,
@@ -32,7 +33,7 @@ import {
 	moveField,
 	normalizeOrder,
 } from "../fields/utils/fields";
-import type { EventField } from "../types";
+import type { EventField, EventOutletCtx } from "../types";
 
 export function EventFieldsPage() {
 	const { eventId } = useParams();
@@ -56,6 +57,9 @@ export function EventFieldsPage() {
 
 	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [deleteTarget, setDeleteTarget] = useState<EventField | null>(null);
+
+	const { access } = useOutletContext<EventOutletCtx>();
+	const canManageFields = access?.canManageFields ?? false;
 
 	const rows = useMemo(() => normalizeOrder(draft as EventField[]), [draft]);
 
@@ -136,7 +140,7 @@ export function EventFieldsPage() {
 
 	const doDelete = () => {
 		if (!deleteTarget) return;
-		setDraft((prev: any[]) =>
+		setDraft((prev: EventField[]) =>
 			normalizeOrder(prev.filter((f) => f.id !== deleteTarget.id)),
 		);
 		setConfirmOpen(false);
@@ -262,6 +266,16 @@ export function EventFieldsPage() {
 		],
 		[rows, moveUp, moveDown, askDelete, openEdit],
 	);
+
+	if (!canManageFields) {
+		return (
+			<EventPermissionGate
+				allow={false}
+				title="Acceso restringido"
+				message="No tienes permisos para gestionar campos de este evento."
+			/>
+		);
+	}
 
 	if (!eventId || !Number.isFinite(id)) {
 		return <Typography color="error">ID de evento inválido</Typography>;

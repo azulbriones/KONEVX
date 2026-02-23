@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useOutletContext, useParams } from "react-router-dom";
 
 import DownloadIcon from "@mui/icons-material/Download";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -24,6 +24,7 @@ import {
 	useUpdateRegistrationStatus,
 } from "@/features/events/hooks/useRegistrations";
 import type {
+	EventOutletCtx,
 	RegistrationItem,
 	RegistrationStatus,
 } from "@/features/events/types";
@@ -33,6 +34,7 @@ import {
 	downloadRegistrationsCsv,
 	downloadRegistrationsPdf,
 } from "../api/registrations.service";
+import { EventPermissionGate } from "../components/EventPermissionGate";
 
 const STATUS_LABEL: Record<RegistrationStatus, string> = {
 	REGISTERED: "Registrado",
@@ -75,7 +77,29 @@ export function EventRegistrationsPage() {
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const [activeRow, setActiveRow] = useState<RegistrationItem | null>(null);
 	const menuOpen = Boolean(anchorEl);
+
 	const [isDownloading, setIsDownloading] = useState(false);
+
+	const { access } = useOutletContext<EventOutletCtx>();
+
+	const canRead = access?.canRead ?? false;
+	const canWrite = access?.canWrite ?? false;
+	const canExport = access?.canExport ?? false;
+
+	// ✅ Gate principal
+	if (!canRead) {
+		return (
+			<EventPermissionGate
+				allow={false}
+				title="Acceso restringido"
+				message="No tienes permisos para ver los registros de este evento."
+			/>
+		);
+	}
+
+	if (!eventId || !Number.isFinite(id)) {
+		return <Typography color="error">ID de evento inválido</Typography>;
+	}
 
 	const params = useMemo(
 		() => ({
@@ -91,11 +115,8 @@ export function EventRegistrationsPage() {
 		id,
 		params,
 	);
-	const updateStatusMutation = useUpdateRegistrationStatus(id);
 
-	if (!eventId || !Number.isFinite(id)) {
-		return <Typography color="error">ID de evento inválido</Typography>;
-	}
+	const updateStatusMutation = useUpdateRegistrationStatus(id);
 
 	const rows = data?.items ?? [];
 	const rowCount = data?.meta.total ?? 0;
@@ -104,6 +125,7 @@ export function EventRegistrationsPage() {
 		e: React.MouseEvent<HTMLElement>,
 		row: RegistrationItem,
 	) => {
+		if (!canWrite) return; // ✅ hard guard
 		setAnchorEl(e.currentTarget);
 		setActiveRow(row);
 	};
@@ -114,7 +136,7 @@ export function EventRegistrationsPage() {
 	};
 
 	const onChangeStatus = (newStatus: RegistrationStatus) => {
-		if (!activeRow) return;
+		if (!activeRow || !canWrite) return;
 		updateStatusMutation.mutate(
 			{ registrationId: activeRow.id, status: newStatus },
 			{ onSuccess: closeMenu },
@@ -129,45 +151,38 @@ export function EventRegistrationsPage() {
 			} else {
 				await downloadRegistrationsPdf(id, params);
 			}
-		} catch (error) {
-			console.error("Error al descargar el archivo:", error);
+		} catch (err) {
+			console.error("Error al descargar el archivo:", err);
 		} finally {
 			setIsDownloading(false);
 		}
 	};
 
 	const columns: GridColDef<RegistrationItem>[] = [
-		{
-			field: "id",
-			headerName: "ID",
-			width: 80,
-			sortable: false,
-		},
+		{ field: "id", headerName: "ID", width: 80, sortable: false },
 		{
 			field: "email",
 			headerName: "Email",
 			flex: 1,
 			minWidth: 220,
 			sortable: false,
-			valueGetter: (params: {
-				row: { participant: { emailNormalized: any } };
-			}) => params.row?.participant?.emailNormalized || "-",
+			valueGetter: (params) =>
+				params.row?.participant?.emailNormalized || "-",
 		},
 		{
 			field: "phone",
 			headerName: "Teléfono",
 			width: 160,
 			sortable: false,
-			valueGetter: (params: {
-				row: { participant: { phoneNormalized: any } };
-			}) => params.row?.participant?.phoneNormalized || "-",
+			valueGetter: (params) =>
+				params.row?.participant?.phoneNormalized || "-",
 		},
 		{
 			field: "status",
 			headerName: "Estado",
 			width: 140,
 			sortable: false,
-			renderCell: (params: { value: string }) => (
+			renderCell: (params) => (
 				<Chip
 					size="small"
 					label={STATUS_LABEL[params.value as RegistrationStatus]}
@@ -182,7 +197,7 @@ export function EventRegistrationsPage() {
 			headerName: "Fecha de Registro",
 			width: 170,
 			sortable: false,
-			renderCell: (params: { row: { createdAt: any } }) =>
+			renderCell: (params) =>
 				dayjs(params.row.createdAt).format("DD MMM YYYY, HH:mm"),
 		},
 		{
@@ -193,10 +208,11 @@ export function EventRegistrationsPage() {
 			filterable: false,
 			disableColumnMenu: true,
 			align: "center",
-			renderCell: (params: { row: RegistrationItem }) => (
+			renderCell: (params) => (
 				<IconButton
 					size="small"
-					onClick={(e: any) => openMenu(e, params.row)}
+					disabled={!canWrite}
+					onClick={(e) => openMenu(e, params.row)}
 					aria-label="acciones"
 				>
 					<MoreVertIcon fontSize="small" />
@@ -246,39 +262,51 @@ export function EventRegistrationsPage() {
 					</TextField>
 				</Stack>
 
-				<Stack direction="row" gap={1} justifyContent="flex-end">
-					<Button
-						variant="outlined"
-						color="secondary"
-						startIcon={
-							isDownloading ? (
-								<CircularProgress size={20} color="inherit" />
-							) : (
-								<DownloadIcon />
-							)
-						}
-						onClick={() => handleDownload("csv")}
-						disabled={isLoading || rowCount === 0 || isDownloading}
-					>
-						CSV
-					</Button>
+				{canExport && (
+					<Stack direction="row" gap={1} justifyContent="flex-end">
+						<Button
+							variant="outlined"
+							color="secondary"
+							startIcon={
+								isDownloading ? (
+									<CircularProgress
+										size={20}
+										color="inherit"
+									/>
+								) : (
+									<DownloadIcon />
+								)
+							}
+							onClick={() => handleDownload("csv")}
+							disabled={
+								isLoading || rowCount === 0 || isDownloading
+							}
+						>
+							CSV
+						</Button>
 
-					<Button
-						variant="outlined"
-						color="error"
-						startIcon={
-							isDownloading ? (
-								<CircularProgress size={20} color="inherit" />
-							) : (
-								<DownloadIcon />
-							)
-						}
-						onClick={() => handleDownload("pdf")}
-						disabled={isLoading || rowCount === 0 || isDownloading}
-					>
-						PDF
-					</Button>
-				</Stack>
+						<Button
+							variant="outlined"
+							color="error"
+							startIcon={
+								isDownloading ? (
+									<CircularProgress
+										size={20}
+										color="inherit"
+									/>
+								) : (
+									<DownloadIcon />
+								)
+							}
+							onClick={() => handleDownload("pdf")}
+							disabled={
+								isLoading || rowCount === 0 || isDownloading
+							}
+						>
+							PDF
+						</Button>
+					</Stack>
+				)}
 			</Stack>
 
 			<Box sx={{ height: 600, width: "100%" }}>
@@ -346,6 +374,7 @@ export function EventRegistrationsPage() {
 					<MenuItem
 						key={s}
 						disabled={
+							!canWrite ||
 							updateStatusMutation.isPending ||
 							activeRow?.status === s
 						}
