@@ -17,6 +17,7 @@ import {
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { useMemo, useState } from "react";
 import { useOutletContext, useParams } from "react-router-dom";
+import { EventPermissionGate } from "../components/EventPermissionGate";
 import {
 	useAddEventMember,
 	useEventMembers,
@@ -33,6 +34,7 @@ export function EventMembersPage() {
 
 	const { access } = useOutletContext<EventOutletCtx>();
 	const canManageMembers = access?.canManageMembers ?? false;
+
 	const { data: me } = useUser();
 
 	const { data, isLoading, isError, error } = useEventMembers(id);
@@ -42,8 +44,10 @@ export function EventMembersPage() {
 
 	const [email, setEmail] = useState("");
 	const [role, setRole] = useState<EventMemberRole>("VIEWER");
+
 	const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 	const [menuRow, setMenuRow] = useState<EventMember | null>(null);
+
 	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [deleteTarget, setDeleteTarget] = useState<EventMember | null>(null);
 
@@ -57,6 +61,34 @@ export function EventMembersPage() {
 	const isSelf = (row: EventMember) => !!me?.id && row.userId === me.id;
 	const isLastEditorRow = (row: EventMember) =>
 		row.eventRole === "EDITOR" && editorsCount <= 1;
+
+	if (!canManageMembers) {
+		return (
+			<EventPermissionGate
+				allow={false}
+				title="Acceso restringido"
+				message="No tienes permisos para gestionar miembros de este evento."
+			/>
+		);
+	}
+
+	if (!eventId || !Number.isFinite(id)) {
+		return <Typography color="error">ID de evento inválido</Typography>;
+	}
+
+	if (isLoading) {
+		return (
+			<Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+				<Typography color="text.secondary">
+					Cargando equipo...
+				</Typography>
+			</Box>
+		);
+	}
+
+	if (isError) {
+		return <Typography color="error">{getErrorMessage(error)}</Typography>;
+	}
 
 	const openMenu = (e: React.MouseEvent<HTMLElement>, row: EventMember) => {
 		setMenuAnchor(e.currentTarget);
@@ -113,6 +145,23 @@ export function EventMembersPage() {
 			},
 		);
 	};
+
+	const busy =
+		addMutation.isPending ||
+		updateRoleMutation.isPending ||
+		removeMutation.isPending;
+
+	const addDisabled = busy || !email.trim();
+
+	const menuIsSelf = menuRow ? isSelf(menuRow) : false;
+	const menuIsLastEditor = menuRow ? isLastEditorRow(menuRow) : false;
+
+	const disableRemove = busy || menuIsSelf || menuIsLastEditor || !menuRow;
+	const disableDowngrade =
+		busy ||
+		!menuRow ||
+		menuIsSelf ||
+		(menuRow.eventRole === "EDITOR" && menuIsLastEditor);
 
 	const columns: GridColDef<EventMember>[] = [
 		{
@@ -185,7 +234,6 @@ export function EventMembersPage() {
 			renderCell: (params) => (
 				<IconButton
 					size="small"
-					disabled={!canManageMembers}
 					onClick={(e) => openMenu(e, params.row)}
 				>
 					<MoreVert fontSize="small" />
@@ -194,226 +242,181 @@ export function EventMembersPage() {
 		},
 	];
 
-	const busy =
-		addMutation.isPending ||
-		updateRoleMutation.isPending ||
-		removeMutation.isPending;
-	const addDisabled = busy || !canManageMembers || !email.trim();
-
-	const menuIsSelf = menuRow ? isSelf(menuRow) : false;
-	const menuIsLastEditor = menuRow ? isLastEditorRow(menuRow) : false;
-	const disableRemove = busy || menuIsSelf || menuIsLastEditor || !menuRow;
-	const disableDowngrade =
-		busy ||
-		!menuRow ||
-		menuIsSelf ||
-		(menuRow?.eventRole === "EDITOR" && menuIsLastEditor);
-
-	if (!eventId || !Number.isFinite(id))
-		return <Typography color="error">ID de evento inválido</Typography>;
-	if (isLoading)
-		return (
-			<Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-				<Typography color="text.secondary">
-					Cargando equipo...
-				</Typography>
-			</Box>
-		);
-	if (isError)
-		return <Typography color="error">{getErrorMessage(error)}</Typography>;
-
 	return (
-		<>
-			<Stack spacing={3} sx={{ pt: 2 }}>
-				<Stack
-					direction={{ xs: "column", md: "row" }}
-					justifyContent="space-between"
-					alignItems={{ xs: "flex-start", md: "center" }}
-					gap={2}
-				>
-					<Stack>
-						<Typography variant="h6" fontWeight={800}>
-							Equipo del Evento
-						</Typography>
-						<Typography variant="body2" color="text.secondary">
-							Gestiona quién puede ver o editar este evento.
-						</Typography>
-					</Stack>
-
-					<Stack
-						component="form"
-						onSubmit={onAdd}
-						direction={{ xs: "column", sm: "row" }}
-						gap={1.5}
-						alignItems="center"
-					>
-						<TextField
-							size="small"
-							label="Email del usuario"
-							placeholder="usuario@ejemplo.com"
-							type="email"
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-							disabled={busy || !canManageMembers}
-							sx={{ minWidth: 220 }}
-						/>
-
-						<TextField
-							size="small"
-							label="Asignar Rol"
-							select
-							value={role}
-							onChange={(e) =>
-								setRole(e.target.value as EventMemberRole)
-							}
-							disabled={busy || !canManageMembers}
-							SelectProps={{ native: true }}
-							sx={{ width: 140 }}
-						>
-							{ROLE_OPTIONS.map((r) => (
-								<option key={r} value={r}>
-									{r}
-								</option>
-							))}
-						</TextField>
-
-						<Button
-							type="submit"
-							variant="contained"
-							startIcon={<Add />}
-							disabled={addDisabled}
-							sx={{ height: 40 }}
-						>
-							Agregar
-						</Button>
-					</Stack>
+		<Stack spacing={3} sx={{ pt: 2 }}>
+			<Stack
+				direction={{ xs: "column", md: "row" }}
+				justifyContent="space-between"
+				alignItems={{ xs: "flex-start", md: "center" }}
+				gap={2}
+			>
+				<Stack>
+					<Typography variant="h6" fontWeight={800}>
+						Equipo del Evento
+					</Typography>
+					<Typography variant="body2" color="text.secondary">
+						Gestiona quién puede ver o editar este evento.
+					</Typography>
 				</Stack>
 
-				{(addMutation.isError ||
-					updateRoleMutation.isError ||
-					removeMutation.isError) && (
-					<Paper
-						sx={{
-							p: 2,
-							bgcolor: "error.lighter",
-							color: "error.main",
-							border: 1,
-							borderColor: "error.light",
-						}}
-					>
-						<Typography variant="body2" fontWeight={600}>
-							Ocurrió un error:
-						</Typography>
-						<Typography variant="body2">
-							{getErrorMessage(
-								addMutation.error ||
-									updateRoleMutation.error ||
-									removeMutation.error,
-							)}
-						</Typography>
-					</Paper>
-				)}
-
-				<Paper
-					variant="outlined"
-					sx={{
-						height: 600,
-						width: "100%",
-						bgcolor: "background.paper",
-					}}
+				<Stack
+					component="form"
+					onSubmit={onAdd}
+					direction={{ xs: "column", sm: "row" }}
+					gap={1.5}
+					alignItems="center"
 				>
-					<DataGrid
-						rows={rows}
-						columns={columns}
-						getRowId={(r) => r.userId}
-						disableRowSelectionOnClick
-						disableColumnMenu
-						pageSizeOptions={[25, 50, 100]}
-						initialState={{
-							pagination: {
-								paginationModel: { pageSize: 25, page: 0 },
-							},
-						}}
-						sx={{
-							border: "none",
-							"& .MuiDataGrid-cell:focus": { outline: "none" },
-							"& .MuiDataGrid-columnHeader:focus": {
-								outline: "none",
-							},
-						}}
+					<TextField
+						size="small"
+						label="Email del usuario"
+						placeholder="usuario@ejemplo.com"
+						type="email"
+						value={email}
+						onChange={(e) => setEmail(e.target.value)}
+						disabled={busy}
+						sx={{ minWidth: 220 }}
 					/>
-				</Paper>
 
-				<Menu
-					anchorEl={menuAnchor}
-					open={Boolean(menuAnchor)}
-					onClose={closeMenu}
-					PaperProps={{
-						sx: { minWidth: 160, borderRadius: 2, mt: 0.5 },
-					}}
-				>
-					<Typography
-						variant="caption"
-						color="text.secondary"
-						sx={{ px: 2, py: 1, display: "block", fontWeight: 700 }}
+					<TextField
+						size="small"
+						label="Asignar Rol"
+						select
+						value={role}
+						onChange={(e) =>
+							setRole(e.target.value as EventMemberRole)
+						}
+						disabled={busy}
+						SelectProps={{ native: true }}
+						sx={{ width: 140 }}
 					>
-						CAMBIAR ROL
-					</Typography>
+						{ROLE_OPTIONS.map((r) => (
+							<option key={r} value={r}>
+								{r}
+							</option>
+						))}
+					</TextField>
 
-					{ROLE_OPTIONS.filter((r) => r !== menuRow?.eventRole).map(
-						(r) => (
-							<MenuItem
-								key={r}
-								onClick={() => setMemberRole(r)}
-								disabled={
-									busy ||
-									(r === "VIEWER" ? disableDowngrade : false)
-								}
-							>
-								Asignar como {r}
-							</MenuItem>
-						),
-					)}
-
-					<Box sx={{ my: 1, height: 1, bgcolor: "divider" }} />
-
-					<MenuItem
-						onClick={askRemove}
-						sx={{ color: "error.main" }}
-						disabled={disableRemove}
+					<Button
+						type="submit"
+						variant="contained"
+						startIcon={<Add />}
+						disabled={addDisabled}
+						sx={{ height: 40 }}
 					>
-						<Delete fontSize="small" sx={{ mr: 1.5 }} /> Quitar del
-						evento
-					</MenuItem>
-				</Menu>
-
-				<ConfirmDialog
-					open={confirmOpen}
-					title="Eliminar miembro"
-					description={
-						deleteTarget
-							? `¿Estás seguro de que deseas quitar a "${deleteTarget.email}"? Perderá el acceso a este evento.`
-							: undefined
-					}
-					confirmText="Sí, quitar"
-					cancelText="Cancelar"
-					onClose={() => {
-						setConfirmOpen(false);
-						setDeleteTarget(null);
-					}}
-					onConfirm={doRemove}
-					loading={removeMutation.isPending}
-				/>
+						Agregar
+					</Button>
+				</Stack>
 			</Stack>
 
-			{!canManageMembers && (
-				<Paper variant="outlined" sx={{ p: 2, mt: 2 }}>
-					<Typography variant="body2" color="text.secondary">
-						No tienes permisos para administrar miembros en este
-						evento.
+			{(addMutation.isError ||
+				updateRoleMutation.isError ||
+				removeMutation.isError) && (
+				<Paper
+					sx={{
+						p: 2,
+						bgcolor: "error.lighter",
+						color: "error.main",
+						border: 1,
+						borderColor: "error.light",
+					}}
+				>
+					<Typography variant="body2" fontWeight={600}>
+						Ocurrió un error:
+					</Typography>
+					<Typography variant="body2">
+						{getErrorMessage(
+							addMutation.error ||
+								updateRoleMutation.error ||
+								removeMutation.error,
+						)}
 					</Typography>
 				</Paper>
 			)}
-		</>
+
+			<Paper
+				variant="outlined"
+				sx={{ height: 600, width: "100%", bgcolor: "background.paper" }}
+			>
+				<DataGrid
+					rows={rows}
+					columns={columns}
+					getRowId={(r) => r.userId}
+					disableRowSelectionOnClick
+					disableColumnMenu
+					pageSizeOptions={[25, 50, 100]}
+					initialState={{
+						pagination: {
+							paginationModel: { pageSize: 25, page: 0 },
+						},
+					}}
+					sx={{
+						border: "none",
+						"& .MuiDataGrid-cell:focus": { outline: "none" },
+						"& .MuiDataGrid-columnHeader:focus": {
+							outline: "none",
+						},
+					}}
+				/>
+			</Paper>
+
+			<Menu
+				anchorEl={menuAnchor}
+				open={Boolean(menuAnchor)}
+				onClose={closeMenu}
+				PaperProps={{ sx: { minWidth: 160, borderRadius: 2, mt: 0.5 } }}
+			>
+				<Typography
+					variant="caption"
+					color="text.secondary"
+					sx={{ px: 2, py: 1, display: "block", fontWeight: 700 }}
+				>
+					CAMBIAR ROL
+				</Typography>
+
+				{ROLE_OPTIONS.filter((r) => r !== menuRow?.eventRole).map(
+					(r) => (
+						<MenuItem
+							key={r}
+							onClick={() => setMemberRole(r)}
+							disabled={
+								busy ||
+								(r === "VIEWER" ? disableDowngrade : false)
+							}
+						>
+							Asignar como {r}
+						</MenuItem>
+					),
+				)}
+
+				<Box sx={{ my: 1, height: 1, bgcolor: "divider" }} />
+
+				<MenuItem
+					onClick={askRemove}
+					sx={{ color: "error.main" }}
+					disabled={disableRemove}
+				>
+					<Delete fontSize="small" sx={{ mr: 1.5 }} />
+					Quitar del evento
+				</MenuItem>
+			</Menu>
+
+			<ConfirmDialog
+				open={confirmOpen}
+				title="Eliminar miembro"
+				description={
+					deleteTarget
+						? `¿Estás seguro de que deseas quitar a "${deleteTarget.email}"? Perderá el acceso a este evento.`
+						: undefined
+				}
+				confirmText="Sí, quitar"
+				cancelText="Cancelar"
+				onClose={() => {
+					setConfirmOpen(false);
+					setDeleteTarget(null);
+				}}
+				onConfirm={doRemove}
+				loading={removeMutation.isPending}
+			/>
+		</Stack>
 	);
 }
