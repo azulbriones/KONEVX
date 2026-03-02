@@ -4,156 +4,190 @@ import { HttpError } from "../lib/httpError.js";
 import { normalizeEmail, normalizePhone } from "../lib/normalize.js";
 import type { PublicRegisterInput } from "../schemas/publicRegistration.schema.js";
 
-type FieldDefinition = {
-	label: string;
-	id: number;
-	key: string;
-	type: "TEXT" | "NUMBER" | "DATE" | "SELECT" | "MULTI_SELECT" | "CHECKBOX";
-	required: boolean;
-	options: unknown;
+type ValidateArgs = {
+	event: { contactRequirement: "EMAIL" | "PHONE" };
+	fields: { id: number; key: string; type: string; required: boolean; options: any }[];
+	payload: {
+		contact: { email?: string | null; phone?: string | null };
+		answers: Record<string, unknown>;
+	};
 };
 
-function validateAndPickValues(
-	fields: FieldDefinition[],
-	answers: Record<string, unknown>,
-) {
-	const allowedKeys = new Set(fields.map((f) => f.key));
-	for (const key of Object.keys(answers)) {
-		if (!allowedKeys.has(key)) {
-			throw new HttpError(400, "UNKNOWN_FIELD", `Unknown field: ${key}`);
-		}
+export function validateAndPickValues(args: ValidateArgs) {
+	const { event, fields, payload } = args;
+
+	const email = (payload.contact?.email ?? "").trim();
+	const phone = (payload.contact?.phone ?? "").trim();
+
+	if (event.contactRequirement === "EMAIL" && !email) {
+		throw new HttpError(400, "VALIDATION_ERROR", "Invalid registration payload", {
+			contact: { email: "El email es requerido para este evento." },
+		});
 	}
 
-	const values: Array<{ eventFieldId: number; value: any }> = [];
+	if (event.contactRequirement === "PHONE" && !phone) {
+		throw new HttpError(400, "VALIDATION_ERROR", "Invalid registration payload", {
+			contact: { phone: "El teléfono es requerido para este evento." },
+		});
+	}
+
+	const allowedKeys = new Set(fields.map((f) => f.key));
+	const unknownKeys = Object.keys(payload.answers ?? {}).filter((k) => !allowedKeys.has(k));
+
+	if (unknownKeys.length > 0) {
+		throw new HttpError(400, "VALIDATION_ERROR", "Invalid registration payload", {
+			answers: Object.fromEntries(unknownKeys.map((k) => [k, "Campo desconocido no permitido."])),
+		});
+	}
+
+	const answerErrors: Record<string, string> = {};
+	const values: { eventFieldId: number; value: any }[] = [];
+
+	const isEmpty = (v: unknown) => {
+		if (v === null || v === undefined) return true;
+		if (typeof v === "string") return v.trim().length === 0;
+		if (Array.isArray(v)) return v.length === 0 || v.every((x) => typeof x === "string" && x.trim().length === 0);
+		return false;
+	};
+
+	const toBool = (v: unknown) => {
+		if (typeof v === "boolean") return v;
+		if (typeof v === "number") return v === 1;
+		if (typeof v === "string") {
+			const s = v.trim().toLowerCase();
+			if (["true", "1", "yes", "on"].includes(s)) return true;
+			if (["false", "0", "no", "off"].includes(s)) return false;
+		}
+		return null;
+	};
+
+	const isValidYyyyMmDd = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
 
 	for (const f of fields) {
-		const val = answers[f.key];
+		const raw = payload.answers?.[f.key];
 
-		const isEmpty = val === undefined || val === null || val === "";
-		if (f.required && isEmpty) {
-			throw new HttpError(
-				400,
-				"MISSING_REQUIRED_FIELD",
-				`Missing required field: ${f.label || f.key}`,
-			);
+		if (f.required && isEmpty(raw)) {
+			answerErrors[f.key] = "Este campo es obligatorio.";
+			continue;
 		}
 
-		if (val === undefined || val === null) continue;
+		if (!f.required && isEmpty(raw)) continue;
 
 		switch (f.type) {
-			case "TEXT":
-				if (typeof val !== "string")
-					throw new HttpError(
-						400,
-						"INVALID_VALUE",
-						`${f.key} must be text`,
-					);
-				values.push({ eventFieldId: f.id, value: val });
-				break;
-
-			case "NUMBER":
-				if (typeof val !== "number" || !Number.isFinite(val))
-					throw new HttpError(
-						400,
-						"INVALID_VALUE",
-						`${f.key} must be a number`,
-					);
-				values.push({ eventFieldId: f.id, value: val });
-				break;
-
-			case "DATE":
-				if (typeof val !== "string" || Number.isNaN(Date.parse(val))) {
-					throw new HttpError(
-						400,
-						"INVALID_VALUE",
-						`${f.key} must be a valid date`,
-					);
+			case "TEXT": {
+				if (typeof raw !== "string") {
+					answerErrors[f.key] = "Se esperaba texto.";
+					break;
 				}
-				values.push({ eventFieldId: f.id, value: val });
+				const v = raw.trim();
+				if (v.length > 2000) {
+					answerErrors[f.key] = "El texto es demasiado largo (máx 2000 caracteres).";
+					break;
+				}
+				values.push({ eventFieldId: f.id, value: v });
 				break;
+			}
 
-			case "CHECKBOX":
-				if (typeof val !== "boolean")
-					throw new HttpError(
-						400,
-						"INVALID_VALUE",
-						`${f.key} must be true/false`,
-					);
-				values.push({ eventFieldId: f.id, value: val });
+			case "NUMBER": {
+				let num: number | null = null;
+				if (typeof raw === "number") num = raw;
+				else if (typeof raw === "string" && raw.trim().length > 0) num = Number(raw.trim());
+
+				if (num === null || !Number.isFinite(num)) {
+					answerErrors[f.key] = "Se esperaba un número válido.";
+					break;
+				}
+				values.push({ eventFieldId: f.id, value: num });
 				break;
+			}
+
+			case "DATE": {
+				if (typeof raw !== "string") {
+					answerErrors[f.key] = "Se esperaba una fecha.";
+					break;
+				}
+				const s = raw.trim();
+				if (!isValidYyyyMmDd(s)) {
+					answerErrors[f.key] = "Formato de fecha inválido. Usa AAAA-MM-DD.";
+					break;
+				}
+				if (!Number.isFinite(Date.parse(s))) {
+					answerErrors[f.key] = "Fecha inexistente.";
+					break;
+				}
+				values.push({ eventFieldId: f.id, value: s });
+				break;
+			}
+
+			case "CHECKBOX": {
+				const b = toBool(raw);
+				if (b === null) {
+					answerErrors[f.key] = "Se esperaba verdadero/falso.";
+					break;
+				}
+				values.push({ eventFieldId: f.id, value: b });
+				break;
+			}
 
 			case "SELECT": {
-				if (typeof val !== "string")
-					throw new HttpError(
-						400,
-						"INVALID_VALUE",
-						`${f.key} must be text`,
-					);
-				const opts = Array.isArray(f.options)
-					? (f.options as string[])
-					: [];
-				if (!opts.includes(val))
-					throw new HttpError(
-						400,
-						"INVALID_OPTION",
-						`Invalid option for ${f.key}`,
-					);
-				values.push({ eventFieldId: f.id, value: val });
+				if (typeof raw !== "string") {
+					answerErrors[f.key] = "Se esperaba texto.";
+					break;
+				}
+				const v = raw.trim();
+				const opts: string[] = Array.isArray(f.options) ? f.options : [];
+
+				if (!opts.includes(v)) {
+					answerErrors[f.key] = "Opción seleccionada inválida.";
+					break;
+				}
+				values.push({ eventFieldId: f.id, value: v });
 				break;
 			}
 
 			case "MULTI_SELECT": {
-				if (
-					!Array.isArray(val) ||
-					!val.every((v) => typeof v === "string")
-				) {
-					throw new HttpError(
-						400,
-						"INVALID_VALUE",
-						`${f.key} must be an array of strings`,
-					);
+				let arr: string[] = [];
+				if (Array.isArray(raw)) {
+					arr = raw.filter((x) => typeof x === "string").map((x) => x.trim()).filter(Boolean);
+				} else if (typeof raw === "string") {
+					arr = raw.split(",").map((x) => x.trim()).filter(Boolean);
 				}
-				const opts = Array.isArray(f.options)
-					? (f.options as string[])
-					: [];
-				for (const item of val) {
-					if (!opts.includes(item))
-						throw new HttpError(
-							400,
-							"INVALID_OPTION",
-							`Invalid option '${item}' for ${f.key}`,
-						);
+
+				const opts: string[] = Array.isArray(f.options) ? f.options : [];
+				const hasInvalidOptions = arr.some((v) => !opts.includes(v));
+
+				if (hasInvalidOptions) {
+					answerErrors[f.key] = "Una o más opciones seleccionadas son inválidas.";
+					break;
 				}
-				values.push({ eventFieldId: f.id, value: val });
+
+				values.push({ eventFieldId: f.id, value: Array.from(new Set(arr)) });
 				break;
 			}
 
 			default:
-				throw new HttpError(
-					500,
-					"CONFIG_ERROR",
-					`Unsupported field type: ${f.type}`,
-				);
+				answerErrors[f.key] = "Tipo de campo no soportado.";
 		}
 	}
 
-	return values;
+	if (Object.keys(answerErrors).length > 0) {
+		throw new HttpError(400, "VALIDATION_ERROR", "Errores de validación en el formulario", {
+			answers: answerErrors,
+		});
+	}
+
+	return {
+		contact: { email: email || null, phone: phone || null },
+		values,
+	};
 }
 
 export async function registerPublicBySlug(
 	slug: string,
 	input: PublicRegisterInput,
 ) {
-	const emailNormalized = normalizeEmail(input.contact.email);
-	const phoneNormalized = normalizePhone(input.contact.phone);
-
-	if (!emailNormalized && !phoneNormalized) {
-		throw new HttpError(
-			400,
-			"CONTACT_REQUIRED",
-			"Either email or phone is required",
-		);
-	}
+	const emailNormalized = normalizeEmail(input.contact?.email);
+	const phoneNormalized = normalizePhone(input.contact?.phone);
 
 	return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
 		const event = await tx.event.findUnique({
@@ -170,21 +204,6 @@ export async function registerPublicBySlug(
 			throw new HttpError(404, "EVENT_NOT_FOUND", "Event not found");
 		}
 
-		if (event.contactRequirement === "EMAIL" && !emailNormalized) {
-			throw new HttpError(
-				400,
-				"EMAIL_REQUIRED",
-				"Email is required for this event",
-			);
-		}
-		if (event.contactRequirement === "PHONE" && !phoneNormalized) {
-			throw new HttpError(
-				400,
-				"PHONE_REQUIRED",
-				"Phone is required for this event",
-			);
-		}
-
 		const fields = await tx.eventField.findMany({
 			where: { eventId: event.id },
 			orderBy: { order: "asc" },
@@ -198,7 +217,11 @@ export async function registerPublicBySlug(
 			},
 		});
 
-		const answerValues = validateAndPickValues(fields, input.answers ?? {});
+		const { values } = validateAndPickValues({
+			event,
+			fields,
+			payload: input,
+		});
 
 		let participant = null;
 
@@ -273,10 +296,10 @@ export async function registerPublicBySlug(
 				participantId: participant.id,
 				status: "REGISTERED",
 				fieldValues: {
-					create: answerValues.map((v) => ({
+					create: values.map((v) => ({
 						eventFieldId: v.eventFieldId,
 						eventId: event.id,
-						value: v.value,
+						value: v.value ?? Prisma.JsonNull,
 					})),
 				},
 			},
