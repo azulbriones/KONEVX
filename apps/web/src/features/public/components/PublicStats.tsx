@@ -5,6 +5,13 @@ import PhoneIphoneIcon from "@mui/icons-material/PhoneIphone";
 
 import type { ContactRequirement } from "../types";
 
+function getRemainingBadge(remaining: number) {
+	if (remaining <= 0) return { text: "Cupo lleno", tone: "danger" as const };
+	if (remaining <= 10)
+		return { text: "Últimos lugares", tone: "warning" as const };
+	return { text: `Quedan ${remaining} lugares`, tone: "success" as const };
+}
+
 export function PublicStats({
 	capacity,
 	remaining,
@@ -18,6 +25,8 @@ export function PublicStats({
 		contactRequirement === "EMAIL"
 			? "Email requerido"
 			: "Teléfono requerido";
+
+	const badge = getRemainingBadge(remaining);
 
 	return (
 		<section className="stats" aria-label="Detalles del evento">
@@ -33,8 +42,19 @@ export function PublicStats({
 				<div style={{ display: "flex", justifyContent: "center" }}>
 					<EventSeatIcon htmlColor="#f97316" />
 				</div>
-				<div className="stat-label">Lugares</div>
-				<div className="stat-value">{remaining} disponibles</div>
+				<div className="stat-label">Disponibilidad</div>
+
+				<div className="stat-value">
+					<span className={`badge badge--${badge.tone}`}>
+						{badge.text}
+					</span>
+				</div>
+
+				<div className="stat-hint">
+					{remaining <= 0
+						? "Ya no hay lugares disponibles."
+						: "¡Aparta tu lugar!"}
+				</div>
 			</div>
 
 			<div className="stat-card">
