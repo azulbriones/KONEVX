@@ -248,6 +248,7 @@ export async function registerPublicBySlug(
 					participantId: participant.id,
 				},
 			},
+			select: { id: true, status: true, createdAt: true },
 		});
 
 		if (existingRegistration) {
