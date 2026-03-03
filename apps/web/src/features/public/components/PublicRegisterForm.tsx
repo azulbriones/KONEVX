@@ -19,6 +19,7 @@ type Props = {
 };
 
 type Errors = Record<string, string | undefined>;
+type SubmittedStatus = "CREATED" | "EXISTS" | null;
 
 function initialAnswers(fields: PublicEventField[]) {
 	const out: Record<string, unknown> = {};
@@ -43,12 +44,13 @@ export function PublicRegisterForm({
 		[fields],
 	);
 
-	const [submitted, setSubmitted] = useState(false);
+	const [submittedStatus, setSubmittedStatus] =
+		useState<SubmittedStatus>(null);
 
-	const [contact, setContact] = useState<{
-		email: string;
-		phone: string;
-	}>({ email: "", phone: "" });
+	const [contact, setContact] = useState<{ email: string; phone: string }>({
+		email: "",
+		phone: "",
+	});
 
 	const [answers, setAnswers] = useState<Record<string, unknown>>(() =>
 		initialAnswers(sortedFields),
@@ -56,12 +58,15 @@ export function PublicRegisterForm({
 
 	const [errors, setErrors] = useState<Errors>({});
 
-	const busy = registerMutation.isPending || !!disabled;
+	const isFullError =
+		(registerMutation.error as any)?.code === "EVENT_FULL" ||
+		(registerMutation.error as any)?.error?.code === "EVENT_FULL";
+
+	const busy = registerMutation.isPending || !!disabled || isFullError;
 
 	const validate = (): boolean => {
 		const next: Errors = {};
 
-		// ContactRequirement enforcement
 		if (contactRequirement === "EMAIL") {
 			if (!contact.email.trim()) next.contact_email = "Email requerido";
 		} else {
@@ -69,7 +74,6 @@ export function PublicRegisterForm({
 				next.contact_phone = "Teléfono requerido";
 		}
 
-		// Field requirements
 		for (const f of sortedFields) {
 			if (!f.required) continue;
 			const v = answers[f.key];
@@ -96,6 +100,7 @@ export function PublicRegisterForm({
 
 	const onSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (busy) return;
 		if (!validate()) return;
 
 		const payload: PublicRegisterInput = {
@@ -107,23 +112,37 @@ export function PublicRegisterForm({
 		};
 
 		registerMutation.mutate(payload, {
-			onSuccess: () => {
-				setSubmitted(true);
+			onSuccess: (res: any) => {
+				setSubmittedStatus(
+					res?.status === "EXISTS" ? "EXISTS" : "CREATED",
+				);
 				window.scrollTo({ top: 0, behavior: "smooth" });
 			},
 		});
 	};
 
-	if (submitted) {
+	const resetForm = () => {
+		setSubmittedStatus(null);
+		setContact({ email: "", phone: "" });
+		setAnswers(initialAnswers(sortedFields));
+		setErrors({});
+		registerMutation.reset?.();
+	};
+
+	if (submittedStatus) {
 		return (
 			<div className="form-card">
 				<div className="success">
 					<div className="success-badge">
 						<CheckCircleIcon fontSize="large" />
 					</div>
+
 					<h2 style={{ fontSize: "2rem", fontWeight: 950 }}>
-						¡Registro exitoso!
+						{submittedStatus === "EXISTS"
+							? "Ya estabas registrado"
+							: "¡Registro exitoso!"}
 					</h2>
+
 					<p
 						style={{
 							color: "#64748b",
@@ -131,18 +150,15 @@ export function PublicRegisterForm({
 							marginBottom: "1.5rem",
 						}}
 					>
-						Gracias por registrarte. Te esperamos en el evento.
+						{submittedStatus === "EXISTS"
+							? "Este contacto ya tenía un registro para este evento. Si necesitas corregir algo, contacta al organizador."
+							: "Gracias por registrarte. Te esperamos en el evento."}
 					</p>
 
 					<button
 						className="public-cta"
 						type="button"
-						onClick={() => {
-							setSubmitted(false);
-							setContact({ email: "", phone: "" });
-							setAnswers(initialAnswers(sortedFields));
-							setErrors({});
-						}}
+						onClick={resetForm}
 					>
 						Hacer otro registro
 					</button>
@@ -158,6 +174,13 @@ export function PublicRegisterForm({
 					<h2>Inscripción</h2>
 					<p>Completa tus datos para asegurar tu lugar.</p>
 				</div>
+
+				{disabled ? (
+					<div className="banner banner--danger" role="status">
+						<strong>Cupo lleno.</strong> Ya no es posible
+						registrarse.
+					</div>
+				) : null}
 
 				<form onSubmit={onSubmit}>
 					<span className="group-label">Contacto</span>
@@ -240,14 +263,17 @@ export function PublicRegisterForm({
 					</div>
 
 					{registerMutation.isError ? (
-						<div
-							style={{
-								marginTop: "1rem",
-								color: "#b91c1c",
-								fontWeight: 800,
-							}}
-						>
-							{getErrorMessage(registerMutation.error)}
+						<div style={{ marginTop: "1rem" }}>
+							<div className="banner banner--danger" role="alert">
+								<strong>
+									{isFullError
+										? "Cupo lleno."
+										: "No se pudo registrar."}
+								</strong>{" "}
+								{isFullError
+									? "Ya no hay lugares disponibles."
+									: getErrorMessage(registerMutation.error)}
+							</div>
 						</div>
 					) : null}
 
