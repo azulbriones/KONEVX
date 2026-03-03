@@ -2,6 +2,7 @@ import { getErrorMessage } from "@/features/utils/getErrorMessage";
 import { CircularProgress } from "@mui/material";
 import { useParams } from "react-router-dom";
 
+import { PublicAvailabilityBanner } from "../components/PublicAvailabilityBanner";
 import { PublicChecklist } from "../components/PublicChecklist";
 import { PublicFooter } from "../components/PublicFooter";
 import { PublicGallery } from "../components/PublicGallery";
@@ -67,15 +68,27 @@ export function PublicEventPage() {
 
 	const { event, fields } = data;
 
+	const canRegister = event.remaining > 0;
+	const isFull = event.remaining <= 0;
+
 	return (
 		<div className="public-page">
-			<PublicNav brand="EventPlanner" />
+			<PublicNav brand="EventPlanner" ctaDisabled={isFull} />
 
 			<PublicHero
 				tag="EVENTO"
 				title={event.name}
 				subtitle="Completa tu registro para asegurar tu lugar."
+				ctaDisabled={isFull}
+				ctaLabel={isFull ? "Cupo lleno" : "¡Inscribirme!"}
 			/>
+
+			<div className="section section-tight">
+				<PublicAvailabilityBanner
+					capacity={event.capacity}
+					remaining={event.remaining}
+				/>
+			</div>
 
 			<PublicStats
 				capacity={event.capacity}
@@ -90,7 +103,7 @@ export function PublicEventPage() {
 				slug={event.slug}
 				contactRequirement={event.contactRequirement}
 				fields={fields}
-				disabled={event.remaining <= 0}
+				disabled={!canRegister}
 			/>
 
 			<PublicFooter />
