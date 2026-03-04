@@ -1,5 +1,6 @@
 import { InferType } from "yup";
 import { schema } from "../utils/validationSchema";
+
 export type UserRole = "SUPER_ADMIN" | "EVENT_ADMIN";
 
 export interface User {
