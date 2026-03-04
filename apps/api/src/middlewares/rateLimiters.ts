@@ -1,42 +1,50 @@
 import type { Request } from "express";
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 const jsonMessage = (code: string, message: string) => ({
 	ok: false,
 	error: { code, message },
 });
 
-const keyByIp = (req: Request) => {
-	return req.ip ?? "unknown";
-};
+const keyByIp = (req: Request) => ipKeyGenerator(req.ip ?? "unknown");
+
+// opcional: bypass para load test controlado
+const skipPublicLoadTest = (req: Request) =>
+	process.env.DISABLE_PUBLIC_RATE_LIMIT === "true" &&
+	req.header("x-public-load-test") === "1";
 
 export const authLimiter = rateLimit({
-	windowMs: 15 * 60 * 1000, // 15 min
-	limit: 30, // 30 requests/15min por IP
+	windowMs: 15 * 60 * 1000,
+	limit: 30,
 	standardHeaders: "draft-7",
 	legacyHeaders: false,
+	keyGenerator: keyByIp,
 });
 
 export const demoLimiter = rateLimit({
-	windowMs: 10 * 60 * 1000, // 10 min
-	limit: 60, // 60 requests/10min por IP
+	windowMs: 10 * 60 * 1000,
+	limit: 60,
 	standardHeaders: "draft-7",
 	legacyHeaders: false,
+	keyGenerator: keyByIp,
 	message: jsonMessage("RATE_LIMITED", "Too many auth requests"),
 });
 
 export const writeLimiter = rateLimit({
-	windowMs: 15 * 60 * 1000, // 15 min
-	limit: 30, // 30 requests/15min por IP
+	windowMs: 15 * 60 * 1000,
+	limit: 30,
 	standardHeaders: "draft-7",
 	legacyHeaders: false,
-	message: jsonMessage("RATE_LIMITED", "Too many auth requests"),
+	keyGenerator: keyByIp,
+	message: jsonMessage("RATE_LIMITED", "Too many requests"),
 });
 
 export const publicRegisterLimiter = rateLimit({
-	windowMs: 10 * 60 * 1000, // 10 min
-	limit: 60, // 60 requests/10min por IP
-	standardHeaders: true,
+	windowMs: 10 * 60 * 1000,
+	limit: 60,
+	standardHeaders: "draft-7",
 	legacyHeaders: false,
-	message: jsonMessage("RATE_LIMITED", "Too many auth requests"),
+	keyGenerator: keyByIp,
+	skip: skipPublicLoadTest,
+	message: jsonMessage("RATE_LIMITED", "Too many requests"),
 });
