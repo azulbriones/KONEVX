@@ -73,7 +73,7 @@ export function LoginPage() {
 	if (user) return null;
 
 	return (
-		<div className="main-auth-bg">
+		<div className="main-bg">
 			<div className="auth-card-container">
 				<h2>Panel de Eventos</h2>
 				<p className="subtitle">Gestiona tus eventos de forma fácil</p>

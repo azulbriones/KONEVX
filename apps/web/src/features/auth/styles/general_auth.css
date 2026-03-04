@@ -1,11 +1,3 @@
-.main-auth-bg {
-	min-height: 100vh;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	background: linear-gradient(135deg, #0f172a, #1e293b);
-}
-
 .auth-card-container {
 	background-color: #1e293b !important;
 	width: 100%;
