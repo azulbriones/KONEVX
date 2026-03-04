@@ -1,12 +1,13 @@
 import { Prisma } from "@prisma/client";
 import type {
-    ErrorRequestHandler,
-    NextFunction,
-    Request,
-    Response,
+	ErrorRequestHandler,
+	NextFunction,
+	Request,
+	Response,
 } from "express";
 import { ZodError } from "zod";
 import { HttpError } from "../lib/httpError.js";
+import { logger } from "../lib/logger.js";
 
 export const errorMiddleware: ErrorRequestHandler = (
 	err: unknown,
@@ -14,7 +15,7 @@ export const errorMiddleware: ErrorRequestHandler = (
 	res: Response,
 	next: NextFunction,
 ) => {
-	const rid = (res.locals.requestId as string | undefined) ?? "-";
+	const rid = (req as Request & { requestId?: string }).requestId ?? "-";
 
 	if (err instanceof ZodError) {
 		res.status(400).json({
@@ -57,19 +58,15 @@ export const errorMiddleware: ErrorRequestHandler = (
 		}
 	}
 
-	console.error(
-		JSON.stringify({
-			level: "error",
-			timestamp: new Date().toISOString(),
-			rid,
-			type: err instanceof Error ? err.name : "UnknownError",
-			message: err instanceof Error ? err.message : String(err),
-			stack:
-				process.env.NODE_ENV === "development" && err instanceof Error
-					? err.stack
-					: undefined,
-		}),
-	);
+	logger.error("Unhandled error", {
+		rid,
+		type: err instanceof Error ? err.name : "UnknownError",
+		message: err instanceof Error ? err.message : String(err),
+		stack:
+			process.env.NODE_ENV === "development" && err instanceof Error
+				? err.stack
+				: undefined,
+	});
 
 	return res.status(500).json({
 		ok: false,

@@ -268,22 +268,45 @@ export async function registerPublicBySlug(
 			throw new HttpError(409, "EVENT_FULL", "Event capacity reached");
 		}
 
-		const registration = await tx.registration.create({
-			data: {
-				eventId: event.id,
-				participantId: participant.id,
-				status: "REGISTERED",
-				fieldValues: {
-					create: answerValues.map((v) => ({
-						eventFieldId: v.eventFieldId,
-						eventId: event.id,
-						value: v.value,
-					})),
+		try {
+			const registration = await tx.registration.create({
+				data: {
+					eventId: event.id,
+					participantId: participant.id,
+					status: "REGISTERED",
+					fieldValues: {
+						create: answerValues.map((v) => ({
+							eventFieldId: v.eventFieldId,
+							eventId: event.id,
+							value: v.value,
+						})),
+					},
 				},
-			},
-			select: { id: true, status: true, createdAt: true },
-		});
+				select: { id: true, status: true, createdAt: true },
+			});
 
-		return { status: "CREATED" as const, registration };
+			return { status: "CREATED" as const, registration };
+		} catch (err) {
+			if (
+				err instanceof Prisma.PrismaClientKnownRequestError &&
+				err.code === "P2002"
+			) {
+				const existing = await tx.registration.findUnique({
+					where: {
+						eventId_participantId: {
+							eventId: event.id,
+							participantId: participant.id,
+						},
+					},
+					select: { id: true, status: true, createdAt: true },
+				});
+
+				if (existing) {
+					return { status: "EXISTS" as const, registration: existing };
+				}
+			}
+
+			throw err;
+		}
 	});
 }
