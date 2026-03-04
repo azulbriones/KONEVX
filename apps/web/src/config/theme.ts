@@ -6,12 +6,13 @@ import { createTheme, responsiveFontSizes } from "@mui/material/styles";
 
 let theme = createTheme({
 	palette: {
-		mode: "light",
+		mode: "dark",
 		primary: {
-			main: "#2563eb",
+			main: "#ea580c",
 		},
 		background: {
-			default: "#f8fafc",
+			default: "#0f172a",
+			paper: "#1e293b",
 		},
 	},
 	typography: {

@@ -10,7 +10,7 @@ import { ProtectedRoute } from "./ProtectedRoute";
 
 // Pages
 import { MainLayout } from "@/components/layout/MainLayout";
-import { LoginPage } from "@/features/auth/components/LoginPage";
+import { LoginPage } from "@/features/auth/pages/LoginPage";
 import { DashboardPage } from "@/features/dashboard/components/DashboardPage";
 import { NotFoundPage } from "@/features/dashboard/components/NotFoundPage";
 import { CreateEventPage } from "@/features/events/pages/CreateEventPage";
@@ -21,22 +21,14 @@ import { EventRegistrationsPage } from "@/features/events/pages/EventRegistratio
 import { PublicEventPage } from "@/features/public/pages/PublicEventPage";
 
 const router = createBrowserRouter([
-	// ---------------------------------------------------------
-	// 1. RUTAS PÚBLICAS
-	// ---------------------------------------------------------
 	{
 		path: "/e/:slug",
 		element: <PublicEventPage />,
 	},
 	{
 		path: "/login",
-		element: <MainLayout />,
-		children: [{ index: true, element: <LoginPage /> }],
+		element: <LoginPage />,
 	},
-
-	// ---------------------------------------------------------
-	// 2. RUTAS PRIVADAS (Aseguradas)
-	// ---------------------------------------------------------
 	{
 		element: <ProtectedRoute />,
 		children: [
