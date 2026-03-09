@@ -37,7 +37,6 @@ const CSRF_COOKIE_NAME = "ep_csrf";
 export const api = axios.create({
 	baseURL: env.API_BASE_URL,
 	withCredentials: true,
-	headers: { "Content-Type": "application/json" },
 	timeout: 10000,
 });
 
@@ -77,7 +76,7 @@ api.interceptors.response.use(
 
 			if (!isLoginRequest && !isLoginPage) {
 				window.location.href = "/login";
-				return new Promise(() => {});
+				return new Promise(() => { });
 			}
 		}
 

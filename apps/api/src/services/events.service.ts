@@ -12,6 +12,21 @@ export async function createEvent(input: CreateEventInput, userId: number) {
 				capacity: input.capacity,
 				contactRequirement: input.contactRequirement,
 				isPublished: input.isPublished ?? false,
+				organizerName: input.organizerName,
+				slogan: input.slogan,
+				description: input.description,
+				footerDescription: input.footerDescription,
+				location: input.location,
+				startDate: input.startDate,
+				endDate: input.endDate,
+				entryTime: input.entryTime,
+				exitTime: input.exitTime,
+				cost: input.cost,
+				minAge: input.minAge,
+				contactInfo: input.contactInfo,
+				socialMediaInfo: input.socialMediaInfo,
+				hashtag: input.hashtag,
+
 				eventMembers: {
 					create: {
 						userId: userId,
@@ -23,9 +38,6 @@ export async function createEvent(input: CreateEventInput, userId: number) {
 				id: true,
 				name: true,
 				slug: true,
-				capacity: true,
-				contactRequirement: true,
-				isPublished: true,
 				createdAt: true,
 			},
 		});
