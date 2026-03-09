@@ -15,6 +15,78 @@ export type EventAccess = {
 	canExport: boolean;
 };
 
+export type EventDetail = {
+	id: number;
+	name: string;
+	slug: string;
+	isPublished: boolean;
+	capacity: number;
+	contactRequirement: ContactRequirement;
+
+	organizerName: string;
+	slogan: string | null;
+	description: string;
+	footerDescription: string | null;
+	location: string;
+
+	startDate: string | null;
+	endDate: string | null;
+	entryTime: string | null;
+	exitTime: string | null;
+
+	cost: number | null;
+	minAge: number | null;
+
+	logo: string | null;
+	promotionalVideo: string | null;
+	promotionalImages: string[] | null;
+
+	contactInfo: string | null;
+	socialMediaInfo: string | null;
+	hashtag: string | null;
+
+	thingsToBring: string | null;
+	thingsNotToBring: string | null;
+	note: string | null;
+
+	createdAt: string;
+	updatedAt: string;
+};
+
+export type CreateEventInput = {
+	name: string;
+	slug: string;
+	capacity: number;
+	contactRequirement: ContactRequirement;
+	isPublished?: boolean;
+	organizerName: string;
+	description: string;
+	location: string;
+
+	slogan?: string;
+	footerDescription?: string;
+
+	startDate?: string;
+	endDate?: string;
+	entryTime?: string;
+	exitTime?: string;
+
+	cost?: number;
+	minAge?: number;
+
+	contactInfo?: string;
+	socialMediaInfo?: string;
+	hashtag?: string;
+
+	thingsToBring?: string;
+	thingsNotToBring?: string;
+	note?: string;
+
+	logo?: any;
+	promotionalVideo?: any;
+	promotionalImages?: any;
+};
+
 export type EventOutletCtx = {
 	event: EventDetail;
 	stats: EventStats;
@@ -32,17 +104,6 @@ export type EventListItem = {
 	access: EventAccess;
 };
 
-export type EventDetail = {
-	id: number;
-	name: string;
-	slug: string;
-	isPublished: boolean;
-	capacity: number;
-	contactRequirement: ContactRequirement;
-	createdAt: string;
-	updatedAt: string;
-};
-
 export type EventStats = {
 	fieldsCount: number;
 	registrationsCount: number;
@@ -55,13 +116,7 @@ export type EventDetailResponse = {
 	stats: EventStats;
 };
 
-export type CreateEventInput = {
-	name: string;
-	slug: string;
-	capacity: number;
-	contactRequirement: ContactRequirement;
-	isPublished?: boolean;
-};
+
 
 export type Ctx = {
 	event: EventDetail;

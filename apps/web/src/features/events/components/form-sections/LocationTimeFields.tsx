@@ -1,0 +1,131 @@
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import PlaceIcon from "@mui/icons-material/Place";
+import {
+	Divider,
+	Grid,
+	InputAdornment,
+	TextField,
+	Typography,
+} from "@mui/material";
+import { useFormContext } from "react-hook-form";
+import type { CreateEventInput } from "../../types";
+
+export function LocationTimeFields({ disabled }: { disabled: boolean }) {
+	const {
+		register,
+		formState: { errors },
+	} = useFormContext<CreateEventInput>();
+
+	return (
+		<Grid container spacing={3}>
+			<Grid item xs={12}>
+				<Typography
+					variant="subtitle1"
+					fontWeight={700}
+					color="primary"
+					sx={{ mt: 2 }}
+				>
+					Ubicación y Horarios
+				</Typography>
+				<Divider sx={{ my: 1 }} />
+			</Grid>
+
+			<Grid item xs={12}>
+				<TextField
+					fullWidth
+					label="Lugar del evento *"
+					{...register("location")}
+					error={!!errors.location}
+					helperText={errors.location?.message}
+					disabled={disabled}
+					InputProps={{
+						startAdornment: (
+							<InputAdornment position="start">
+								<PlaceIcon fontSize="small" />
+							</InputAdornment>
+						),
+					}}
+				/>
+			</Grid>
+
+			<Grid item xs={12} sm={6}>
+				<TextField
+					fullWidth
+					type="date"
+					label="Fecha de inicio"
+					InputLabelProps={{ shrink: true }}
+					{...register("startDate" as any)}
+					error={!!(errors as any).startDate}
+					helperText={(errors as any).startDate?.message as string}
+					disabled={disabled}
+					InputProps={{
+						startAdornment: (
+							<InputAdornment position="start">
+								<CalendarTodayIcon fontSize="small" />
+							</InputAdornment>
+						),
+					}}
+				/>
+			</Grid>
+			<Grid item xs={12} sm={6}>
+				<TextField
+					fullWidth
+					type="date"
+					label="Fecha de cierre"
+					InputLabelProps={{ shrink: true }}
+					{...register("endDate" as any)}
+					error={!!(errors as any).endDate}
+					helperText={(errors as any).endDate?.message as string}
+					disabled={disabled}
+					InputProps={{
+						startAdornment: (
+							<InputAdornment position="start">
+								<CalendarTodayIcon fontSize="small" />
+							</InputAdornment>
+						),
+					}}
+				/>
+			</Grid>
+
+			<Grid item xs={12} sm={6}>
+				<TextField
+					fullWidth
+					type="time"
+					label="Hora de entrada"
+					InputLabelProps={{ shrink: true }}
+					{...register("entryTime")}
+					error={!!errors.entryTime}
+					helperText={errors.entryTime?.message}
+					disabled={disabled}
+					InputProps={{
+						startAdornment: (
+							<InputAdornment position="start">
+								<AccessTimeIcon fontSize="small" />
+							</InputAdornment>
+						),
+					}}
+				/>
+			</Grid>
+			<Grid item xs={12} sm={6}>
+				<TextField
+					fullWidth
+					type="time"
+					label="Hora de cierre"
+					InputLabelProps={{ shrink: true }}
+					{...register("exitTime")}
+					error={!!errors.exitTime}
+					helperText={errors.exitTime?.message}
+					disabled={disabled}
+					InputProps={{
+						startAdornment: (
+							<InputAdornment position="start">
+								<AccessTimeIcon fontSize="small" />
+							</InputAdornment>
+						),
+					}}
+				/>
+			</Grid>
+		</Grid>
+	);
+}

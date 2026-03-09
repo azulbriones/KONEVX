@@ -1,7 +1,6 @@
 import { api } from "@/lib/axios";
 import type { ApiResponse } from "@/types/api";
 import type {
-	CreateEventInput,
 	EventDetailResponse,
 	EventListItem,
 } from "../types";
@@ -24,7 +23,7 @@ export async function getEventById(
 	return data.data;
 }
 
-export async function createEvent(input: CreateEventInput) {
+export async function createEvent(input: FormData) {
 	const { data } = await api.post<ApiResponse<any>>("/events", input);
 	if (!data.ok) throw data;
 	return data.data;
