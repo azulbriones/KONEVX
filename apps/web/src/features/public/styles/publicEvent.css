@@ -212,6 +212,9 @@
 	box-shadow: var(--shadow-xl);
 	border: 1px solid #f1f5f9;
 	text-align: center;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
 }
 
 .stat-label {
