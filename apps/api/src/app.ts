@@ -2,6 +2,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
+import path from "path";
 import { errorMiddleware } from "./middlewares/error.js";
 import { httpLogger } from "./middlewares/httpLogger.js";
 import { requestId } from "./middlewares/requestId.js";
@@ -24,9 +25,9 @@ app.use(
 
 app.use(requestId);
 app.use(httpLogger);
-
 app.use(cookieParser());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use(
 	cors({
@@ -37,6 +38,8 @@ app.use(
 		optionsSuccessStatus: 204,
 	}),
 );
+
+app.use("/uploads", express.static(path.join(process.cwd(), "public/uploads")));
 
 app.use("/api", router);
 

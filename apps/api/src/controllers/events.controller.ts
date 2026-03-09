@@ -6,17 +6,40 @@ import { buildEventAccess } from "../lib/eventAccess.js";
 import { HttpError } from "../lib/httpError.js";
 import { parseId } from "../lib/parser.js";
 import { SetPublishSchema } from "../schemas/eventPublish.schema.js";
+import { CreateEventSchema } from "../schemas/events.schema.js";
 import { createEvent } from "../services/events.service.js";
 
-const EVENT_LIST_SELECT = {
+const EVENT_DETAIL_SELECT = {
 	id: true,
 	name: true,
 	slug: true,
-	isPublished: true,
 	capacity: true,
 	contactRequirement: true,
+	isPublished: true,
+	organizerName: true,
+	slogan: true,
+	description: true,
+	footerDescription: true,
+	location: true,
+	startDate: true,
+	endDate: true,
+	entryTime: true,
+	exitTime: true,
+	cost: true,
+	minAge: true,
+	promotionalVideo: true,
+	promotionalImages: true,
+	contactInfo: true,
+	socialMediaInfo: true,
+	hashtag: true,
+	logo: true,
+	thingsToBring: true,
+	thingsNotToBring: true,
+	note: true,
 	createdAt: true,
+	updatedAt: true,
 } as const;
+
 
 type SetPublishBody = z.infer<typeof SetPublishSchema>;
 
@@ -27,17 +50,43 @@ type SetPublishBody = z.infer<typeof SetPublishSchema>;
 export const createEventHandler: RequestHandler = async (req, res, next) => {
 	try {
 		const user = req.user as { id: number; role: string } | undefined;
-		if (!user) {
-			throw new HttpError(401, "UNAUTHENTICATED", "No autenticado");
+		if (!user) throw new HttpError(401, "UNAUTHENTICATED", "No autenticado");
+
+		const parsedBody = CreateEventSchema.parse(req.body);
+
+		const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+		let logoUrl: string | null = null;
+		let videoUrl: string | null = null;
+		let imagesUrls: string[] = [];
+
+		if (files?.logo?.[0]) {
+			logoUrl = `/uploads/${files.logo[0].filename}`;
 		}
 
-		const created = await createEvent(req.body, user.id);
+		if (files?.promotionalVideo?.[0]) {
+			videoUrl = `/uploads/${files.promotionalVideo[0].filename}`;
+		}
+
+		if (files?.promotionalImages) {
+			imagesUrls = files.promotionalImages.map(file => `/uploads/${file.filename}`);
+		}
+
+		const eventData = {
+			...parsedBody,
+			logo: logoUrl,
+			promotionalVideo: videoUrl,
+			promotionalImages: imagesUrls.length > 0 ? imagesUrls : null,
+		};
+
+		const created = await createEvent(eventData, user.id);
 
 		res.status(201).json({ ok: true, data: created });
 	} catch (err) {
 		next(err);
 	}
 };
+
 export const listEventsHandler: RequestHandler = async (req, res, next) => {
 	try {
 		const user = req.user as { id: number; role: string } | undefined;
@@ -50,7 +99,7 @@ export const listEventsHandler: RequestHandler = async (req, res, next) => {
 			const events = await prisma.event.findMany({
 				orderBy: { createdAt: "desc" },
 				take: 50,
-				select: EVENT_LIST_SELECT,
+				select: EVENT_DETAIL_SELECT,
 			});
 
 			const withAccess = events.map((e) => ({
@@ -66,7 +115,7 @@ export const listEventsHandler: RequestHandler = async (req, res, next) => {
 			orderBy: { createdAt: "desc" },
 			take: 50,
 			select: {
-				...EVENT_LIST_SELECT,
+				...EVENT_DETAIL_SELECT,
 				eventMembers: {
 					where: { userId: user.id },
 					select: { role: true },
@@ -123,11 +172,11 @@ export const setPublishHandler: RequestHandler<
 			where: isSuperAdmin
 				? { id: eventId }
 				: {
-						id: eventId,
-						eventMembers: {
-							some: { userId: user.id, role: "EDITOR" },
-						},
+					id: eventId,
+					eventMembers: {
+						some: { userId: user.id, role: "EDITOR" },
 					},
+				},
 		});
 
 		if (!event) {
@@ -156,17 +205,6 @@ export const setPublishHandler: RequestHandler<
 	}
 };
 
-const EVENT_DETAIL_SELECT = {
-	id: true,
-	name: true,
-	slug: true,
-	isPublished: true,
-	capacity: true,
-	contactRequirement: true,
-	createdAt: true,
-	updatedAt: true,
-} as const;
-
 export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 	req,
 	res,
@@ -191,12 +229,12 @@ export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 				...(isSuperAdmin
 					? {}
 					: {
-							eventMembers: {
-								where: { userId: user.id },
-								select: { role: true },
-								take: 1,
-							},
-						}),
+						eventMembers: {
+							where: { userId: user.id },
+							select: { role: true },
+							take: 1,
+						},
+					}),
 			},
 		});
 
@@ -211,16 +249,16 @@ export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 		const memberRole = isSuperAdmin
 			? null
 			: (((event as { eventMembers?: Array<{ role: string }> }).eventMembers?.[0]?.role ?? null) as
-					| "EDITOR"
-					| "VIEWER"
-					| null);
+				| "EDITOR"
+				| "VIEWER"
+				| null);
 
 		const safeEvent = isSuperAdmin
 			? event
 			: (() => {
-					const { eventMembers, ...rest } = event as typeof event & { eventMembers?: unknown };
-					return rest;
-				})();
+				const { eventMembers, ...rest } = event as typeof event & { eventMembers?: unknown };
+				return rest;
+			})();
 
 		const [fieldsCount, registrationsCount] = await Promise.all([
 			prisma.eventField.count({ where: { eventId } }),
@@ -237,8 +275,8 @@ export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 					registrationsCount,
 					occupancy: safeEvent.capacity
 						? Math.round(
-								(registrationsCount / safeEvent.capacity) * 100,
-							)
+							(registrationsCount / safeEvent.capacity) * 100,
+						)
 						: null,
 				},
 			},

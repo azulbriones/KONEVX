@@ -73,12 +73,17 @@ export function PublicEventPage() {
 
 	return (
 		<div className="public-page">
-			<PublicNav brand="EventPlanner" ctaDisabled={isFull} />
+			<PublicNav
+				brand={event?.organizerName}
+				logo={event?.logo}
+				slug={event.slug}
+				ctaDisabled={isFull}
+			/>
 
 			<PublicHero
-				tag="EVENTO"
-				title={event.name}
-				subtitle="Completa tu registro para asegurar tu lugar."
+				tag={event?.name}
+				title={event?.slogan}
+				subtitle={event?.description}
 				ctaDisabled={isFull}
 				ctaLabel={isFull ? "Cupo lleno" : "¡Inscribirme!"}
 			/>
@@ -91,13 +96,25 @@ export function PublicEventPage() {
 			</div>
 
 			<PublicStats
-				capacity={event.capacity}
+				startDate={event.startDate}
+				endDate={event.endDate}
+				location={event.location}
+				entryTime={event.entryTime}
+				cost={event.cost}
+				minAge={event.minAge}
 				remaining={event.remaining}
-				contactRequirement={event.contactRequirement}
 			/>
 
-			<PublicGallery />
-			<PublicChecklist />
+			<PublicGallery
+				promotionalVideo={event.promotionalVideo}
+				promotionalImages={event.promotionalImages}
+			/>
+
+			<PublicChecklist
+				thingsToBring={event.thingsToBring}
+				thingsNotToBring={event.thingsNotToBring}
+				note={event.note}
+			/>
 
 			<PublicRegisterForm
 				slug={event.slug}
@@ -106,7 +123,11 @@ export function PublicEventPage() {
 				disabled={!canRegister}
 			/>
 
-			<PublicFooter />
+			<PublicFooter
+				footerDescription={event.footerDescription}
+				contactInfo={event.contactInfo}
+				socialMediaInfo={event.socialMediaInfo}
+			/>
 		</div>
 	);
 }

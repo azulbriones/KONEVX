@@ -1,14 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    createEvent,
-    getEventById,
-    listEvents,
-    setPublish,
+	createEvent,
+	getEventById,
+	listEvents,
+	setPublish,
 } from "../api/events.service";
 import type {
-    CreateEventInput,
-    EventDetailResponse,
-    EventListItem,
+	EventDetailResponse,
+	EventListItem
 } from "../types";
 
 export const eventsKeys = {
@@ -36,7 +35,7 @@ export const useCreateEvent = () => {
 	const qc = useQueryClient();
 
 	return useMutation({
-		mutationFn: (input: CreateEventInput) => createEvent(input),
+		mutationFn: (formData: FormData) => createEvent(formData),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: eventsKeys.list() });
 		},

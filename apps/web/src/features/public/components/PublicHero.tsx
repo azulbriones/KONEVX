@@ -2,7 +2,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
 export function PublicHero({
 	title,
-	subtitle,
+	subtitle = "Completa tu registro para asegurar tu lugar.",
 	tag = "EVENTO",
 	ctaDisabled,
 	ctaLabel = "¡Inscribirme!",

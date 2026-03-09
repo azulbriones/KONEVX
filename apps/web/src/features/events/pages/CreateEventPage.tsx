@@ -6,14 +6,16 @@ import {
 	Box,
 	Button,
 	CircularProgress,
-	MenuItem,
 	Paper,
 	Stack,
-	TextField,
 	Typography,
 } from "@mui/material";
-import { useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import { GeneralInfoFields } from "../components/form-sections/GeneralInfoFields";
+import { LocationTimeFields } from "../components/form-sections/LocationTimeFields";
+import { MediaConfigFields } from "../components/form-sections/MediaConfigFields";
+import { PublicLinkFields } from "../components/form-sections/PublicLinkFields";
 import type { CreateEventInput } from "../types";
 import { schema } from "../utils/validationSchema";
 
@@ -21,11 +23,7 @@ export function CreateEventPage() {
 	const navigate = useNavigate();
 	const createMutation = useCreateEvent();
 
-	const {
-		register,
-		handleSubmit,
-		formState: { errors },
-	} = useForm<CreateEventInput>({
+	const methods = useForm<CreateEventInput>({
 		resolver: yupResolver(schema),
 		defaultValues: {
 			name: "",
@@ -35,101 +33,108 @@ export function CreateEventPage() {
 		},
 	});
 
-	const onSubmit = (values: CreateEventInput) => {
-		createMutation.mutate(values, {
+	const onSubmit = (values: any) => {
+		const formData = new FormData();
+		console.log({ values });
+
+		Object.keys(values).forEach((key) => {
+			if (key !== "promotionalVideo" && key !== "promotionalImages") {
+				if (
+					values[key] !== undefined &&
+					values[key] !== null &&
+					values[key] !== ""
+				) {
+					formData.append(key, values[key]);
+				}
+			}
+		});
+		console.log({ values });
+
+		if (values.promotionalVideo && values.promotionalVideo.length > 0) {
+			formData.append("promotionalVideo", values.promotionalVideo[0]);
+		}
+
+		if (values.promotionalImages && values.promotionalImages.length > 0) {
+			Array.from(values.promotionalImages).forEach((file: any) => {
+				formData.append("promotionalImages", file);
+			});
+		}
+
+		if (values.logo && values.logo.length > 0) {
+			formData.append("logo", values.logo[0]);
+		}
+
+		console.log({ formData });
+		createMutation.mutate(formData as any, {
 			onSuccess: (created) => {
 				navigate(`/events/${created.id}`, { replace: true });
 			},
 		});
 	};
+	const isPending = createMutation.isPending;
 
 	return (
-		<Box sx={{ display: "flex", justifyContent: "center" }}>
+		<Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
 			<Paper
-				sx={{ width: "100%", maxWidth: 720, p: 3, borderRadius: 3 }}
+				sx={{
+					width: "100%",
+					maxWidth: 900,
+					p: { xs: 3, md: 5 },
+					borderRadius: 3,
+					boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+				}}
 				variant="outlined"
 			>
-				<Stack spacing={2.5}>
-					<Stack spacing={0.5}>
-						<Typography variant="h5" fontWeight={800}>
-							Crear evento
+				<Stack spacing={3}>
+					<Box>
+						<Typography variant="h4" fontWeight={800} gutterBottom>
+							Crear nuevo evento
 						</Typography>
-						<Typography variant="body2" color="text.secondary">
-							Define la configuración inicial del evento.
+						<Typography variant="body1" color="text.secondary">
+							Completa los detalles a continuación para configurar
+							tu evento. Podrás editar esto más tarde.
 						</Typography>
-					</Stack>
+					</Box>
 
 					{createMutation.isError && (
-						<Alert severity="error">
+						<Alert severity="error" sx={{ borderRadius: 2 }}>
 							{getErrorMessage(createMutation.error)}
 						</Alert>
 					)}
 
-					<Box
-						component="form"
-						onSubmit={handleSubmit(onSubmit)}
-						noValidate
-					>
-						<Stack spacing={2}>
-							<TextField
-								label="Nombre"
-								{...register("name")}
-								error={!!errors.name}
-								helperText={errors.name?.message}
-								disabled={createMutation.isPending}
-							/>
-
-							<TextField
-								label="Slug"
-								{...register("slug")}
-								error={!!errors.slug}
-								helperText={
-									errors.slug?.message ?? "Ej: my-event-2026"
-								}
-								disabled={createMutation.isPending}
-							/>
-
-							<TextField
-								label="Capacidad"
-								type="number"
-								{...register("capacity")}
-								error={!!errors.capacity}
-								helperText={errors.capacity?.message}
-								disabled={createMutation.isPending}
-							/>
-
-							<TextField
-								label="Requisito de contacto"
-								select
-								defaultValue="EMAIL"
-								{...register("contactRequirement")}
-								error={!!errors.contactRequirement}
-								helperText={errors.contactRequirement?.message}
-								disabled={createMutation.isPending}
-							>
-								<MenuItem value="EMAIL">EMAIL</MenuItem>
-								<MenuItem value="PHONE">PHONE</MenuItem>
-							</TextField>
+					<FormProvider {...methods}>
+						<Box
+							component="form"
+							onSubmit={methods.handleSubmit(onSubmit)}
+							noValidate
+						>
+							<GeneralInfoFields disabled={isPending} />
+							<LocationTimeFields disabled={isPending} />
+							<MediaConfigFields disabled={isPending} />
+							<PublicLinkFields disabled={isPending} />
 
 							<Stack
 								direction="row"
-								spacing={1}
+								spacing={2}
 								justifyContent="flex-end"
+								sx={{ mt: 5 }}
 							>
 								<Button
-									variant="text"
+									variant="outlined"
+									color="inherit"
 									onClick={() => navigate("/")}
-									disabled={createMutation.isPending}
+									disabled={isPending}
+									sx={{ borderRadius: 2 }}
 								>
 									Cancelar
 								</Button>
-
 								<Button
 									type="submit"
 									variant="contained"
-									disabled={createMutation.isPending}
+									disabled={isPending}
+									sx={{ borderRadius: 2, px: 4 }}
 									startIcon={
-										createMutation.isPending ? (
+										isPending ? (
 											<CircularProgress
 												size={18}
 												color="inherit"
@@ -137,11 +142,11 @@ export function CreateEventPage() {
 										) : null
 									}
 								>
-									Crear
+									{isPending ? "Creando..." : "Crear Evento"}
 								</Button>
 							</Stack>
-						</Stack>
-					</Box>
+						</Box>
+					</FormProvider>
 				</Stack>
 			</Paper>
 		</Box>

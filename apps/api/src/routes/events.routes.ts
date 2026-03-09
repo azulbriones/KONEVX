@@ -5,6 +5,7 @@ import {
 	listEventsHandler,
 	setPublishHandler,
 } from "../controllers/events.controller.js";
+import { upload } from "../lib/upload.js";
 import { requireAuth, requireCsrf } from "../middlewares/auth.js";
 import {
 	requireEventRead,
@@ -27,10 +28,14 @@ eventsRouter.get("/", requireAuth, listEventsHandler);
 eventsRouter.post(
 	"/",
 	requireAuth,
+	upload.fields([
+		{ name: "logo", maxCount: 1 },
+		{ name: "promotionalVideo", maxCount: 1 },
+		{ name: "promotionalImages", maxCount: 3 }
+	]),
 	validateBody(CreateEventSchema),
 	createEventHandler,
 );
-
 eventsRouter.get("/:eventId", requireAuth, requireEventRead, getEventHandler);
 
 // Fields management (read/write)
