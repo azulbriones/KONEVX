@@ -1,0 +1,7 @@
+app.konevx.com {
+	reverse_proxy web:80
+}
+
+api.konevx.com {
+	reverse_proxy api:3001
+}

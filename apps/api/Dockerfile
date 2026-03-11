@@ -34,7 +34,6 @@
 	COPY --from=deps /app/apps/api/node_modules ./node_modules
 	COPY apps/api ./
 
-	# tu prisma.config.ts requiere DATABASE_URL en build
 	ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 	RUN pnpm prisma:generate
 
