@@ -11,6 +11,9 @@ export type LoginInput = {
 export const getUser = async (): Promise<User | null> => {
 	try {
 		const { data } = await api.get<ApiResponse<{ user: User }>>("/auth/me");
+		if (!data.ok) {
+			throw data;
+		}
 		return data.data.user;
 	} catch (e: unknown) {
 		const isCustom401 = isApiErrorPayload(e) && e.error.code === "HTTP_401";

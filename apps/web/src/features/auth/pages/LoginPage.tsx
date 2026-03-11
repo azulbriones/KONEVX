@@ -8,17 +8,14 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { Alert, Box, CircularProgress } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { FormValues } from "../types";
 import { schema } from "../utils/validationSchema";
 import "./../styles/general_auth.css";
 
 export function LoginPage() {
 	const navigate = useNavigate();
-	const location = useLocation();
 	const [showPassword, setShowPassword] = useState(false);
-
-	const from = (location.state as any)?.from?.pathname || "/";
 
 	const { data: user, isLoading: isUserLoading } = useUser();
 	const loginMutation = useLogin();
