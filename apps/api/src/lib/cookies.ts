@@ -9,6 +9,7 @@ const commonOptions: CookieOptions = {
 	secure: authConfig.cookie.secure,
 	sameSite: authConfig.cookie.sameSite,
 	path: "/",
+	domain: authConfig.cookie.domain,
 };
 
 export function baseCookieOptions(): CookieOptions {

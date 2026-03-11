@@ -10,6 +10,7 @@ export const authConfig = {
 		)
 			? process.env.COOKIE_SAMESITE
 			: "lax") as "lax" | "strict" | "none",
+		domain: process.env.COOKIE_DOMAIN || undefined,
 	},
 };
 
