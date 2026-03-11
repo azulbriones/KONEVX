@@ -1,8 +1,8 @@
+import konevxLogo from "@/assets/konevx.webp";
 import { useLogout, useUser } from "@/features/auth/hooks/useAuth";
 import { useEvent } from "@/features/events/hooks/useEvents";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import EventIcon from "@mui/icons-material/Event";
 import LogoutIcon from "@mui/icons-material/Logout";
 import {
 	AppBar,
@@ -87,28 +87,45 @@ export function MainLayout() {
 
 						<Box
 							sx={{
+								borderRadius: "12px",
+								bgcolor: "#9d9eac",
 								display: "flex",
 								alignItems: "center",
-								gap: 1,
+								justifyContent: "center",
+								boxShadow: "0 2px 8px rgba(15, 23, 42, 0.15)",
+								p: "5px 10px",
 								cursor: "pointer",
-								"&:hover": { opacity: 0.8 },
 							}}
 							onClick={() => navigate("/")}
 						>
-							<EventIcon sx={{ color: "primary.main" }} />
+							<Box
+								component="img"
+								src={konevxLogo}
+								alt="KONEVX Logo"
+								sx={{
+									width: 32,
+									height: 32,
+									objectFit: "contain",
+									borderRadius: "4px",
+								}}
+							/>
 							<Typography
 								variant="h6"
-								fontWeight="800"
-								sx={{ letterSpacing: "-0.5px" }}
+								fontWeight="900"
+								sx={{
+									letterSpacing: "-1px",
+									color: "inherit",
+									display: { xs: "none", sm: "block" },
+								}}
 							>
-								EventPlanner
+								KONEVX
 							</Typography>
 						</Box>
 
 						{event && (
 							<Box
 								sx={{
-									display: { xs: "none", sm: "flex" },
+									display: { xs: "none", md: "flex" },
 									alignItems: "center",
 								}}
 							>
@@ -119,7 +136,7 @@ export function MainLayout() {
 									variant="subtitle1"
 									fontWeight="600"
 									sx={{
-										maxWidth: { sm: 150, md: 300 },
+										maxWidth: { sm: 150, md: 250 },
 										whiteSpace: "nowrap",
 										overflow: "hidden",
 										textOverflow: "ellipsis",
@@ -164,7 +181,7 @@ export function MainLayout() {
 										sx={{
 											width: 40,
 											height: 40,
-											bgcolor: "primary.main",
+											bgcolor: "var(--orange)",
 											fontSize: 16,
 											fontWeight: "bold",
 											transition: "transform 0.2s",

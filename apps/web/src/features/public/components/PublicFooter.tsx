@@ -86,7 +86,7 @@ export function PublicFooter({
 						}}
 					>
 						{footerDescription ||
-							"Una página pública para registrar participantes, hecha con amor y orden por EventPlanner."}
+							"Una página pública para registrar participantes, hecha con amor y orden por KONEVX."}
 					</p>
 				</div>
 
@@ -136,7 +136,7 @@ export function PublicFooter({
 						</span>
 					</>
 				)}{" "}
-				• Creado con EventPlanner
+				• Creado con KONEVX
 			</div>
 		</footer>
 	);

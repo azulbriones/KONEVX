@@ -8,7 +8,7 @@ type Props = {
 };
 
 export function PublicNav({
-	brand = "EventPlanner",
+	brand = "KONEVX",
 	logo,
 	slug,
 	ctaDisabled,
