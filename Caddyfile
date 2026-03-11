@@ -3,7 +3,7 @@ konevx.com {
 }
 
 www.konevx.com {
-	redir https: //konevx.com{uri} 301
+	redir https://konevx.com{uri} 301
 }
 
 api.konevx.com {
