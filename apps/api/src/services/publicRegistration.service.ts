@@ -8,7 +8,7 @@ type FieldDefinition = {
 	label: string;
 	id: number;
 	key: string;
-	type: "TEXT" | "NUMBER" | "DATE" | "SELECT" | "MULTI_SELECT" | "CHECKBOX";
+	type: "TEXT" | "TEXTAREA" | "NUMBER" | "DATE" | "SELECT" | "MULTI_SELECT" | "CHECKBOX";
 	required: boolean;
 	options: unknown;
 };
@@ -42,6 +42,16 @@ function validateAndPickValues(
 
 		switch (f.type) {
 			case "TEXT":
+				if (typeof val !== "string")
+					throw new HttpError(
+						400,
+						"INVALID_VALUE",
+						`${f.key} must be text`,
+					);
+				values.push({ eventFieldId: f.id, value: val });
+				break;
+
+			case "TEXTAREA":
 				if (typeof val !== "string")
 					throw new HttpError(
 						400,

@@ -6,8 +6,9 @@ import { buildEventAccess } from "../lib/eventAccess.js";
 import { HttpError } from "../lib/httpError.js";
 import { parseId } from "../lib/parser.js";
 import { SetPublishSchema } from "../schemas/eventPublish.schema.js";
-import { CreateEventSchema } from "../schemas/events.schema.js";
-import { createEvent } from "../services/events.service.js";
+import { CreateEventSchema, UpdateEventSchema } from "../schemas/events.schema.js";
+import { createEvent, deleteEvent, updateEvent } from "../services/events.service.js";
+
 
 const EVENT_DETAIL_SELECT = {
 	id: true,
@@ -33,13 +34,14 @@ const EVENT_DETAIL_SELECT = {
 	socialMediaInfo: true,
 	hashtag: true,
 	logo: true,
+	backgroundImage: true,
+	heroImage: true,
 	thingsToBring: true,
 	thingsNotToBring: true,
 	note: true,
 	createdAt: true,
 	updatedAt: true,
 } as const;
-
 
 type SetPublishBody = z.infer<typeof SetPublishSchema>;
 
@@ -59,6 +61,8 @@ export const createEventHandler: RequestHandler = async (req, res, next) => {
 		let logoUrl: string | null = null;
 		let videoUrl: string | null = null;
 		let imagesUrls: string[] = [];
+		let backgroundUrl: string | null = null;
+		let heroUrl: string | null = null;
 
 		if (files?.logo?.[0]) {
 			logoUrl = `/uploads/${files.logo[0].filename}`;
@@ -72,11 +76,20 @@ export const createEventHandler: RequestHandler = async (req, res, next) => {
 			imagesUrls = files.promotionalImages.map(file => `/uploads/${file.filename}`);
 		}
 
+		if (files?.backgroundImage?.[0]) {
+			backgroundUrl = `/uploads/${files.backgroundImage[0].filename}`;
+		}
+		if (files?.heroImage?.[0]) {
+			heroUrl = `/uploads/${files.heroImage[0].filename}`;
+		}
+
 		const eventData = {
 			...parsedBody,
 			logo: logoUrl,
 			promotionalVideo: videoUrl,
 			promotionalImages: imagesUrls.length > 0 ? imagesUrls : null,
+			backgroundImage: backgroundUrl,
+			heroImage: heroUrl,
 		};
 
 		const created = await createEvent(eventData, user.id);
@@ -283,5 +296,89 @@ export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 		});
 	} catch (e) {
 		next(e);
+	}
+};
+
+export const updateEventHandler: RequestHandler<{ eventId: string }> = async (req, res, next) => {
+	try {
+		const user = req.user as { id: number; role: string } | undefined;
+		if (!user) throw new HttpError(401, "UNAUTHENTICATED", "No autenticado");
+
+		const eventId = parseId(req.params.eventId);
+		const isSuperAdmin = user.role === "SUPER_ADMIN";
+
+		const event = await prisma.event.findFirst({
+			where: isSuperAdmin
+				? { id: eventId }
+				: {
+					id: eventId,
+					eventMembers: {
+						some: { userId: user.id, role: "EDITOR" },
+					},
+				},
+		});
+
+		if (!event) {
+			throw new HttpError(403, "FORBIDDEN", "No tienes permisos para modificar este evento o no existe");
+		}
+
+		const parsedBody = UpdateEventSchema.parse(req.body);
+		const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+
+		const updateData: any = { ...parsedBody };
+
+		if (files?.logo?.[0]) {
+			updateData.logo = `/uploads/${files.logo[0].filename}`;
+		}
+		if (files?.promotionalVideo?.[0]) {
+			updateData.promotionalVideo = `/uploads/${files.promotionalVideo[0].filename}`;
+		}
+		if (files?.promotionalImages) {
+			updateData.promotionalImages = files.promotionalImages.map(f => `/uploads/${f.filename}`);
+		}
+
+		if (files?.backgroundImage?.[0]) {
+			updateData.backgroundImage = `/uploads/${files.backgroundImage[0].filename}`;
+		}
+		if (files?.heroImage?.[0]) {
+			updateData.heroImage = `/uploads/${files.heroImage[0].filename}`;
+		}
+
+		const updated = await updateEvent(eventId, updateData);
+
+		res.json({ ok: true, data: updated });
+	} catch (err) {
+		next(err);
+	}
+};
+
+export const deleteEventHandler: RequestHandler<{ eventId: string }> = async (req, res, next) => {
+	try {
+		const user = req.user as { id: number; role: string } | undefined;
+		if (!user) throw new HttpError(401, "UNAUTHENTICATED", "No autenticado");
+
+		const eventId = parseId(req.params.eventId);
+		const isSuperAdmin = user.role === "SUPER_ADMIN";
+
+		const event = await prisma.event.findFirst({
+			where: isSuperAdmin
+				? { id: eventId }
+				: {
+					id: eventId,
+					eventMembers: {
+						some: { userId: user.id, role: "EDITOR" },
+					},
+				},
+		});
+
+		if (!event) {
+			throw new HttpError(403, "FORBIDDEN", "No tienes permisos para eliminar este evento o no existe");
+		}
+
+		await deleteEvent(eventId);
+
+		res.json({ ok: true, message: "Evento eliminado correctamente" });
+	} catch (err) {
+		next(err);
 	}
 };

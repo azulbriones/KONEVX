@@ -6,19 +6,23 @@ const jsonMessage = (code: string, message: string) => ({
 	error: { code, message },
 });
 
+const isDev = process.env.NODE_ENV === "development";
+
 const keyByIp = (req: Request) => ipKeyGenerator(req.ip ?? "unknown");
 
-// opcional: bypass para load test controlado
 const skipPublicLoadTest = (req: Request) =>
 	process.env.DISABLE_PUBLIC_RATE_LIMIT === "true" &&
 	req.header("x-public-load-test") === "1";
 
+const devLimit = 1000;
+
 export const authLimiter = rateLimit({
-	windowMs: 15 * 60 * 1000,
-	limit: 30,
+	windowMs: isDev ? 1 * 60 * 1000 : 15 * 60 * 1000,
+	limit: isDev ? devLimit : 60,
 	standardHeaders: "draft-7",
 	legacyHeaders: false,
 	keyGenerator: keyByIp,
+	message: jsonMessage("RATE_LIMITED", "Demasiados intentos. Intenta de nuevo en un momento."),
 });
 
 export const demoLimiter = rateLimit({
@@ -31,8 +35,8 @@ export const demoLimiter = rateLimit({
 });
 
 export const writeLimiter = rateLimit({
-	windowMs: 15 * 60 * 1000,
-	limit: 30,
+	windowMs: isDev ? 1 * 60 * 1000 : 15 * 60 * 1000,
+	limit: isDev ? devLimit : 60,
 	standardHeaders: "draft-7",
 	legacyHeaders: false,
 	keyGenerator: keyByIp,
