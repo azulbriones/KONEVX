@@ -1,4 +1,4 @@
-# EventPlanner
+# KONEVX
 
 Plataforma web para gestión de eventos: un organizador crea eventos, define campos personalizados de registro y administra participantes, estatus y reportes.
 
