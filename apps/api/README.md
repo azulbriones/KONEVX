@@ -1,3 +1,3 @@
 # API (Express + TypeScript)
 
-Backend de EventPlanner.
+Backend de KONEVX.

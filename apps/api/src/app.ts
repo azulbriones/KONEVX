@@ -43,10 +43,6 @@ app.use(
 
 const uploadsPath = path.resolve(process.cwd(), "public/uploads");
 
-console.log("----------------------------------------");
-console.log("📂 SERVIENDO ARCHIVOS DESDE:", uploadsPath);
-console.log("----------------------------------------");
-
 app.use("/api/uploads", express.static(uploadsPath));
 
 app.use("/api", router);
