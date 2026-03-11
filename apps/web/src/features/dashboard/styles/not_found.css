@@ -1,0 +1,34 @@
+.not-found-container {
+	width: 100%;
+	max-width: 450px;
+	padding: 20px;
+	text-align: center;
+}
+
+.error-icon {
+	color: #64748b;
+	margin-bottom: 20px;
+}
+
+.error-code {
+	font-size: 80px;
+	font-weight: 900;
+	margin-bottom: 10px;
+	line-height: 1;
+	background: linear-gradient(135deg, #c2410c, #ea580c);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+}
+
+.not-found-container h2 {
+	color: #ffffff;
+	font-size: 28px;
+	margin-bottom: 15px;
+}
+
+.not-found-container p.subtitle {
+	color: #94a3b8;
+	font-size: 16px;
+	margin-bottom: 40px;
+	line-height: 1.5;
+}

@@ -15,7 +15,29 @@ model Event {
     id                 Int                      @id @default(autoincrement())
     name               String
     slug               String                   @unique
+    organizerName      String                   @default("Organizador")
+    slogan             String?
+    description        String                   @default("Descripción pendiente")
+    footerDescription  String?
+    location           String                   @default("Por definir")
+    startDate          DateTime?
+    endDate            DateTime?
+    entryTime          String?
+    exitTime           String?
+    cost               Float?
+    minAge             Int?
+    promotionalVideo   String?
+    promotionalImages  Json?
+    backgroundImage    String?
+    heroImage          String?
+    contactInfo        String?
+    socialMediaInfo    String?
+    hashtag            String?
     capacity           Int
+    logo               String?
+    thingsToBring      String?                  @default("")
+    thingsNotToBring   String?                  @default("")
+    note               String?                  @default("")
     contactRequirement ContactRequirement
     isPublished        Boolean                  @default(false)
     fields             EventField[]
@@ -28,6 +50,7 @@ model Event {
 
 enum FieldType {
     TEXT
+    TEXTAREA
     NUMBER
     DATE
     SELECT
@@ -60,7 +83,6 @@ enum RegistrationStatus {
     CANCELLED
     CONFIRMED
     ATTENDED
-    NO_SHOW
 }
 
 model Participant {

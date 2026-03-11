@@ -12,7 +12,7 @@ enum EventRole {
 }
 
 interface AuthenticatedRequest extends Request {
-	params: any;
+	params: Record<string, string>;
 	user?: {
 		demo?: boolean;
 		id: number;

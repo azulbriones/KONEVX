@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const FieldTypeSchema = z.enum([
 	"TEXT",
+	"TEXTAREA",
 	"NUMBER",
 	"DATE",
 	"SELECT",

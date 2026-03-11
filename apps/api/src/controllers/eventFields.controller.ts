@@ -2,13 +2,16 @@ import type { RequestHandler } from "express";
 import { z } from "zod";
 import { HttpError } from "../lib/httpError.js";
 import { parseId } from "../lib/parser.js";
-import { EventFieldInputSchema } from "../schemas/eventFields.schema.js";
+import {
+	ReplaceEventFieldsInput,
+	ReplaceEventFieldsSchema,
+} from "../schemas/eventFields.schema.js";
 import {
 	listEventFields,
 	replaceEventFields,
 } from "../services/eventFields.service.js";
 
-const ReplaceEventFieldsBodySchema = z.array(EventFieldInputSchema);
+const ReplaceEventFieldsBodySchema = ReplaceEventFieldsSchema;
 
 type ReplaceEventFieldsBody = z.infer<typeof ReplaceEventFieldsBodySchema>;
 
@@ -33,25 +36,27 @@ export const listEventFieldsHandler: RequestHandler<{
 export const replaceEventFieldsHandler: RequestHandler<
 	{ eventId: string },
 	any,
-	ReplaceEventFieldsBody
+	ReplaceEventFieldsInput
 > = async (req, res, next) => {
 	try {
 		const eventId = parseId(req.params.eventId);
 
-		const parsed = ReplaceEventFieldsBodySchema.safeParse(req.body);
+		const parsed = ReplaceEventFieldsSchema.safeParse(req.body);
 
 		if (!parsed.success) {
 			throw new HttpError(
 				400,
 				"VALIDATION_ERROR",
 				"Invalid fields structure",
-				parsed.error.flatten().fieldErrors,
+				{
+					fieldErrors: parsed.error.flatten().fieldErrors,
+					formErrors: parsed.error.flatten().formErrors,
+					issues: parsed.error.issues,
+				},
 			);
 		}
 
-		const fields = await replaceEventFields(eventId, {
-			fields: parsed.data,
-		});
+		const fields = await replaceEventFields(eventId, parsed.data);
 
 		res.json({ ok: true, data: fields });
 	} catch (err) {

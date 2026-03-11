@@ -1,0 +1,133 @@
+import { useNotification } from "@/components/ui/NotificationContext";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+	createEvent,
+	deleteEvent,
+	getEventById,
+	listEvents,
+	setPublish,
+	updateEvent,
+} from "../api/events.service";
+import type {
+	EventDetailResponse,
+	EventListItem
+} from "../types";
+
+export const eventsKeys = {
+	all: ["events"] as const,
+	list: () => [...eventsKeys.all, "list"] as const,
+	detail: (id: number) => [...eventsKeys.all, "detail", id] as const,
+};
+
+export const useEvents = () =>
+	useQuery({
+		queryKey: eventsKeys.list(),
+		queryFn: listEvents,
+		staleTime: 30_000,
+	});
+
+export const useEvent = (eventId: number) =>
+	useQuery({
+		queryKey: eventsKeys.detail(eventId),
+		queryFn: () => getEventById(eventId),
+		enabled: Number.isFinite(eventId) && eventId > 0,
+		staleTime: 30_000,
+	});
+
+export const useCreateEvent = () => {
+	const qc = useQueryClient();
+
+	return useMutation({
+		mutationFn: (formData: FormData) => createEvent(formData),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: eventsKeys.list() });
+		},
+	});
+};
+
+export const useSetPublish = (eventId: number) => {
+	const qc = useQueryClient();
+
+	return useMutation({
+		mutationFn: (isPublished: boolean) => setPublish(eventId, isPublished),
+
+		onMutate: async (newStatus: boolean) => {
+			await qc.cancelQueries({ queryKey: eventsKeys.detail(eventId) });
+
+			const previous = qc.getQueryData<EventDetailResponse>(
+				eventsKeys.detail(eventId),
+			);
+
+			qc.setQueryData<EventDetailResponse | undefined>(
+				eventsKeys.detail(eventId),
+				(old: EventDetailResponse | undefined) => {
+					if (!old) return old;
+					return {
+						...old,
+						event: { ...old.event, isPublished: newStatus },
+					};
+				},
+			);
+
+			qc.setQueryData<EventListItem[] | undefined>(
+				eventsKeys.list(),
+				(oldList: EventListItem[] | undefined) => {
+					if (!oldList) return oldList;
+					return oldList.map((ev) =>
+						ev.id === eventId
+							? { ...ev, isPublished: newStatus }
+							: ev,
+					);
+				},
+			);
+
+			return { previous };
+		},
+
+		onError: (_err: Error, _newStatus: boolean, ctx?: { previous: EventDetailResponse | undefined }) => {
+			if (ctx?.previous) {
+				qc.setQueryData(eventsKeys.detail(eventId), ctx.previous);
+			}
+		},
+
+		onSettled: async () => {
+			await qc.invalidateQueries({
+				queryKey: eventsKeys.detail(eventId),
+			});
+			await qc.invalidateQueries({ queryKey: eventsKeys.list() });
+		},
+	});
+};
+
+export const useUpdateEvent = (eventId: number) => {
+	const qc = useQueryClient();
+	const { showNotification } = useNotification();
+
+	return useMutation({
+		mutationFn: (formData: FormData) => updateEvent(eventId, formData),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: eventsKeys.list() });
+			qc.invalidateQueries({ queryKey: eventsKeys.detail(eventId) });
+			showNotification("Evento actualizado correctamente", "success");
+		},
+		onError: () => {
+			showNotification("Error al actualizar el evento", "error");
+		}
+	});
+};
+
+export const useDeleteEvent = () => {
+	const qc = useQueryClient();
+	const { showNotification } = useNotification();
+
+	return useMutation({
+		mutationFn: (eventId: number) => deleteEvent(eventId),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: eventsKeys.list() });
+			showNotification("Evento eliminado permanentemente", "success");
+		},
+		onError: () => {
+			showNotification("No se pudo eliminar el evento", "error");
+		}
+	});
+};

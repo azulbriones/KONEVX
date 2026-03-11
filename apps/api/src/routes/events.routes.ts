@@ -1,9 +1,13 @@
 import { Router } from "express";
 import {
 	createEventHandler,
+	deleteEventHandler,
+	getEventHandler,
 	listEventsHandler,
 	setPublishHandler,
+	updateEventHandler,
 } from "../controllers/events.controller.js";
+import { upload } from "../lib/upload.js";
 import { requireAuth, requireCsrf } from "../middlewares/auth.js";
 import {
 	requireEventRead,
@@ -12,7 +16,7 @@ import {
 import { writeLimiter } from "../middlewares/rateLimiters.js";
 import { validateBody } from "../middlewares/validate.js";
 import { SetPublishSchema } from "../schemas/eventPublish.schema.js";
-import { CreateEventSchema } from "../schemas/events.schema.js";
+import { CreateEventSchema, UpdateEventSchema } from "../schemas/events.schema.js";
 import { eventFieldsRouter } from "./eventFields.routes.js";
 import { eventMembersRouter } from "./eventMembers.routes.js";
 import { registrationStatusRouter } from "./registrationStatus.routes.js";
@@ -26,9 +30,43 @@ eventsRouter.get("/", requireAuth, listEventsHandler);
 eventsRouter.post(
 	"/",
 	requireAuth,
+	upload.fields([
+		{ name: 'logo', maxCount: 1 },
+		{ name: 'promotionalVideo', maxCount: 1 },
+		{ name: 'promotionalImages', maxCount: 5 },
+		{ name: 'backgroundImage', maxCount: 1 },
+		{ name: 'heroImage', maxCount: 1 },
+	]),
 	validateBody(CreateEventSchema),
 	createEventHandler,
 );
+eventsRouter.patch(
+	"/:eventId",
+	writeLimiter,
+	requireAuth,
+	requireCsrf,
+	requireEventWrite,
+	upload.fields([
+		{ name: 'logo', maxCount: 1 },
+		{ name: 'promotionalVideo', maxCount: 1 },
+		{ name: 'promotionalImages', maxCount: 5 },
+		{ name: 'backgroundImage', maxCount: 1 },
+		{ name: 'heroImage', maxCount: 1 }
+	]),
+	validateBody(UpdateEventSchema),
+	updateEventHandler,
+);
+
+eventsRouter.delete(
+	"/:eventId",
+	writeLimiter,
+	requireAuth,
+	requireCsrf,
+	requireEventWrite,
+	deleteEventHandler,
+);
+
+eventsRouter.get("/:eventId", requireAuth, requireEventRead, getEventHandler);
 
 // Fields management (read/write)
 eventsRouter.use(

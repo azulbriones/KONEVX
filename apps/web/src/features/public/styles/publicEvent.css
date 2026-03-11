@@ -1,0 +1,951 @@
+/* =========================================
+   1. VARIABLES Y RESET GLOBAL
+========================================= */
+:root {
+	--primary: #0f172a;
+	--primary-light: #1e293b;
+	--orange: #f97316;
+	--orange-hover: #ea580c;
+
+	--bg: #f8fafc;
+	--card: #ffffff;
+	--text: #0f172a;
+	--muted: #64748b;
+	--border: #e2e8f0;
+
+	--shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1),
+		0 10px 10px -5px rgba(15, 23, 42, 0.04);
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+* {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+.public-page {
+	min-height: 100vh;
+	background: var(--bg);
+	color: var(--text);
+	overflow-x: hidden;
+	font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+		Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* =========================================
+   2. NAVEGACIÓN (NAVBAR)
+========================================= */
+.public-nav {
+	position: sticky;
+	top: 0;
+	z-index: 50;
+	background: rgba(255, 255, 255, 0.8);
+	backdrop-filter: blur(12px);
+	border-bottom: 1px solid var(--border);
+	padding: 1rem 1.5rem;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+}
+
+.public-brand {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.public-logo {
+	width: 48px;
+	height: 48px;
+	border-radius: 9999px;
+	overflow: hidden;
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: transparent;
+}
+
+.public-logo-image {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	display: block;
+}
+
+.public-logo-placeholder {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: bold;
+	color: var(--orange);
+	background-color: #fef3c7;
+	border-radius: inherit;
+}
+
+.public-brand-name {
+	font-weight: 800;
+	font-size: 1.05rem;
+	white-space: nowrap;
+}
+
+/* =========================================
+   3. BOTONES GLOBALES
+========================================= */
+.btn {
+	border: none;
+	border-radius: 1rem;
+	padding: 0.85rem 1.5rem;
+	font-weight: 900;
+	text-decoration: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	transition: 0.2s;
+}
+
+.btn:hover {
+	transform: scale(1.02);
+}
+
+.btn-primary {
+	background: var(--orange);
+	color: white;
+	box-shadow: 0 16px 24px rgba(249, 115, 22, 0.18);
+}
+
+.btn-secondary {
+	background: rgba(255, 255, 255, 0.95);
+	color: var(--primary-dark);
+}
+
+.btn--disabled,
+.btn-disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+	pointer-events: none;
+	transform: none !important;
+	box-shadow: none;
+}
+
+.public-cta {
+	background: var(--orange);
+	color: white;
+	border: none;
+	border-radius: 9999px;
+	padding: 0.6rem 1.2rem;
+	font-weight: 800;
+	font-size: 0.9rem;
+	text-decoration: none;
+	box-shadow: 0 10px 20px rgba(249, 115, 22, 0.18);
+	transition: 0.2s;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.public-cta:hover {
+	transform: translateY(-2px);
+	background: var(--orange-hover);
+}
+
+.public-cta--disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+	pointer-events: none;
+	transform: none !important;
+	box-shadow: none;
+}
+
+/* =========================================
+   4. SECCIÓN HERO (CABECERA PRINCIPAL)
+========================================= */
+.hero {
+	color: white;
+	padding: 6rem 1.5rem 10rem;
+	position: relative;
+	overflow: hidden;
+	background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+.hero::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 320px;
+	height: 320px;
+	background: rgba(255, 255, 255, 0.12);
+	border-radius: 9999px;
+	transform: translate(35%, -35%);
+	filter: blur(70px);
+	pointer-events: none;
+}
+
+.hero-inner {
+	max-width: 1200px;
+	margin: 0 auto;
+	position: relative;
+	z-index: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 3.5rem;
+}
+
+/* Variante: Hero sin imagen secundaria (Centrado) */
+.hero--centered .hero-inner {
+	text-align: center;
+}
+
+.hero--centered .hero-p,
+.hero--centered p {
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.hero--centered .hero-actions {
+	justify-content: center;
+}
+
+.hero-text {
+	flex: 1;
+	width: 100%;
+}
+
+.hero-tag {
+	display: inline-block;
+	background: var(--orange);
+	padding: 0.35rem 1.15rem;
+	border-radius: 9999px;
+	font-size: 0.75rem;
+	font-weight: 900;
+	letter-spacing: 0.08em;
+	margin-bottom: 1.5rem;
+	animation: float 3s ease-in-out infinite;
+	text-transform: uppercase;
+}
+
+.hero h1 {
+	font-size: clamp(2.25rem, 4vw, 4rem);
+	font-weight: 950;
+	line-height: 1.1;
+	margin-bottom: 1rem;
+	text-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.hero p {
+	font-size: clamp(1.05rem, 2vw, 1.35rem);
+	opacity: 0.92;
+	max-width: 720px;
+	margin: 0 auto 2rem;
+	font-style: italic;
+	line-height: 1.6;
+}
+
+.hero-actions {
+	display: flex;
+	justify-content: center;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+
+/* Elementos de la Imagen Flotante del Hero */
+.hero-image-wrapper {
+	flex: 1;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 100%;
+	max-width: 400px;
+	animation: floatImage 6s ease-in-out infinite;
+	perspective: 1000px;
+}
+
+.hero-image-card {
+	position: relative;
+	width: 100%;
+	/* Mantiene una proporción elegante tipo retrato cuadrado u horizontal */
+	aspect-ratio: 4/5;
+	border-radius: 1.5rem;
+	overflow: hidden;
+	/* Sombra profunda y elegante */
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6),
+		0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+	/* Borde semi-transparente estilo Glassmorphism */
+	border: 4px solid rgba(255, 255, 255, 0.15);
+	background-color: rgba(255, 255, 255, 0.05);
+	/* Por si la imagen tarda en cargar */
+	transform: rotateY(-5deg) rotateX(5deg);
+	/* Ligera rotación 3D para darle profundidad */
+	transition: transform 0.5s ease;
+}
+
+.hero-image-card:hover {
+	transform: rotateY(0) rotateX(0) scale(1.02);
+	/* Se "endereza" al pasar el mouse */
+}
+
+.hero-floating-img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+/* Animaciones del Hero */
+@keyframes float {
+
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+
+	50% {
+		transform: translateY(-8px);
+	}
+}
+
+@keyframes floatImage {
+
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+
+	50% {
+		transform: translateY(-20px);
+	}
+}
+
+/* =========================================
+   5. TARJETAS DE ESTADÍSTICAS (INFO)
+========================================= */
+.stats {
+	max-width: 1200px;
+	margin: -4.75rem auto 0;
+	padding: 0 1.5rem;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1rem;
+	position: relative;
+	z-index: 10;
+}
+
+.stat-card {
+	background: var(--card);
+	padding: 1.25rem;
+	border-radius: 1.5rem;
+	box-shadow: var(--shadow-xl);
+	border: 1px solid #f1f5f9;
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.stat-card.is-ok {
+	border-color: #bbf7d0;
+}
+
+.stat-card.is-warn {
+	border-color: #fde68a;
+}
+
+.stat-card.is-full {
+	border-color: #fecaca;
+}
+
+.stat-label {
+	font-size: 0.65rem;
+	text-transform: uppercase;
+	font-weight: 900;
+	color: var(--muted);
+	letter-spacing: 0.08em;
+	margin-top: 0.5rem;
+}
+
+.stat-value {
+	font-size: 0.95rem;
+	font-weight: 900;
+	margin-top: 0.3rem;
+}
+
+.stat-sub {
+	margin-top: 0.35rem;
+	font-size: 0.8rem;
+	color: var(--muted);
+	font-weight: 700;
+}
+
+.stat-hint {
+	margin-top: 0.45rem;
+	color: var(--muted);
+	font-size: 0.8rem;
+	font-weight: 700;
+}
+
+/* =========================================
+   6. SECCIONES GENERALES Y GALERÍA (BENTO)
+========================================= */
+.section {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 5.5rem 1.5rem;
+}
+
+.section-tight {
+	padding-top: 2rem;
+	padding-bottom: 0;
+}
+
+.section-title {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin-bottom: 2rem;
+}
+
+.section-title h2 {
+	font-size: 2rem;
+	font-weight: 950;
+}
+
+.bento {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 1.5rem;
+	height: auto;
+}
+
+.bento-item {
+	border-radius: var(--r-3xl);
+	overflow: hidden;
+	position: relative;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+	background: #cbd5e1;
+}
+
+.bento-item img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	transition: 0.5s;
+	display: block;
+	/* Para evitar espacios fantasma debajo de las imágenes */
+}
+
+.bento-item:hover img {
+	transform: scale(1.05);
+}
+
+.bento-main {
+	/* En móviles (por defecto), mantenemos una proporción de video */
+	aspect-ratio: 16/9;
+}
+
+.bento-overlay {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	pointer-events: none;
+	/* Para que el usuario pueda hacer click en el video si tiene controles */
+}
+
+.play {
+	width: 72px;
+	height: 72px;
+	border-radius: 9999px;
+	background: rgba(255, 255, 255, 0.92);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--primary);
+	pointer-events: auto;
+	/* El botón de play sí debe ser clickeable si no hay autoplay */
+}
+
+.bento-caption {
+	position: absolute;
+	bottom: 2rem;
+	left: 2rem;
+	color: white;
+	z-index: 2;
+}
+
+.bento-caption small {
+	opacity: 0.85;
+	font-weight: 700;
+}
+
+.bento-caption h3 {
+	font-weight: 950;
+	font-size: 1.5rem;
+	margin-top: 0.25rem;
+}
+
+/* =========================================
+   7. LISTAS Y CHECKLISTS (QUÉ LLEVAR)
+========================================= */
+.checklists {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 1.5rem;
+}
+
+.check-card {
+	padding: 2.25rem;
+	border-radius: var(--r-3xl);
+	border: 1px solid var(--border);
+	background: white;
+}
+
+.check-card.good {
+	background: #f0fdf4;
+	border-color: #dcfce7;
+}
+
+.check-card.bad {
+	background: #fef2f2;
+	border-color: #fee2e2;
+}
+
+.check-head {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	font-weight: 950;
+	font-size: 1.4rem;
+	margin-bottom: 1rem;
+}
+
+.list {
+	list-style: none;
+	margin-top: 1rem;
+}
+
+.list li {
+	display: flex;
+	gap: 0.65rem;
+	align-items: flex-start;
+	margin-bottom: 0.85rem;
+	color: #334155;
+	line-height: 1.4;
+}
+
+/* =========================================
+   8. FORMULARIO DE REGISTRO
+========================================= */
+.form-wrap {
+	background: #f1f5f9;
+	padding: 6rem 1.5rem;
+}
+
+.form-card {
+	max-width: 860px;
+	margin: 50px auto;
+	background: white;
+	padding: 3rem;
+	border-radius: var(--r-3xl);
+	box-shadow: var(--shadow-xl);
+	border: 1px solid #f1f5f9;
+}
+
+.form-title {
+	text-align: center;
+	margin-bottom: 2.5rem;
+}
+
+.form-title h2 {
+	font-size: 2.2rem;
+	font-weight: 950;
+	margin-bottom: 0.4rem;
+}
+
+.form-title p {
+	color: var(--muted);
+}
+
+.group-label {
+	display: block;
+	font-size: 1.05rem;
+	font-weight: 900;
+	color: var(--primary);
+	margin: 2rem 0 1rem;
+	border-bottom: 2px solid #eff6ff;
+	padding-bottom: 0.5rem;
+}
+
+.form-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 1rem;
+}
+
+.field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.45rem;
+}
+
+.field label {
+	font-size: 0.85rem;
+	font-weight: 800;
+	color: #475569;
+}
+
+.field input,
+.field textarea,
+.field select {
+	padding: 0.85rem 1.1rem;
+	border: none;
+	background: #f8fafc;
+	border-radius: 1rem;
+	font: inherit;
+	outline: none;
+	transition: 0.2s;
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus {
+	box-shadow: 0 0 0 2px var(--primary);
+	background: white;
+}
+
+.field small {
+	color: var(--muted);
+	font-size: 0.8rem;
+}
+
+.field-error {
+	color: #b91c1c;
+	font-size: 0.85rem;
+	font-weight: 700;
+	margin-top: 0.25rem;
+}
+
+.checkbox-row {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	padding: 0.75rem 1rem;
+	background: #f8fafc;
+	border-radius: 1rem;
+}
+
+.checkbox-row input {
+	width: 18px;
+	height: 18px;
+}
+
+.submit {
+	width: 100%;
+	background: var(--orange);
+	color: white;
+	border: none;
+	padding: 1.25rem;
+	border-radius: 1.25rem;
+	font-size: 1.1rem;
+	font-weight: 950;
+	cursor: pointer;
+	margin-top: 2rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.75rem;
+	transition: 0.2s;
+	box-shadow: 0 12px 24px rgba(249, 115, 22, 0.18);
+}
+
+.submit:hover {
+	background: var(--orange-hover);
+	transform: scale(1.01);
+}
+
+.success {
+	text-align: center;
+	padding: 1rem 0;
+}
+
+.success-badge {
+	width: 84px;
+	height: 84px;
+	border-radius: 9999px;
+	background: #dcfce7;
+	color: #16a34a;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0 auto 1.25rem;
+}
+
+/* =========================================
+   9. COMPONENTES DE ESTADO (BADGES Y BANNERS)
+========================================= */
+.availability {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.55rem;
+	padding: 0.4rem 0.75rem;
+	border-radius: 9999px;
+	font-size: 0.75rem;
+	font-weight: 950;
+	letter-spacing: 0.04em;
+	margin: 0.65rem auto 0;
+	width: fit-content;
+	border: 1px solid transparent;
+}
+
+.availability .dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 9999px;
+	display: inline-block;
+}
+
+.availability.ok {
+	background: #ecfdf5;
+	border-color: #a7f3d0;
+	color: #065f46;
+}
+
+.availability.warn {
+	background: #fffbeb;
+	border-color: #fde68a;
+	color: #92400e;
+}
+
+.availability.full {
+	background: #fef2f2;
+	border-color: #fecaca;
+	color: #991b1b;
+}
+
+.availability.ok .dot {
+	background: #22c55e;
+}
+
+.availability.warn .dot {
+	background: #f59e0b;
+}
+
+.availability.full .dot {
+	background: #ef4444;
+}
+
+.availability-badge {
+	margin-top: 0.75rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.35rem 0.7rem;
+	border-radius: 9999px;
+	font-size: 0.75rem;
+	font-weight: 900;
+	letter-spacing: 0.02em;
+	border: 1px solid var(--border);
+}
+
+.availability-badge--ok {
+	background: #ecfdf5;
+	border-color: #d1fae5;
+	color: #065f46;
+}
+
+.availability-badge--warn {
+	background: #fffbeb;
+	border-color: #fef3c7;
+	color: #92400e;
+}
+
+.availability-badge--danger {
+	background: #fef2f2;
+	border-color: #fee2e2;
+	color: #991b1b;
+}
+
+.badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.35rem 0.65rem;
+	border-radius: 9999px;
+	font-weight: 950;
+	font-size: 0.8rem;
+	letter-spacing: 0.02em;
+	border: 1px solid transparent;
+}
+
+.badge--success {
+	background: #dcfce7;
+	color: #166534;
+	border-color: #bbf7d0;
+}
+
+.badge--warning {
+	background: #ffedd5;
+	color: #9a3412;
+	border-color: #fed7aa;
+}
+
+.badge--danger {
+	background: #fee2e2;
+	color: #991b1b;
+	border-color: #fecaca;
+}
+
+.banner {
+	border-radius: 1rem;
+	padding: 0.95rem 1.1rem;
+	font-weight: 700;
+	border: 1px solid var(--border);
+	background: white;
+}
+
+.banner--warn {
+	background: #fffbeb;
+	border-color: #fef3c7;
+	color: #92400e;
+}
+
+.banner--danger {
+	background: #fef2f2;
+	border-color: #fee2e2;
+	color: #991b1b;
+}
+
+.public-banner {
+	max-width: 1200px;
+	margin: 1rem auto -1.5rem;
+	padding: 0 1.5rem;
+}
+
+.public-banner--full {
+	background: #fee2e2;
+	color: #991b1b;
+	border: 1px solid #fecaca;
+	border-radius: 1rem;
+	padding: 0.9rem 1rem;
+	font-weight: 900;
+}
+
+/* =========================================
+   10. FOOTER
+========================================= */
+.footer {
+	background: #0f172a;
+	color: #94a3b8;
+	padding: 4.5rem 1.5rem;
+}
+
+.footer-grid {
+	max-width: 1200px;
+	margin: 0 auto;
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 2.25rem;
+}
+
+.footer h4,
+.footer h5 {
+	color: white;
+}
+
+.footer-bottom {
+	margin-top: 3rem;
+	padding-top: 1.5rem;
+	border-top: 1px solid #1e293b;
+	text-align: center;
+	font-size: 0.75rem;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+}
+
+/* =========================================
+   11. MEDIA QUERIES (RESPONSIVE)
+========================================= */
+@media (min-width: 768px) {
+	.stats {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	.bento {
+		grid-template-columns: repeat(12, 1fr);
+		height: 600px;
+	}
+
+	.bento-main {
+		grid-column: span 8;
+		height: 100%;
+		max-height: 700px;
+		aspect-ratio: auto;
+	}
+
+	.bento-side {
+		grid-column: span 4;
+		display: grid;
+		grid-template-rows: 3fr 2fr;
+		gap: 1.5rem;
+	}
+
+	.bento-mini {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 1.5rem;
+	}
+
+	.checklists {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.form-grid {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.full {
+		grid-column: span 2;
+	}
+
+	.footer-grid {
+		grid-template-columns: 2fr 1fr 1fr;
+	}
+}
+
+@media (min-width: 992px) {
+
+	.hero--with-image .hero-inner {
+		flex-direction: row;
+		text-align: left;
+		justify-content: space-between;
+	}
+
+	.hero--with-image .hero-actions {
+		justify-content: flex-start;
+	}
+
+	.hero--with-image p {
+		margin: 0 0 2rem 0;
+	}
+
+	.hero-image-wrapper {
+		max-width: 400px;
+		padding-left: 2rem;
+	}
+}
+
+@media (min-width: 1024px) {
+	.stats {
+		grid-template-columns: repeat(6, minmax(0, 1fr));
+	}
+}

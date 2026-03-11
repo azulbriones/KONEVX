@@ -1,18 +1,43 @@
 import { prisma } from "../db/prisma.js";
 import { HttpError } from "../lib/httpError.js";
 
+const EVENT_DETAIL_SELECT = {
+	id: true,
+	name: true,
+	slug: true,
+	capacity: true,
+	contactRequirement: true,
+	isPublished: true,
+	organizerName: true,
+	slogan: true,
+	description: true,
+	footerDescription: true,
+	location: true,
+	startDate: true,
+	endDate: true,
+	entryTime: true,
+	exitTime: true,
+	cost: true,
+	minAge: true,
+	promotionalVideo: true,
+	promotionalImages: true,
+	contactInfo: true,
+	socialMediaInfo: true,
+	hashtag: true,
+	logo: true,
+	backgroundImage: true,
+	heroImage: true,
+	thingsToBring: true,
+	thingsNotToBring: true,
+	note: true,
+	createdAt: true,
+	updatedAt: true,
+} as const;
+
 export async function getPublicEventBySlug(slug: string) {
 	const event = await prisma.event.findUnique({
 		where: { slug },
-		select: {
-			id: true,
-			name: true,
-			slug: true,
-			capacity: true,
-			contactRequirement: true,
-			isPublished: true,
-			createdAt: true,
-		},
+		select: { ...EVENT_DETAIL_SELECT },
 	});
 
 	if (!event) throw new HttpError(404, "EVENT_NOT_FOUND", "Event not found");
@@ -42,12 +67,8 @@ export async function getPublicEventBySlug(slug: string) {
 
 	return {
 		event: {
-			id: event.id,
-			name: event.name,
-			slug: event.slug,
-			capacity: event.capacity,
+			...event,
 			remaining,
-			contactRequirement: event.contactRequirement,
 		},
 		fields,
 	};

@@ -51,7 +51,7 @@ export async function resetAndSeedDemo(options: ResetAndSeedOptions = {}) {
 		})) ??
 		(await prisma.event.create({
 			data: {
-				name: "Demo EventPlanner",
+				name: "Demo KONEVX",
 				slug,
 				capacity: 200,
 				contactRequirement: "EMAIL",

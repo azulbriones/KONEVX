@@ -25,6 +25,8 @@ services:
             context: .
             dockerfile: apps/api/Dockerfile
             target: runtime
+        volumes:
+            - ./apps/api/public/uploads:/app/apps/api/public/uploads
         env_file: .env
         environment:
             NODE_ENV: production
@@ -61,9 +63,9 @@ services:
         volumes:
             - ./apps/web:/app/apps/web
             - /app/apps/web/node_modules
-            - /app/node_modules
         ports:
             - "5173:5173"
+        tty: true
         depends_on:
             - api
 

@@ -1,4 +1,6 @@
+import bcrypt from "bcrypt";
 import type { RequestHandler, Response } from "express";
+import { prisma } from "../db/prisma.js";
 import {
 	ACCESS_COOKIE,
 	CSRF_COOKIE,
@@ -68,6 +70,61 @@ export const loginHandler: RequestHandler = async (req, res, next) => {
 		res.json({ ok: true, data: { user: result.user } });
 	} catch (err) {
 		next(err);
+	}
+};
+
+export const registerHandler: RequestHandler = async (req, res, next) => {
+	try {
+		const { email, password } = req.body;
+
+		if (!email || !password) {
+			return res.status(400).json({
+				ok: false,
+				error: {
+					code: "BAD_REQUEST",
+					message: "Email y contraseña son obligatorios.",
+				},
+			});
+		}
+
+		const emailNormalized = email.trim().toLowerCase();
+
+		const existingUser = await prisma.user.findUnique({
+			where: { email: emailNormalized },
+		});
+
+		if (existingUser) {
+			return res.status(400).json({
+				ok: false,
+				error: {
+					code: "EMAIL_IN_USE",
+					message: "Este correo electrónico ya está registrado.",
+				},
+			});
+		}
+
+		const saltRounds = 10;
+		const passwordHash = await bcrypt.hash(password, saltRounds);
+
+		// Nota: Según tu schema, el rol por defecto será EVENT_ADMIN
+		const newUser = await prisma.user.create({
+			data: {
+				email: emailNormalized,
+				passwordHash,
+			},
+		});
+
+		return res.status(201).json({
+			ok: true,
+			data: {
+				id: newUser.id,
+				email: newUser.email,
+				role: newUser.role,
+			},
+		});
+	} catch (error) {
+		console.error("Error en registerHandler:", error);
+		next(error);
 	}
 };
 

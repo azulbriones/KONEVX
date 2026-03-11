@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "RegistrationStatus" AS ENUM ('REGISTERED', 'CANCELLED', 'CONFIRMED', 'ATTENDED', 'NO_SHOW');
+CREATE TYPE "RegistrationStatus" AS ENUM ('REGISTERED', 'CANCELLED', 'CONFIRMED', 'ATTENDED');
 
 -- CreateTable
 CREATE TABLE "Participant" (

@@ -1,5 +1,5 @@
 # ---------- base ----------
-	FROM node:20-bookworm-slim AS base
+	FROM node:22-alpine AS base
 	WORKDIR /app
 	RUN corepack enable && corepack prepare pnpm@9.15.2 --activate
 
