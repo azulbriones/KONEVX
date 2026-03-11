@@ -26,6 +26,33 @@ export type PublicEventSummary = {
 	capacity: number;
 	remaining: number;
 	contactRequirement: ContactRequirement;
+
+	organizerName?: string;
+	logo?: string | null;
+	slogan?: string | null;
+	description?: string;
+	backgroundImage?: string | null;
+	heroImage?: string | null;
+
+	startDate: string;
+	endDate: string;
+	location: string;
+	entryTime?: string | null;
+	cost: number;
+	minAge?: number | null;
+
+	// Media y marketing
+	promotionalVideo?: string | null;
+	promotionalImages?: string[];
+
+	thingsToBring?: string | null;
+	thingsNotToBring?: string | null;
+	note?: string | null;
+
+	footerDescription?: string | null;
+	contactInfo?: any;
+	socialMediaInfo?: any;
+	hashtag?: string | null;
 };
 
 export type GetPublicEventResponse = {

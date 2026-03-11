@@ -117,7 +117,6 @@ export function MediaConfigFields({ disabled }: { disabled: boolean }) {
 					inputProps={{ multiple: true, accept: "image/*" }}
 					{...register("promotionalImages")}
 					error={!!errors.promotionalImages}
-					helperText={errors.promotionalImages?.message}
 					disabled={disabled}
 					InputProps={{
 						startAdornment: (
@@ -142,10 +141,6 @@ export function MediaConfigFields({ disabled }: { disabled: boolean }) {
 					inputProps={{ accept: "video/*" }}
 					{...register("promotionalVideo")}
 					error={!!errors.promotionalVideo}
-					helperText={
-						errors.promotionalVideo?.message ||
-						"Formatos soportados: MP4, MOV, etc."
-					}
 					disabled={disabled}
 					InputProps={{
 						startAdornment: (

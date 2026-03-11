@@ -119,7 +119,7 @@ export function PublicEventPage() {
 
 			<PublicHero
 				tag={event?.name}
-				title={event?.slogan}
+				title={event?.slogan || event?.name || ""}
 				subtitle={event?.description}
 				ctaDisabled={isFull}
 				ctaLabel={isFull ? "Cupo lleno" : "¡Inscribirme!"}

@@ -245,8 +245,8 @@ export function EventRegistrationsPage() {
 		if (firstRow?.answers) {
 			const sortedKeys = Object.keys(firstRow.answers).sort(
 				(a, b) =>
-					(firstRow.answers[a].order || 0) -
-					(firstRow.answers[b].order || 0),
+					((firstRow.answers[a] as any).order || 0) -
+					((firstRow.answers[b] as any).order || 0),
 			);
 
 			sortedKeys.forEach((key) => {
