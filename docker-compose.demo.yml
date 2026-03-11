@@ -23,6 +23,8 @@ services:
             context: .
             dockerfile: apps/api/Dockerfile
             target: runtime
+        volumes:
+            - uploads_data:/app/apps/api/public/uploads
         env_file: .env.demo
         environment:
             NODE_ENV: production

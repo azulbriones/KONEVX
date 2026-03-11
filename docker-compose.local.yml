@@ -25,6 +25,8 @@ services:
             context: .
             dockerfile: apps/api/Dockerfile
             target: runtime
+        volumes:
+            - ./apps/api/public/uploads:/app/apps/api/public/uploads
         env_file: .env
         environment:
             NODE_ENV: production
