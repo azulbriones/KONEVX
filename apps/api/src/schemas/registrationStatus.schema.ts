@@ -6,7 +6,6 @@ export const UpdateRegistrationStatusSchema = z.object({
 		"CANCELLED",
 		"CONFIRMED",
 		"ATTENDED",
-		"NO_SHOW",
 	]),
 });
 
