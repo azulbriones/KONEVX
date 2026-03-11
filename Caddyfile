@@ -1,5 +1,5 @@
 konevx.com {
-	reverse_proxy web: 80
+	reverse_proxy web:80
 }
 
 www.konevx.com {
@@ -7,5 +7,5 @@ www.konevx.com {
 }
 
 api.konevx.com {
-	reverse_proxy api: 3001
+	reverse_proxy api:3001
 }
