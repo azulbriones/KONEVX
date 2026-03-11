@@ -50,6 +50,22 @@ export function FieldInput({ field, value, onChange, error }: Props) {
 		);
 	}
 
+	if (field.type === "TEXTAREA") {
+		return (
+			<div className="field">
+				<label>{label}</label>
+				<textarea
+					value={typeof value === "string" ? value : ""}
+					onChange={(e) => setString(e.target.value)}
+					placeholder="Escribe aquí tus comentarios..."
+					rows={4}
+					style={{ resize: "vertical" }}
+				/>
+				{error ? <div className="field-error">{error}</div> : null}
+			</div>
+		);
+	}
+
 	if (field.type === "NUMBER") {
 		return (
 			<div className="field">

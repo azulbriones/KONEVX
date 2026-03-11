@@ -70,6 +70,7 @@ export function PublicEventPage() {
 
 	const canRegister = event.remaining > 0;
 	const isFull = event.remaining <= 0;
+	console.log({ event });
 
 	return (
 		<div className="public-page">
@@ -86,6 +87,8 @@ export function PublicEventPage() {
 				subtitle={event?.description}
 				ctaDisabled={isFull}
 				ctaLabel={isFull ? "Cupo lleno" : "¡Inscribirme!"}
+				backgroundImage={event.backgroundImage}
+				heroImage={event.heroImage}
 			/>
 
 			<div className="section section-tight">
@@ -127,6 +130,7 @@ export function PublicEventPage() {
 				footerDescription={event.footerDescription}
 				contactInfo={event.contactInfo}
 				socialMediaInfo={event.socialMediaInfo}
+				hashtag={event.hashtag}
 			/>
 		</div>
 	);
