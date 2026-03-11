@@ -1,7 +1,11 @@
-app.konevx.com {
-	reverse_proxy web:80
+konevx.com {
+	reverse_proxy web: 80
+}
+
+www.konevx.com {
+	redir https: //konevx.com{uri} permanent
 }
 
 api.konevx.com {
-	reverse_proxy api:3001
+	reverse_proxy api: 3001
 }
