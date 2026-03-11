@@ -1,47 +1,47 @@
 import { useLogout, useUser } from "@/features/auth/hooks/useAuth";
-import {
-	Dashboard as DashboardIcon,
-	Logout as LogoutIcon,
-	Person as PersonIcon,
-} from "@mui/icons-material";
+import { useEvent } from "@/features/events/hooks/useEvents";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import EventIcon from "@mui/icons-material/Event";
+import LogoutIcon from "@mui/icons-material/Logout";
 import {
 	AppBar,
 	Avatar,
 	Box,
-	Button,
+	Chip,
 	CircularProgress,
 	Container,
-	Divider,
 	IconButton,
-	ListItemIcon,
 	Menu,
 	MenuItem,
-	Stack,
 	Toolbar,
 	Typography,
 } from "@mui/material";
-import { MouseEvent, useState } from "react";
-import { Outlet, Link as RouterLink, useLocation } from "react-router-dom";
-
-const NAV_LINKS = [
-	{
-		label: "Mis Eventos",
-		path: "/",
-		icon: <DashboardIcon sx={{ mr: 1, fontSize: 20 }} />,
-	},
-];
+import { useState } from "react";
+import { Outlet, matchPath, useLocation, useNavigate } from "react-router-dom";
 
 export function MainLayout() {
-	const { data: user, isLoading } = useUser();
+	const { data: user, isLoading: isUserLoading } = useUser();
 	const logoutMutation = useLogout();
 	const location = useLocation();
+	const navigate = useNavigate();
+
+	const match = matchPath("/events/:eventId/*", location.pathname);
+	const eventId = match?.params.eventId ? Number(match.params.eventId) : 0;
+
+	const { data: eventData } = useEvent(eventId);
+	const event = eventData?.event;
 
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-	const open = Boolean(anchorEl);
+	const openMenu = Boolean(anchorEl);
 
-	const handleMenuOpen = (event: MouseEvent<HTMLElement>) =>
-		setAnchorEl(event.currentTarget);
-	const handleMenuClose = () => setAnchorEl(null);
+	const handleMenuOpen = (e: React.MouseEvent<HTMLElement>) => {
+		setAnchorEl(e.currentTarget);
+	};
+
+	const handleMenuClose = () => {
+		setAnchorEl(null);
+	};
 
 	const handleLogout = () => {
 		handleMenuClose();
@@ -49,171 +49,178 @@ export function MainLayout() {
 	};
 
 	const userInitials = user?.email?.charAt(0).toUpperCase() || "U";
+	const isHome = location.pathname === "/";
 
 	return (
 		<Box
 			sx={{
-				minHeight: "100vh",
-				bgcolor: "background.default",
 				display: "flex",
 				flexDirection: "column",
+				minHeight: "100vh",
 			}}
 		>
 			<AppBar
 				position="sticky"
 				elevation={0}
-				color="inherit"
 				sx={{
+					bgcolor: "background.paper",
+					color: "text.primary",
 					borderBottom: "1px solid",
 					borderColor: "divider",
-					bgcolor: "background.paper",
 				}}
 			>
-				<Container maxWidth="lg">
-					<Toolbar disableGutters sx={{ height: 64 }}>
-						<RouterLink
-							to="/"
-							style={{
-								textDecoration: "none",
-								color: "inherit",
-								display: "flex",
-								alignItems: "center",
-							}}
-						>
-							<Typography
-								variant="h6"
-								fontWeight={800}
-								color="primary"
-								sx={{ mr: 4 }}
+				<Toolbar
+					sx={{ display: "flex", justifyContent: "space-between" }}
+				>
+					<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+						{!isHome && (
+							<IconButton
+								edge="start"
+								color="inherit"
+								onClick={() => navigate(-1)}
+								aria-label="Regresar"
+								sx={{ mr: 1 }}
 							>
-								EventPlanner
-							</Typography>
-						</RouterLink>
+								<ArrowBackIcon />
+							</IconButton>
+						)}
 
 						<Box
 							sx={{
-								flexGrow: 1,
 								display: "flex",
 								alignItems: "center",
 								gap: 1,
+								cursor: "pointer",
+								"&:hover": { opacity: 0.8 },
 							}}
+							onClick={() => navigate("/")}
 						>
-							{NAV_LINKS.map((link) => {
-								const isActive =
-									location.pathname === link.path;
-								return (
-									<Button
-										key={link.path}
-										component={RouterLink}
-										to={link.path}
-										color={isActive ? "primary" : "inherit"}
-										sx={{
-											textTransform: "none",
-											fontWeight: isActive ? 700 : 500,
-											color: isActive
-												? "primary.main"
-												: "text.secondary",
-										}}
-										startIcon={link.icon}
-									>
-										{link.label}
-									</Button>
-								);
-							})}
+							<EventIcon sx={{ color: "primary.main" }} />
+							<Typography
+								variant="h6"
+								fontWeight="800"
+								sx={{ letterSpacing: "-0.5px" }}
+							>
+								EventPlanner
+							</Typography>
 						</Box>
 
-						{isLoading ? (
+						{event && (
+							<Box
+								sx={{
+									display: { xs: "none", sm: "flex" },
+									alignItems: "center",
+								}}
+							>
+								<ChevronRightIcon
+									sx={{ mx: 0.5, color: "text.disabled" }}
+								/>
+								<Typography
+									variant="subtitle1"
+									fontWeight="600"
+									sx={{
+										maxWidth: { sm: 150, md: 300 },
+										whiteSpace: "nowrap",
+										overflow: "hidden",
+										textOverflow: "ellipsis",
+									}}
+								>
+									{event.name}
+								</Typography>
+								<Chip
+									label={
+										event.isPublished
+											? "Publicado"
+											: "Borrador"
+									}
+									size="small"
+									color={
+										event.isPublished
+											? "success"
+											: "default"
+									}
+									sx={{
+										ml: 1.5,
+										height: 22,
+										fontSize: "0.7rem",
+										fontWeight: "bold",
+									}}
+								/>
+							</Box>
+						)}
+					</Box>
+
+					<Box>
+						{isUserLoading ? (
 							<CircularProgress size={24} />
 						) : user ? (
 							<>
-								<Stack
-									direction="row"
-									alignItems="center"
-									spacing={1}
-									sx={{
-										mr: 1,
-										display: { xs: "none", sm: "flex" },
-									}}
-								>
-									<Box textAlign="right">
-										<Typography
-											variant="subtitle2"
-											lineHeight={1.2}
-										>
-											{user.firstName ||
-												user.email.split("@")[0]}
-										</Typography>
-										<Typography
-											variant="caption"
-											color="text.secondary"
-										>
-											{user.role}
-										</Typography>
-									</Box>
-								</Stack>
-
 								<IconButton
 									onClick={handleMenuOpen}
 									size="small"
-									aria-controls={
-										open ? "account-menu" : undefined
-									}
-									aria-haspopup="true"
-									aria-expanded={open ? "true" : undefined}
+									sx={{ p: 0 }}
 								>
 									<Avatar
 										sx={{
-											width: 36,
-											height: 36,
+											width: 40,
+											height: 40,
 											bgcolor: "primary.main",
 											fontSize: 16,
 											fontWeight: "bold",
+											transition: "transform 0.2s",
+											"&:hover": {
+												transform: "scale(1.05)",
+											},
 										}}
 									>
 										{userInitials}
 									</Avatar>
 								</IconButton>
+
+								<Menu
+									anchorEl={anchorEl}
+									open={openMenu}
+									onClose={handleMenuClose}
+									onClick={handleMenuClose}
+									transformOrigin={{
+										horizontal: "right",
+										vertical: "top",
+									}}
+									anchorOrigin={{
+										horizontal: "right",
+										vertical: "bottom",
+									}}
+									PaperProps={{
+										elevation: 4,
+										sx: {
+											mt: 1.5,
+											minWidth: 180,
+											borderRadius: 2,
+										},
+									}}
+								>
+									<MenuItem
+										onClick={handleLogout}
+										sx={{ gap: 1.5, py: 1.5 }}
+									>
+										<LogoutIcon fontSize="small" />
+										Cerrar sesión
+									</MenuItem>
+								</Menu>
 							</>
 						) : null}
-					</Toolbar>
-				</Container>
+					</Box>
+				</Toolbar>
 			</AppBar>
 
-			<Menu
-				anchorEl={anchorEl}
-				id="account-menu"
-				open={open}
-				onClose={handleMenuClose}
-				onClick={handleMenuClose}
-				transformOrigin={{ horizontal: "right", vertical: "top" }}
-				anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
-				PaperProps={{
-					elevation: 2,
-					sx: { width: 200, mt: 1.5, borderRadius: 2 },
-				}}
-			>
-				<MenuItem disabled>
-					<ListItemIcon>
-						<PersonIcon fontSize="small" />
-					</ListItemIcon>
-					Mi Perfil
-				</MenuItem>
-				<Divider />
-				<MenuItem onClick={handleLogout} sx={{ color: "error.main" }}>
-					<ListItemIcon>
-						<LogoutIcon fontSize="small" color="error" />
-					</ListItemIcon>
-					Cerrar Sesión
-				</MenuItem>
-			</Menu>
-
-			<Container
-				maxWidth="lg"
+			<Box
 				component="main"
-				sx={{ flexGrow: 1, py: 4 }}
+				sx={{ flexGrow: 1, p: { xs: 2, sm: 3, md: 4 } }}
 			>
-				<Outlet />
-			</Container>
+				<Container maxWidth="lg" sx={{ p: "0 !important" }}>
+					<Outlet />
+				</Container>
+			</Box>
 		</Box>
 	);
 }

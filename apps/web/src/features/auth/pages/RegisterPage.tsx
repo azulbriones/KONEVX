@@ -1,4 +1,5 @@
-import { useLogin, useUser } from "@/features/auth/hooks/useAuth";
+import { useNotification } from "@/components/ui/NotificationContext";
+import { useRegister, useUser } from "@/features/auth/hooks/useAuth";
 import { getErrorMessage } from "@/features/utils/getErrorMessage";
 import { yupResolver } from "@hookform/resolvers/yup";
 import EmailIcon from "@mui/icons-material/Email";
@@ -13,15 +14,16 @@ import type { FormValues } from "../types";
 import { schema } from "../utils/validationSchema";
 import "./../styles/general_auth.css";
 
-export function LoginPage() {
+export function RegisterPage() {
 	const navigate = useNavigate();
 	const location = useLocation();
+	const { showNotification } = useNotification();
 	const [showPassword, setShowPassword] = useState(false);
 
 	const from = (location.state as any)?.from?.pathname || "/";
 
 	const { data: user, isLoading: isUserLoading } = useUser();
-	const loginMutation = useLogin();
+	const registerMutation = useRegister();
 
 	const {
 		register,
@@ -35,23 +37,27 @@ export function LoginPage() {
 
 	useEffect(() => {
 		if (!isUserLoading && user) {
-			navigate("/", { replace: true });
+			navigate(from, { replace: true });
 		}
-	}, [isUserLoading, user, navigate]);
+	}, [isUserLoading, user, navigate, from]);
 
 	useEffect(() => {
 		const subscription = watch(() => {
-			if (loginMutation.isError) {
-				loginMutation.reset();
+			if (registerMutation.isError) {
+				registerMutation.reset();
 			}
 		});
 		return () => subscription.unsubscribe();
-	}, [watch, loginMutation]);
+	}, [watch, registerMutation]);
 
 	const onSubmit = (values: FormValues) => {
-		loginMutation.mutate(values, {
+		registerMutation.mutate(values, {
 			onSuccess: () => {
-				navigate("/", { replace: true });
+				showNotification(
+					"Cuenta creada con éxito. Ahora puedes iniciar sesión.",
+					"success",
+				);
+				navigate("/login", { replace: true });
 			},
 		});
 	};
@@ -75,12 +81,12 @@ export function LoginPage() {
 	return (
 		<div className="main-bg">
 			<div className="auth-card-container">
-				<h2>Panel de Eventos</h2>
-				<p className="subtitle">Gestiona tus eventos de forma fácil</p>
+				<h2>Crear Cuenta</h2>
+				<p className="subtitle">Únete para colaborar en eventos</p>
 
-				{loginMutation.isError && (
+				{registerMutation.isError && (
 					<Alert severity="error" sx={{ width: "100%", mb: 2 }}>
-						{getErrorMessage(loginMutation.error)}
+						{getErrorMessage(registerMutation.error)}
 					</Alert>
 				)}
 
@@ -97,7 +103,7 @@ export function LoginPage() {
 								placeholder="Correo Electrónico"
 								aria-label="Correo Electrónico"
 								autoComplete="email"
-								disabled={loginMutation.isPending}
+								disabled={registerMutation.isPending}
 								className={errors.email ? "input-error" : ""}
 								{...register("email")}
 							/>
@@ -116,19 +122,14 @@ export function LoginPage() {
 								type={showPassword ? "text" : "password"}
 								placeholder="Contraseña"
 								aria-label="Contraseña"
-								autoComplete="current-password"
-								disabled={loginMutation.isPending}
+								autoComplete="new-password"
+								disabled={registerMutation.isPending}
 								className={errors.password ? "input-error" : ""}
 								{...register("password")}
 							/>
 							<button
 								type="button"
 								className="toggle-password"
-								aria-label={
-									showPassword
-										? "Ocultar contraseña"
-										: "Mostrar contraseña"
-								}
 								onClick={() => setShowPassword((prev) => !prev)}
 							>
 								{showPassword ? (
@@ -148,26 +149,32 @@ export function LoginPage() {
 					<button
 						type="submit"
 						className="btn-submit"
-						disabled={loginMutation.isPending}
+						disabled={registerMutation.isPending}
 					>
-						{loginMutation.isPending && (
-							<CircularProgress size={20} color="inherit" />
+						{registerMutation.isPending && (
+							<CircularProgress
+								size={20}
+								color="inherit"
+								sx={{ mr: 1 }}
+							/>
 						)}
-						{loginMutation.isPending
-							? "Ingresando..."
-							: "Iniciar Sesión"}
+						{registerMutation.isPending
+							? "Creando cuenta..."
+							: "Registrarse"}
 					</button>
+
 					<div style={{ textAlign: "center", marginTop: "1rem" }}>
 						<span style={{ color: "#64748b", fontSize: "0.9rem" }}>
-							¿No tienes cuenta?{" "}
+							¿Ya tienes cuenta?{" "}
 							<Link
-								to="/register"
+								to="/login"
 								style={{
 									color: "#ea580c",
+									textDecoration: "none",
 									fontWeight: 600,
 								}}
 							>
-								Regístrate aquí
+								Inicia sesión
 							</Link>
 						</span>
 					</div>

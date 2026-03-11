@@ -113,3 +113,32 @@
 	display: block;
 	margin-left: 5px;
 }
+
+.auth-form {
+	width: 100%;
+}
+
+.forgot-pass {
+	display: block;
+	text-align: right;
+	font-size: 13px;
+	color: #ea580c;
+	text-decoration: none;
+	margin-top: -10px;
+	margin-bottom: 20px;
+	font-weight: 600;
+	transition: color 0.2s;
+}
+
+.forgot-pass:hover {
+	color: #c2410c;
+}
+
+.input-wrapper input.input-error {
+	border-color: #ef4444;
+}
+
+.toggle-password:focus-visible {
+	outline: 2px solid #ea580c;
+	border-radius: 4px;
+}
