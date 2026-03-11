@@ -3,9 +3,11 @@ import {
 	Box,
 	Button,
 	Checkbox,
+	Divider,
 	Drawer,
 	FormControl,
 	FormControlLabel,
+	FormHelperText,
 	InputLabel,
 	MenuItem,
 	Select,
@@ -80,13 +82,14 @@ export function FieldDrawer({
 				.mixed<FieldType>()
 				.oneOf([
 					"TEXT",
+					"TEXTAREA",
 					"NUMBER",
 					"DATE",
 					"SELECT",
 					"MULTI_SELECT",
 					"CHECKBOX",
 				])
-				.required(),
+				.required("Selecciona un tipo de dato"),
 			required: yup.boolean().required(),
 			optionsText: yup.string().when("type", ([type], schema) => {
 				return isSelectType(type as FieldType)
@@ -158,108 +161,215 @@ export function FieldDrawer({
 	};
 
 	return (
-		<Drawer anchor="right" open={open} onClose={onClose}>
+		<Drawer
+			anchor="right"
+			open={open}
+			onClose={onClose}
+			PaperProps={{
+				sx: { width: { xs: "100%", sm: 450 } },
+			}}
+		>
 			<Box
 				component="form"
 				onSubmit={handleSubmit(onFormSubmit)}
-				sx={{ width: { xs: "100%", sm: 450 }, p: 3, mt: 4 }}
+				sx={{
+					display: "flex",
+					flexDirection: "column",
+					height: "100%",
+				}}
 			>
-				<Stack spacing={3}>
+				<Box sx={{ p: 3, pb: 2 }}>
 					<Typography variant="h6" fontWeight={800}>
-						{mode === "create" ? "Nuevo Campo" : "Editar Campo"}
+						{mode === "create"
+							? "Nuevo Campo Personalizado"
+							: "Editar Campo"}
 					</Typography>
+					<Typography variant="body2" color="text.secondary">
+						Define la información que los usuarios deberán
+						proporcionar.
+					</Typography>
+				</Box>
 
-					<TextField
-						label="Key (Identificador)"
-						placeholder="ej: fecha_nacimiento"
-						{...register("key")}
-						error={!!errors.key}
-						helperText={errors.key?.message || "Usado internamente"}
-						disabled={mode === "edit"}
-						fullWidth
-					/>
+				<Divider />
 
-					<TextField
-						label="Label (Etiqueta visible)"
-						placeholder="ej: Fecha de Nacimiento"
-						{...register("label")}
-						error={!!errors.label}
-						helperText={errors.label?.message}
-						fullWidth
-					/>
+				<Box sx={{ p: 3, flexGrow: 1, overflowY: "auto" }}>
+					<Stack spacing={4}>
+						<Box>
+							<Typography
+								variant="subtitle2"
+								gutterBottom
+								fontWeight={600}
+							>
+								Configuración Básica
+							</Typography>
+							<Stack spacing={2.5}>
+								<TextField
+									label="Etiqueta visible (Label)"
+									placeholder="Ej: Enfermedad o Alergias"
+									{...register("label")}
+									error={!!errors.label}
+									helperText={
+										errors.label?.message ||
+										"Así es como lo verá el usuario final."
+									}
+									fullWidth
+								/>
 
-					<Controller
-						name="type"
-						control={control}
-						render={({ field }) => (
-							<FormControl fullWidth>
-								<InputLabel>Tipo de dato</InputLabel>
-								<Select {...field} label="Tipo de dato">
-									<MenuItem value="TEXT">
-										Texto Corto
-									</MenuItem>
-									<MenuItem value="NUMBER">Número</MenuItem>
-									<MenuItem value="DATE">Fecha</MenuItem>
-									<MenuItem value="CHECKBOX">
-										Casilla (Sí/No)
-									</MenuItem>
-									<MenuItem value="SELECT">
-										Selección Única
-									</MenuItem>
-									<MenuItem value="MULTI_SELECT">
-										Selección Múltiple
-									</MenuItem>
-								</Select>
-							</FormControl>
-						)}
-					/>
+								<TextField
+									label="Identificador interno (Key)"
+									placeholder="ej: enfermedades_alergias"
+									{...register("key")}
+									error={!!errors.key}
+									helperText={
+										errors.key?.message ||
+										"Usado para exportar datos. Debe usar guiones bajos y minúsculas."
+									}
+									disabled={mode === "edit"}
+									fullWidth
+								/>
+							</Stack>
+						</Box>
 
-					<Controller
-						name="required"
-						control={control}
-						render={({ field }) => (
-							<FormControlLabel
-								control={
-									<Checkbox
-										checked={field.value}
-										onChange={field.onChange}
-									/>
-								}
-								label="Este campo es obligatorio"
+						<Divider />
+
+						<Box>
+							<Typography
+								variant="subtitle2"
+								gutterBottom
+								fontWeight={600}
+							>
+								Tipo de Respuesta
+							</Typography>
+
+							<Controller
+								name="type"
+								control={control}
+								render={({ field }) => (
+									<FormControl
+										fullWidth
+										error={!!errors.type}
+										sx={{ mt: 1 }}
+									>
+										<InputLabel id="field-type-label">
+											Selecciona el tipo de dato
+										</InputLabel>
+										<Select
+											{...field}
+											labelId="field-type-label"
+											label="Selecciona el tipo de dato"
+										>
+											<MenuItem value="TEXT">
+												Texto Corto (Ej: Nombre,
+												Teléfono)
+											</MenuItem>
+											<MenuItem value="TEXTAREA">
+												Texto Largo (Ej: Observaciones)
+											</MenuItem>
+											<MenuItem value="NUMBER">
+												Número (Ej: Edad)
+											</MenuItem>
+											<MenuItem value="DATE">
+												Fecha (Ej: Fecha de nacimiento)
+											</MenuItem>
+											<MenuItem value="SELECT">
+												Menú Desplegable (Una sola
+												opción)
+											</MenuItem>
+											<MenuItem value="MULTI_SELECT">
+												Selección Múltiple (Varias
+												opciones)
+											</MenuItem>
+											<MenuItem value="CHECKBOX">
+												Casilla de verificación (Sí/No)
+											</MenuItem>
+										</Select>
+										{errors.type && (
+											<FormHelperText>
+												{errors.type.message}
+											</FormHelperText>
+										)}
+									</FormControl>
+								)}
 							/>
-						)}
-					/>
 
-					{showOptions && (
-						<TextField
-							label="Opciones"
-							placeholder={"Opción 1\nOpción 2\nOpción 3"}
-							multiline
-							minRows={4}
-							{...register("optionsText")}
-							error={!!errors.optionsText}
-							helperText={
-								errors.optionsText?.message ||
-								"Escribe una opción por línea"
-							}
-							fullWidth
-						/>
-					)}
+							{showOptions && (
+								<TextField
+									label="Opciones disponibles"
+									placeholder={
+										"Masculino\nFemenino\nPrefiero no decirlo"
+									}
+									multiline
+									minRows={4}
+									{...register("optionsText")}
+									error={!!errors.optionsText}
+									helperText={
+										errors.optionsText?.message ||
+										"Escribe una opción por línea y presiona Enter."
+									}
+									fullWidth
+									sx={{ mt: 3 }}
+								/>
+							)}
+						</Box>
 
-					<Stack
-						direction="row"
-						justifyContent="flex-end"
-						gap={1}
-						sx={{ mt: 2 }}
-					>
-						<Button onClick={onClose} color="inherit">
+						<Box
+							sx={{
+								bgcolor: "background.default",
+								p: 2,
+								borderRadius: 2,
+							}}
+						>
+							<Controller
+								name="required"
+								control={control}
+								render={({ field }) => (
+									<FormControlLabel
+										control={
+											<Checkbox
+												checked={field.value}
+												onChange={field.onChange}
+												color="primary"
+											/>
+										}
+										label={
+											<Box>
+												<Typography
+													variant="body2"
+													fontWeight={600}
+												>
+													Hacer este campo obligatorio
+												</Typography>
+												<Typography
+													variant="caption"
+													color="text.secondary"
+												>
+													El usuario no podrá
+													registrarse sin llenar este
+													dato.
+												</Typography>
+											</Box>
+										}
+									/>
+								)}
+							/>
+						</Box>
+					</Stack>
+				</Box>
+
+				<Divider />
+
+				<Box sx={{ p: 3, bgcolor: "background.paper" }}>
+					<Stack direction="row" justifyContent="flex-end" gap={2}>
+						<Button onClick={onClose} color="inherit" size="large">
 							Cancelar
 						</Button>
-						<Button type="submit" variant="contained">
-							{mode === "create" ? "Agregar" : "Actualizar"}
+						<Button type="submit" variant="contained" size="large">
+							{mode === "create"
+								? "Agregar Campo"
+								: "Guardar Cambios"}
 						</Button>
 					</Stack>
-				</Stack>
+				</Box>
 			</Box>
 		</Drawer>
 	);

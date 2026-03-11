@@ -131,17 +131,21 @@ export type RegistrationStatus =
 	| "CANCELLED"
 	| "CONFIRMED"
 	| "ATTENDED"
-	| "NO_SHOW";
 
-export type RegistrationItem = {
+export interface RegistrationItem {
 	id: number;
 	status: RegistrationStatus;
 	createdAt: string;
-	participant: {
+	contact: {
 		id: number;
-		emailNormalized: string | null;
-		phoneNormalized: string | null;
+		email: string | null;
+		phone: string | null;
 	};
+	answers: Record<string, {
+		label: string;
+		type: string;
+		value: any;
+	}>;
 };
 
 export type RegistrationsMeta = {
@@ -167,6 +171,7 @@ export type RegistrationsListResponse = {
 
 export type FieldType =
 	| "TEXT"
+	| "TEXTAREA"
 	| "NUMBER"
 	| "DATE"
 	| "SELECT"

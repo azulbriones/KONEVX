@@ -1,9 +1,12 @@
+import { useNotification } from "@/components/ui/NotificationContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	createEvent,
+	deleteEvent,
 	getEventById,
 	listEvents,
 	setPublish,
+	updateEvent,
 } from "../api/events.service";
 import type {
 	EventDetailResponse,
@@ -93,5 +96,38 @@ export const useSetPublish = (eventId: number) => {
 			});
 			await qc.invalidateQueries({ queryKey: eventsKeys.list() });
 		},
+	});
+};
+
+export const useUpdateEvent = (eventId: number) => {
+	const qc = useQueryClient();
+	const { showNotification } = useNotification();
+
+	return useMutation({
+		mutationFn: (formData: FormData) => updateEvent(eventId, formData),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: eventsKeys.list() });
+			qc.invalidateQueries({ queryKey: eventsKeys.detail(eventId) });
+			showNotification("Evento actualizado correctamente", "success");
+		},
+		onError: () => {
+			showNotification("Error al actualizar el evento", "error");
+		}
+	});
+};
+
+export const useDeleteEvent = () => {
+	const qc = useQueryClient();
+	const { showNotification } = useNotification();
+
+	return useMutation({
+		mutationFn: (eventId: number) => deleteEvent(eventId),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: eventsKeys.list() });
+			showNotification("Evento eliminado permanentemente", "success");
+		},
+		onError: () => {
+			showNotification("No se pudo eliminar el evento", "error");
+		}
 	});
 };

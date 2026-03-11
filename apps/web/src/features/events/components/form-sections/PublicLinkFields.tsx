@@ -16,7 +16,7 @@ export function PublicLinkFields({ disabled }: { disabled: boolean }) {
 	} = useFormContext<CreateEventInput>();
 
 	return (
-		<Grid container spacing={3}>
+		<Grid container spacing={3} sx={{ width: "100%" }}>
 			<Grid item xs={12}>
 				<Typography
 					variant="subtitle1"

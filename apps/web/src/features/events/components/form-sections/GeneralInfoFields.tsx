@@ -1,15 +1,24 @@
-import { Divider, Grid, TextField, Typography } from "@mui/material";
-import { useFormContext } from "react-hook-form";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import {
+	Divider,
+	Grid,
+	InputAdornment,
+	MenuItem,
+	TextField,
+	Typography,
+} from "@mui/material";
+import { Controller, useFormContext } from "react-hook-form";
 import { CreateEventInput } from "../../types";
 
 export function GeneralInfoFields({ disabled }: { disabled: boolean }) {
 	const {
 		register,
+		control,
 		formState: { errors },
 	} = useFormContext<CreateEventInput>();
 
 	return (
-		<Grid container spacing={3}>
+		<Grid container spacing={3} sx={{ width: "100%" }}>
 			<Grid item xs={12}>
 				<Typography
 					variant="subtitle1"
@@ -42,6 +51,78 @@ export function GeneralInfoFields({ disabled }: { disabled: boolean }) {
 					disabled={disabled}
 				/>
 			</Grid>
+
+			<Grid item xs={12} sm={6} md={3}>
+				<TextField
+					fullWidth
+					type="number"
+					label="Capacidad (Asistentes) *"
+					{...register("capacity", { valueAsNumber: true })}
+					error={!!errors.capacity}
+					helperText={errors.capacity?.message}
+					disabled={disabled}
+				/>
+			</Grid>
+
+			<Grid item xs={12} sm={6} md={3}>
+				<TextField
+					fullWidth
+					label="Costo"
+					type="number"
+					{...register("cost")}
+					error={!!errors.cost}
+					helperText={errors.cost?.message}
+					disabled={disabled}
+					InputProps={{
+						startAdornment: (
+							<InputAdornment position="start">
+								<AttachMoneyIcon fontSize="small" />
+							</InputAdornment>
+						),
+					}}
+				/>
+			</Grid>
+			<Grid item xs={12} sm={6} md={2.5}>
+				<TextField
+					fullWidth
+					label="Edad mínima"
+					type="number"
+					{...register("minAge")}
+					error={!!errors.minAge}
+					helperText={errors.minAge?.message}
+					disabled={disabled}
+				/>
+			</Grid>
+
+			<Grid item xs={12} sm={6} md={3.5}>
+				<Controller
+					name="contactRequirement"
+					control={control}
+					render={({ field }) => {
+						return (
+							<TextField
+								{...field}
+								select
+								fullWidth
+								label="Requisito de Contacto *"
+								disabled={disabled}
+								error={!!errors.contactRequirement}
+								helperText={
+									errors.contactRequirement?.message as string
+								}
+							>
+								<MenuItem value="EMAIL">
+									Correo Electrónico
+								</MenuItem>
+								<MenuItem value="PHONE">
+									Teléfono (WhatsApp)
+								</MenuItem>
+							</TextField>
+						);
+					}}
+				/>
+			</Grid>
+
 			<Grid item xs={12}>
 				<TextField
 					fullWidth
@@ -76,6 +157,7 @@ export function GeneralInfoFields({ disabled }: { disabled: boolean }) {
 					disabled={disabled}
 				/>
 			</Grid>
+
 			<Grid item xs={12}>
 				<Typography
 					variant="subtitle1"
