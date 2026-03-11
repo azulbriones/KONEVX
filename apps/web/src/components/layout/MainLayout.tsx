@@ -101,7 +101,7 @@ export function MainLayout() {
 							<Box
 								component="img"
 								src={konevxLogo}
-								alt="KONEVX Logo"
+								alt="Konevx Logo"
 								sx={{
 									width: 32,
 									height: 32,
@@ -118,7 +118,7 @@ export function MainLayout() {
 									display: { xs: "none", sm: "block" },
 								}}
 							>
-								KONEVX
+								Konevx
 							</Typography>
 						</Box>
 

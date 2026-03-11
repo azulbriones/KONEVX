@@ -3,7 +3,7 @@ set -eu
 
 log() { echo "[$(date -u +'%Y-%m-%dT%H:%M:%SZ')] $*"; }
 
-log "🔧 KONEVX API entrypoint"
+log "🔧 Konevx API entrypoint"
 
 : "${DATABASE_URL:?DATABASE_URL is required}"
 : "${AUTH_ACCESS_TOKEN_SECRET:?AUTH_ACCESS_TOKEN_SECRET is required}"

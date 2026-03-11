@@ -1,3 +1,3 @@
 # API (Express + TypeScript)
 
-Backend de KONEVX.
+Backend de Konevx.
