@@ -16,9 +16,9 @@ import {
 	TextField,
 	Typography,
 } from "@mui/material";
-
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
+import { useNotification } from "@/components/ui/NotificationContext";
 import {
 	useRegistrations,
 	useUpdateRegistrationStatus,
@@ -30,6 +30,7 @@ import type {
 } from "@/features/events/types";
 import { getErrorMessage } from "@/features/utils/getErrorMessage";
 import { useDebounce } from "@/hooks/useDebounce";
+
 import {
 	downloadRegistrationsCsv,
 	downloadRegistrationsPdf,
@@ -41,7 +42,6 @@ const STATUS_LABEL: Record<RegistrationStatus, string> = {
 	CONFIRMED: "Confirmado",
 	CANCELLED: "Cancelado",
 	ATTENDED: "Asistió",
-	NO_SHOW: "No show",
 };
 
 const STATUS_COLOR: Record<
@@ -52,7 +52,6 @@ const STATUS_COLOR: Record<
 	CONFIRMED: "success",
 	CANCELLED: "error",
 	ATTENDED: "success",
-	NO_SHOW: "warning",
 };
 
 const STATUS_OPTIONS: RegistrationStatus[] = [
@@ -60,12 +59,13 @@ const STATUS_OPTIONS: RegistrationStatus[] = [
 	"CONFIRMED",
 	"CANCELLED",
 	"ATTENDED",
-	"NO_SHOW",
 ];
 
 export function EventRegistrationsPage() {
 	const { eventId } = useParams();
 	const id = Number(eventId);
+
+	const { showNotification } = useNotification();
 
 	const [q, setQ] = useState("");
 	const debouncedQ = useDebounce(q, 500);
@@ -80,13 +80,14 @@ export function EventRegistrationsPage() {
 
 	const [isDownloading, setIsDownloading] = useState(false);
 
-	const { access } = useOutletContext<EventOutletCtx>();
+	const { access, event } = useOutletContext<
+		EventOutletCtx & { event: any }
+	>();
 
 	const canRead = access?.canRead ?? false;
 	const canWrite = access?.canWrite ?? false;
 	const canExport = access?.canExport ?? false;
 
-	// ✅ Gate principal
 	if (!canRead) {
 		return (
 			<EventPermissionGate
@@ -125,7 +126,7 @@ export function EventRegistrationsPage() {
 		e: React.MouseEvent<HTMLElement>,
 		row: RegistrationItem,
 	) => {
-		if (!canWrite) return; // ✅ hard guard
+		if (!canWrite) return;
 		setAnchorEl(e.currentTarget);
 		setActiveRow(row);
 	};
@@ -139,7 +140,22 @@ export function EventRegistrationsPage() {
 		if (!activeRow || !canWrite) return;
 		updateStatusMutation.mutate(
 			{ registrationId: activeRow.id, status: newStatus },
-			{ onSuccess: closeMenu },
+			{
+				onSuccess: () => {
+					closeMenu();
+					showNotification(
+						`Estado cambiado a ${STATUS_LABEL[newStatus]}`,
+						"success",
+					);
+				},
+				onError: () => {
+					closeMenu();
+					showNotification(
+						"Error al cambiar el estado del registro",
+						"error",
+					);
+				},
+			},
 		);
 	};
 
@@ -151,75 +167,120 @@ export function EventRegistrationsPage() {
 			} else {
 				await downloadRegistrationsPdf(id, params);
 			}
+			showNotification(
+				`Archivo ${type.toUpperCase()} descargado con éxito`,
+				"success",
+			);
 		} catch (err) {
 			console.error("Error al descargar el archivo:", err);
+			showNotification(
+				`Hubo un error al generar el ${type.toUpperCase()}`,
+				"error",
+			);
 		} finally {
 			setIsDownloading(false);
 		}
 	};
 
-	const columns: GridColDef<RegistrationItem>[] = [
-		{ field: "id", headerName: "ID", width: 80, sortable: false },
-		{
-			field: "email",
-			headerName: "Email",
-			flex: 1,
-			minWidth: 220,
-			sortable: false,
-			valueGetter: (params) =>
-				params.row?.participant?.emailNormalized || "-",
-		},
-		{
-			field: "phone",
-			headerName: "Teléfono",
-			width: 160,
-			sortable: false,
-			valueGetter: (params) =>
-				params.row?.participant?.phoneNormalized || "-",
-		},
-		{
-			field: "status",
-			headerName: "Estado",
-			width: 140,
-			sortable: false,
-			renderCell: (params) => (
-				<Chip
-					size="small"
-					label={STATUS_LABEL[params.value as RegistrationStatus]}
-					color={STATUS_COLOR[params.value as RegistrationStatus]}
-					variant="outlined"
-					sx={{ fontWeight: 600 }}
-				/>
-			),
-		},
-		{
-			field: "createdAt",
-			headerName: "Fecha de Registro",
-			width: 170,
-			sortable: false,
-			renderCell: (params) =>
-				dayjs(params.row.createdAt).format("DD MMM YYYY, HH:mm"),
-		},
-		{
-			field: "actions",
-			headerName: "",
-			width: 60,
-			sortable: false,
-			filterable: false,
-			disableColumnMenu: true,
-			align: "center",
-			renderCell: (params) => (
-				<IconButton
-					size="small"
-					disabled={!canWrite}
-					onClick={(e) => openMenu(e, params.row)}
-					aria-label="acciones"
-				>
-					<MoreVertIcon fontSize="small" />
-				</IconButton>
-			),
-		},
-	];
+	const columns: GridColDef<RegistrationItem>[] = useMemo(() => {
+		const baseColumns: GridColDef<RegistrationItem>[] = [
+			{
+				field: "actions",
+				headerName: "",
+				width: 60,
+				sortable: false,
+				filterable: false,
+				disableColumnMenu: true,
+				align: "center",
+				renderCell: (params) => (
+					<IconButton
+						size="small"
+						disabled={!canWrite}
+						onClick={(e) => openMenu(e, params.row)}
+						aria-label="acciones"
+					>
+						<MoreVertIcon fontSize="small" />
+					</IconButton>
+				),
+			},
+			{ field: "id", headerName: "ID", width: 70, sortable: false },
+			{
+				field: "status",
+				headerName: "Estado",
+				width: 130,
+				sortable: false,
+				renderCell: (params) => (
+					<Chip
+						size="small"
+						label={STATUS_LABEL[params.value as RegistrationStatus]}
+						color={STATUS_COLOR[params.value as RegistrationStatus]}
+						variant="outlined"
+						sx={{ fontWeight: 600 }}
+					/>
+				),
+			},
+		];
+
+		if (event?.contactRequirement === "PHONE") {
+			baseColumns.push({
+				field: "phone",
+				headerName: "Teléfono",
+				width: 140,
+				sortable: false,
+				valueGetter: (params) => params.row?.contact?.phone || "-",
+			});
+		} else {
+			baseColumns.push({
+				field: "email",
+				headerName: "Email",
+				minWidth: 200,
+				sortable: false,
+				valueGetter: (params) => params.row?.contact?.email || "-",
+			});
+		}
+
+		const dynamicColumns: GridColDef<RegistrationItem>[] = [];
+		const firstRow = rows[0];
+
+		if (firstRow?.answers) {
+			const sortedKeys = Object.keys(firstRow.answers).sort(
+				(a, b) =>
+					(firstRow.answers[a].order || 0) -
+					(firstRow.answers[b].order || 0),
+			);
+
+			sortedKeys.forEach((key) => {
+				const fieldInfo = firstRow.answers[key];
+				dynamicColumns.push({
+					field: `answer_${key}`,
+					headerName: fieldInfo.label,
+					width: 180,
+					sortable: false,
+					valueGetter: (params) => {
+						const val = params.row?.answers?.[key]?.value;
+						if (val === null || val === undefined || val === "")
+							return "-";
+						if (typeof val === "boolean") return val ? "Sí" : "No";
+						if (Array.isArray(val)) return val.join(", ");
+						return val;
+					},
+				});
+			});
+		}
+
+		const endColumns: GridColDef<RegistrationItem>[] = [
+			{
+				field: "createdAt",
+				headerName: "Fecha de Registro",
+				width: 160,
+				sortable: false,
+				renderCell: (params) =>
+					dayjs(params.row.createdAt).format("DD MMM YYYY, HH:mm"),
+			},
+		];
+
+		return [...baseColumns, ...dynamicColumns, ...endColumns];
+	}, [rows, canWrite, event?.contactRequirement]);
 
 	return (
 		<Stack spacing={3} sx={{ pt: 2 }}>
@@ -310,17 +371,7 @@ export function EventRegistrationsPage() {
 			</Stack>
 
 			<Box sx={{ height: 600, width: "100%" }}>
-				{isLoading ? (
-					<Box
-						sx={{
-							display: "flex",
-							justifyContent: "center",
-							py: 8,
-						}}
-					>
-						<CircularProgress />
-					</Box>
-				) : isError ? (
+				{isError ? (
 					<Typography color="error" textAlign="center" py={4}>
 						{getErrorMessage(error)}
 					</Typography>
@@ -336,7 +387,7 @@ export function EventRegistrationsPage() {
 							setPage(m.page);
 							setPageSize(m.pageSize);
 						}}
-						loading={isFetching}
+						loading={isLoading || isFetching}
 						disableRowSelectionOnClick
 						pageSizeOptions={[10, 20, 50, 100]}
 						sx={{

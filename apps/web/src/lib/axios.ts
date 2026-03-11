@@ -71,10 +71,15 @@ api.interceptors.response.use(
 		}
 
 		if (error.response.status === 401) {
-			const isLoginRequest = error.config?.url?.includes("/login");
-			const isLoginPage = window.location.pathname.includes("/login");
+			const isAuthRequest =
+				error.config?.url?.includes("/login") ||
+				error.config?.url?.includes("/register");
 
-			if (!isLoginRequest && !isLoginPage) {
+			const isAuthPage =
+				window.location.pathname.includes("/login") ||
+				window.location.pathname.includes("/register");
+
+			if (!isAuthRequest && !isAuthPage) {
 				window.location.href = "/login";
 				return new Promise(() => { });
 			}

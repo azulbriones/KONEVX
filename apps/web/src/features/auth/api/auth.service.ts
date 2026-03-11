@@ -22,6 +22,15 @@ export const getUser = async (): Promise<User | null> => {
 	}
 };
 
+export const register = async (credentials: LoginInput): Promise<User> => {
+	const { data } = await api.post<ApiResponse<User>>(
+		"/auth/register",
+		credentials,
+	);
+	if (!data.ok) throw data;
+	return data.data;
+};
+
 export const login = async (credentials: LoginInput): Promise<User> => {
 	const { data } = await api.post<ApiResponse<{ user: User }>>(
 		"/auth/login",

@@ -1,20 +1,18 @@
+import { EventCard } from "@/features/events/components/EventCard";
+import { useEvents } from "@/features/events/hooks/useEvents";
+import { getErrorMessage } from "@/features/utils/getErrorMessage";
+
 import { Add } from "@mui/icons-material";
+import EventNoteIcon from "@mui/icons-material/EventNote";
 import {
 	Box,
 	Button,
-	Card,
-	CardActionArea,
-	CardContent,
-	Chip,
 	CircularProgress,
 	Grid,
 	Stack,
 	Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-
-import { useEvents } from "@/features/events/hooks/useEvents";
-import { getErrorMessage } from "@/features/utils/getErrorMessage";
 
 export function DashboardPage() {
 	const navigate = useNavigate();
@@ -24,99 +22,125 @@ export function DashboardPage() {
 
 	if (isLoading) {
 		return (
-			<Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+			<Box
+				sx={{
+					display: "flex",
+					justifyContent: "center",
+					alignItems: "center",
+					minHeight: "50vh",
+				}}
+			>
 				<CircularProgress />
 			</Box>
 		);
 	}
 
 	if (isError) {
-		return <Typography color="error">{getErrorMessage(error)}</Typography>;
+		return (
+			<Box
+				sx={{
+					p: 3,
+					bgcolor: "#fee2e2",
+					borderRadius: 2,
+					color: "#991b1b",
+				}}
+			>
+				<Typography fontWeight="bold">
+					Error al cargar los eventos:
+				</Typography>
+				<Typography variant="body2">
+					{getErrorMessage(error)}
+				</Typography>
+			</Box>
+		);
 	}
 
 	const events = data ?? [];
 
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={4}>
 			<Stack
-				direction="row"
+				direction={{ xs: "column", sm: "row" }}
 				justifyContent="space-between"
-				alignItems="center"
+				alignItems={{ xs: "flex-start", sm: "center" }}
 				gap={2}
 			>
-				<Typography variant="h4" fontWeight={800}>
-					Dashboard
-				</Typography>
+				<Box>
+					<Typography
+						variant="h4"
+						fontWeight={800}
+						color="text.primary"
+					>
+						Mis Eventos
+					</Typography>
+					<Typography variant="body1" color="text.secondary">
+						Administra y supervisa todos tus registros.
+					</Typography>
+				</Box>
 
 				<Button
 					variant="contained"
 					startIcon={<Add />}
 					onClick={goCreate}
+					sx={{
+						borderRadius: 2,
+						px: 3,
+						py: 1,
+						textTransform: "none",
+						fontSize: "1rem",
+					}}
 				>
-					Crear evento
+					Nuevo Evento
 				</Button>
 			</Stack>
 
-			<Grid container spacing={2}>
-				{events.map((e) => (
-					<Grid item xs={12} sm={6} md={4} key={e.id}>
-						<Card variant="outlined" sx={{ borderRadius: 3 }}>
-							<CardActionArea
-								onClick={() => navigate(`/events/${e.id}`)}
-							>
-								<CardContent>
-									<Stack spacing={1}>
-										<Stack
-											direction="row"
-											alignItems="center"
-											justifyContent="space-between"
-											gap={1}
-										>
-											<Typography fontWeight={800} noWrap>
-												{e.name}
-											</Typography>
-											<Chip
-												size="small"
-												label={
-													e.isPublished
-														? "Publicado"
-														: "Borrador"
-												}
-												color={
-													e.isPublished
-														? "success"
-														: "default"
-												}
-											/>
-										</Stack>
-
-										<Typography
-											variant="body2"
-											color="text.secondary"
-										>
-											slug: <b>{e.slug}</b>
-										</Typography>
-
-										<Typography
-											variant="body2"
-											color="text.secondary"
-										>
-											capacidad: <b>{e.capacity}</b> ·
-											contacto:{" "}
-											<b>{e.contactRequirement}</b>
-										</Typography>
-									</Stack>
-								</CardContent>
-							</CardActionArea>
-						</Card>
-					</Grid>
-				))}
-			</Grid>
-
-			{events.length === 0 && (
-				<Typography color="text.secondary">
-					No tienes eventos aún. Crea tu primer evento.
-				</Typography>
+			{events.length > 0 ? (
+				<Grid container spacing={3}>
+					{events.map((e) => (
+						<Grid item xs={12} sm={6} md={4} key={e.id}>
+							<EventCard event={e} />
+						</Grid>
+					))}
+				</Grid>
+			) : (
+				<Box
+					sx={{
+						display: "flex",
+						flexDirection: "column",
+						alignItems: "center",
+						justifyContent: "center",
+						textAlign: "center",
+						p: 6,
+						bgcolor: "background.paper",
+						borderRadius: 4,
+						border: "2px dashed",
+						borderColor: "divider",
+						minHeight: "40vh",
+					}}
+				>
+					<EventNoteIcon
+						sx={{ fontSize: 64, color: "text.disabled", mb: 2 }}
+					/>
+					<Typography variant="h6" fontWeight={700} gutterBottom>
+						Aún no tienes eventos
+					</Typography>
+					<Typography
+						variant="body1"
+						color="text.secondary"
+						sx={{ mb: 3, maxWidth: 400 }}
+					>
+						Crea tu primer evento para empezar a recibir registros y
+						organizar a tus participantes.
+					</Typography>
+					<Button
+						variant="outlined"
+						startIcon={<Add />}
+						onClick={goCreate}
+						sx={{ borderRadius: 2 }}
+					>
+						Crear mi primer evento
+					</Button>
+				</Box>
 			)}
 		</Stack>
 	);

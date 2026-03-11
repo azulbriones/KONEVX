@@ -50,10 +50,12 @@ export function PublicFooter({
 	footerDescription,
 	contactInfo,
 	socialMediaInfo,
+	hashtag, // 👈 1. Añadimos la prop del hashtag
 }: {
 	footerDescription?: string | null;
 	contactInfo?: string | null;
 	socialMediaInfo?: string | null;
+	hashtag?: string | null; // 👈 2. Lo declaramos en los tipos
 }) {
 	const contacts = contactInfo
 		? contactInfo
@@ -122,7 +124,19 @@ export function PublicFooter({
 			</div>
 
 			<div className="footer-bottom">
-				© {new Date().getFullYear()} • Creado con EventPlanner
+				© {new Date().getFullYear()}
+				{hashtag && (
+					<>
+						{" "}
+						•{" "}
+						<span
+							style={{ color: "var(--orange)", fontWeight: 900 }}
+						>
+							#{hashtag.toUpperCase()}
+						</span>
+					</>
+				)}{" "}
+				• Creado con EventPlanner
 			</div>
 		</footer>
 	);

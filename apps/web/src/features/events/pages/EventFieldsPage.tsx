@@ -1,6 +1,8 @@
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useNotification } from "@/components/ui/NotificationContext";
 import { useEventFieldsDraft } from "@/features/events/hooks/useEventFieldsDraft";
 import { getErrorMessage } from "@/features/utils/getErrorMessage";
+
 import {
 	Add,
 	ArrowDownward,
@@ -21,7 +23,7 @@ import {
 	Typography,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useOutletContext, useParams } from "react-router-dom";
 import { EventPermissionGate } from "../components/EventPermissionGate";
 import {
@@ -38,6 +40,7 @@ import type { EventField, EventOutletCtx } from "../types";
 export function EventFieldsPage() {
 	const { eventId } = useParams();
 	const id = Number(eventId);
+	const { showNotification } = useNotification();
 
 	const {
 		draft,
@@ -63,16 +66,24 @@ export function EventFieldsPage() {
 
 	const rows = useMemo(() => normalizeOrder(draft as EventField[]), [draft]);
 
+	useEffect(() => {
+		const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+			if (dirty) {
+				e.preventDefault();
+			}
+		};
+
+		window.addEventListener("beforeunload", handleBeforeUnload);
+		return () =>
+			window.removeEventListener("beforeunload", handleBeforeUnload);
+	}, [dirty]);
+
 	const moveUp = (fieldId: number) => {
-		setDraft((prev: EventField[]) => {
-			return moveField(prev, fieldId, -1);
-		});
+		setDraft((prev: EventField[]) => moveField(prev, fieldId, -1));
 	};
 
 	const moveDown = (fieldId: number) => {
-		setDraft((prev: EventField[]) => {
-			return moveField(prev, fieldId, 1);
-		});
+		setDraft((prev: EventField[]) => moveField(prev, fieldId, 1));
 	};
 
 	const openCreate = () => {
@@ -109,7 +120,6 @@ export function EventFieldsPage() {
 						? values.options
 						: undefined,
 				} as EventField;
-
 				return normalizeOrder([...next, newField]);
 			}
 
@@ -147,6 +157,15 @@ export function EventFieldsPage() {
 		setDeleteTarget(null);
 	};
 
+	const handleSaveDraft = async () => {
+		try {
+			await saveDraft();
+			showNotification("Campos actualizados correctamente", "success");
+		} catch (err) {
+			showNotification("Hubo un error al guardar los campos", "error");
+		}
+	};
+
 	const columns = useMemo<GridColDef[]>(
 		() => [
 			{
@@ -156,7 +175,7 @@ export function EventFieldsPage() {
 				align: "center",
 				headerAlign: "center",
 				sortable: false,
-				renderCell: (params: { value: number }) => params.value + 1,
+				renderCell: (params) => (params.value as number) + 1,
 			},
 			{
 				field: "label",
@@ -170,7 +189,7 @@ export function EventFieldsPage() {
 				headerName: "Key",
 				width: 180,
 				sortable: false,
-				renderCell: (params: { value: string }) => (
+				renderCell: (params) => (
 					<Typography
 						variant="body2"
 						sx={{
@@ -187,7 +206,7 @@ export function EventFieldsPage() {
 				headerName: "Tipo",
 				width: 140,
 				sortable: false,
-				renderCell: (params: { value: string }) => (
+				renderCell: (params) => (
 					<Chip
 						label={params.value}
 						size="small"
@@ -209,14 +228,17 @@ export function EventFieldsPage() {
 				width: 160,
 				sortable: false,
 				disableColumnMenu: true,
-				renderCell: (params: { row: EventField }) => {
+				renderCell: (params) => {
 					const row = params.row as EventField;
-
 					const isFirst = row.order === 0;
 					const isLast = row.order === rows.length - 1;
 
 					return (
-						<Stack direction="row" spacing={0}>
+						<Stack
+							direction="row"
+							alignItems="center"
+							height="100%"
+						>
 							<Tooltip title="Editar">
 								<IconButton
 									size="small"
@@ -225,7 +247,6 @@ export function EventFieldsPage() {
 									<Edit fontSize="small" />
 								</IconButton>
 							</Tooltip>
-
 							<Tooltip title="Subir">
 								<span>
 									<IconButton
@@ -237,7 +258,6 @@ export function EventFieldsPage() {
 									</IconButton>
 								</span>
 							</Tooltip>
-
 							<Tooltip title="Bajar">
 								<span>
 									<IconButton
@@ -249,7 +269,6 @@ export function EventFieldsPage() {
 									</IconButton>
 								</span>
 							</Tooltip>
-
 							<Tooltip title="Eliminar">
 								<IconButton
 									size="small"
@@ -264,7 +283,7 @@ export function EventFieldsPage() {
 				},
 			},
 		],
-		[rows, moveUp, moveDown, askDelete, openEdit],
+		[rows.length, moveUp, moveDown, askDelete, openEdit],
 	);
 
 	if (!canManageFields) {
@@ -277,11 +296,9 @@ export function EventFieldsPage() {
 		);
 	}
 
-	if (!eventId || !Number.isFinite(id)) {
+	if (!eventId || !Number.isFinite(id))
 		return <Typography color="error">ID de evento inválido</Typography>;
-	}
-
-	if (isLoading) {
+	if (isLoading)
 		return (
 			<Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
 				<Typography color="text.secondary">
@@ -289,11 +306,8 @@ export function EventFieldsPage() {
 				</Typography>
 			</Box>
 		);
-	}
-
-	if (isError) {
+	if (isError)
 		return <Typography color="error">{getErrorMessage(error)}</Typography>;
-	}
 
 	return (
 		<Stack spacing={3}>
@@ -327,7 +341,6 @@ export function EventFieldsPage() {
 					>
 						Agregar
 					</Button>
-
 					<Button
 						variant="text"
 						color="error"
@@ -341,7 +354,7 @@ export function EventFieldsPage() {
 					<Button
 						variant="contained"
 						startIcon={saving ? undefined : <Save />}
-						onClick={saveDraft}
+						onClick={handleSaveDraft}
 						disabled={!dirty || saving}
 					>
 						{saving ? "Guardando..." : "Guardar Cambios"}

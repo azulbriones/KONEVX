@@ -69,9 +69,11 @@ export function PublicRegisterForm({
 
 		if (contactRequirement === "EMAIL") {
 			if (!contact.email.trim()) next.contact_email = "Email requerido";
+			contact.phone = "";
 		} else {
 			if (!contact.phone.trim())
 				next.contact_phone = "Teléfono requerido";
+			contact.email = "";
 		}
 
 		for (const f of sortedFields) {
@@ -186,57 +188,49 @@ export function PublicRegisterForm({
 					<span className="group-label">Contacto</span>
 
 					<div className="form-grid">
-						<div
-							className={`field ${contactRequirement === "EMAIL" ? "full" : ""}`}
-						>
-							<label>
-								Email{" "}
-								{contactRequirement === "EMAIL" ? "*" : ""}
-							</label>
-							<input
-								type="email"
-								value={contact.email}
-								onChange={(e) =>
-									setContact((p) => ({
-										...p,
-										email: e.target.value,
-									}))
-								}
-								disabled={busy}
-								placeholder="person@example.com"
-							/>
-							{errors.contact_email ? (
-								<div className="field-error">
-									{errors.contact_email}
-								</div>
-							) : null}
-						</div>
-
-						<div
-							className={`field ${contactRequirement === "PHONE" ? "full" : ""}`}
-						>
-							<label>
-								Teléfono{" "}
-								{contactRequirement === "PHONE" ? "*" : ""}
-							</label>
-							<input
-								type="tel"
-								value={contact.phone}
-								onChange={(e) =>
-									setContact((p) => ({
-										...p,
-										phone: e.target.value,
-									}))
-								}
-								disabled={busy}
-								placeholder="9796859595"
-							/>
-							{errors.contact_phone ? (
-								<div className="field-error">
-									{errors.contact_phone}
-								</div>
-							) : null}
-						</div>
+						{contactRequirement === "EMAIL" ? (
+							<div className="field full">
+								<label>Correo Electrónico *</label>
+								<input
+									type="email"
+									value={contact.email}
+									onChange={(e) =>
+										setContact((p) => ({
+											...p,
+											email: e.target.value,
+										}))
+									}
+									disabled={busy}
+									placeholder="ejemplo@correo.com"
+								/>
+								{errors.contact_email && (
+									<div className="field-error">
+										{errors.contact_email}
+									</div>
+								)}
+							</div>
+						) : (
+							<div className="field full">
+								<label>Número de Teléfono *</label>
+								<input
+									type="tel"
+									value={contact.phone}
+									onChange={(e) =>
+										setContact((p) => ({
+											...p,
+											phone: e.target.value,
+										}))
+									}
+									disabled={busy}
+									placeholder="961 123 4567"
+								/>
+								{errors.contact_phone && (
+									<div className="field-error">
+										{errors.contact_phone}
+									</div>
+								)}
+							</div>
+						)}
 					</div>
 
 					<span className="group-label">Formulario</span>
@@ -245,7 +239,12 @@ export function PublicRegisterForm({
 						{sortedFields.map((f) => (
 							<div
 								key={f.id}
-								className={f.type !== "CHECKBOX" ? "" : "full"}
+								className={
+									f.type === "CHECKBOX" ||
+									f.type === "TEXTAREA"
+										? "full"
+										: ""
+								}
 							>
 								<FieldInput
 									field={f}

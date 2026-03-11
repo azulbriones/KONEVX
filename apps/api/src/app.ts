@@ -3,6 +3,7 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import path from "path";
+
 import { errorMiddleware } from "./middlewares/error.js";
 import { httpLogger } from "./middlewares/httpLogger.js";
 import { requestId } from "./middlewares/requestId.js";
@@ -20,6 +21,7 @@ app.use(
 	helmet({
 		contentSecurityPolicy: false,
 		crossOriginResourcePolicy: { policy: "cross-origin" },
+		crossOriginEmbedderPolicy: false,
 	}),
 );
 
@@ -39,7 +41,13 @@ app.use(
 	}),
 );
 
-app.use("/uploads", express.static(path.join(process.cwd(), "public/uploads")));
+const uploadsPath = path.resolve(process.cwd(), "public/uploads");
+
+console.log("----------------------------------------");
+console.log("📂 SERVIENDO ARCHIVOS DESDE:", uploadsPath);
+console.log("----------------------------------------");
+
+app.use("/api/uploads", express.static(uploadsPath));
 
 app.use("/api", router);
 

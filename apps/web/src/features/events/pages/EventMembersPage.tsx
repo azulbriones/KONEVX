@@ -1,8 +1,10 @@
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useNotification } from "@/components/ui/NotificationContext";
 import { useUser } from "@/features/auth/hooks/useAuth";
 import { getErrorMessage } from "@/features/utils/getErrorMessage";
 import { Add, Delete, MoreVert } from "@mui/icons-material";
 import {
+	Avatar,
 	Box,
 	Button,
 	Chip,
@@ -31,6 +33,7 @@ const ROLE_OPTIONS: EventMemberRole[] = ["VIEWER", "EDITOR"];
 export function EventMembersPage() {
 	const { eventId } = useParams();
 	const id = Number(eventId);
+	const { showNotification } = useNotification();
 
 	const { access } = useOutletContext<EventOutletCtx>();
 	const canManageMembers = access?.canManageMembers ?? false;
@@ -72,23 +75,10 @@ export function EventMembersPage() {
 		);
 	}
 
-	if (!eventId || !Number.isFinite(id)) {
+	if (!eventId || !Number.isFinite(id))
 		return <Typography color="error">ID de evento inválido</Typography>;
-	}
-
-	if (isLoading) {
-		return (
-			<Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-				<Typography color="text.secondary">
-					Cargando equipo...
-				</Typography>
-			</Box>
-		);
-	}
-
-	if (isError) {
+	if (isError)
 		return <Typography color="error">{getErrorMessage(error)}</Typography>;
-	}
 
 	const openMenu = (e: React.MouseEvent<HTMLElement>, row: EventMember) => {
 		setMenuAnchor(e.currentTarget);
@@ -110,10 +100,12 @@ export function EventMembersPage() {
 	const doRemove = () => {
 		if (!deleteTarget) return;
 		removeMutation.mutate(deleteTarget.userId, {
-			onSettled: () => {
+			onSuccess: () => {
+				showNotification(`Usuario eliminado del evento`, "success");
 				setConfirmOpen(false);
 				setDeleteTarget(null);
 			},
+			onError: (err) => showNotification(getErrorMessage(err), "error"),
 		});
 	};
 
@@ -127,7 +119,15 @@ export function EventMembersPage() {
 			return;
 
 		closeMenu();
-		updateRoleMutation.mutate({ userId: menuRow.userId, role: newRole });
+		updateRoleMutation.mutate(
+			{ userId: menuRow.userId, role: newRole },
+			{
+				onSuccess: () =>
+					showNotification(`Rol actualizado a ${newRole}`, "success"),
+				onError: (err) =>
+					showNotification(getErrorMessage(err), "error"),
+			},
+		);
 	};
 
 	const onAdd = (e?: React.FormEvent) => {
@@ -141,6 +141,25 @@ export function EventMembersPage() {
 				onSuccess: () => {
 					setEmail("");
 					setRole("VIEWER");
+					showNotification(`Usuario agregado al evento`, "success");
+				},
+				onError: (err: any) => {
+					const errorCode =
+						err?.error?.code || err?.response?.data?.error?.code;
+
+					if (errorCode === "USER_NOT_FOUND") {
+						showNotification(
+							"El usuario no existe. Pídele que se registre en la plataforma primero.",
+							"warning",
+						);
+					} else if (errorCode === "USER_ALREADY_MEMBER") {
+						showNotification(
+							"Este usuario ya es miembro del evento.",
+							"info",
+						);
+					} else {
+						showNotification(getErrorMessage(err), "error");
+					}
 				},
 			},
 		);
@@ -150,7 +169,6 @@ export function EventMembersPage() {
 		addMutation.isPending ||
 		updateRoleMutation.isPending ||
 		removeMutation.isPending;
-
 	const addDisabled = busy || !email.trim();
 
 	const menuIsSelf = menuRow ? isSelf(menuRow) : false;
@@ -168,7 +186,29 @@ export function EventMembersPage() {
 			field: "email",
 			headerName: "Usuario (Email)",
 			flex: 1,
-			minWidth: 220,
+			minWidth: 250,
+			renderCell: (params) => (
+				<Stack
+					direction="row"
+					alignItems="center"
+					spacing={1.5}
+					height="100%"
+				>
+					<Avatar
+						sx={{
+							width: 30,
+							height: 30,
+							fontSize: "0.85rem",
+							bgcolor: "primary.main",
+						}}
+					>
+						{params.row.email.charAt(0).toUpperCase()}
+					</Avatar>
+					<Typography variant="body2" fontWeight={500}>
+						{params.row.email}
+					</Typography>
+				</Stack>
+			),
 		},
 		{
 			field: "eventRole",
@@ -207,21 +247,24 @@ export function EventMembersPage() {
 			headerName: "Agregado el",
 			width: 180,
 			valueGetter: (params) => params.row?.createdAt || "",
-			renderCell: (params) => (
-				<Typography variant="body2">
-					{new Date(params.row.createdAt).toLocaleDateString()}{" "}
-					<Typography
-						component="span"
-						variant="caption"
-						color="text.secondary"
-					>
-						{new Date(params.row.createdAt).toLocaleTimeString([], {
-							hour: "2-digit",
-							minute: "2-digit",
-						})}
+			renderCell: (params) => {
+				const date = new Date(params.row.createdAt);
+				return (
+					<Typography variant="body2">
+						{date.toLocaleDateString()}{" "}
+						<Typography
+							component="span"
+							variant="caption"
+							color="text.secondary"
+						>
+							{date.toLocaleTimeString([], {
+								hour: "2-digit",
+								minute: "2-digit",
+							})}
+						</Typography>
 					</Typography>
-				</Typography>
-			),
+				);
+			},
 		},
 		{
 			field: "actions",
@@ -235,6 +278,7 @@ export function EventMembersPage() {
 				<IconButton
 					size="small"
 					onClick={(e) => openMenu(e, params.row)}
+					disabled={busy}
 				>
 					<MoreVert fontSize="small" />
 				</IconButton>
@@ -286,13 +330,12 @@ export function EventMembersPage() {
 							setRole(e.target.value as EventMemberRole)
 						}
 						disabled={busy}
-						SelectProps={{ native: true }}
 						sx={{ width: 140 }}
 					>
 						{ROLE_OPTIONS.map((r) => (
-							<option key={r} value={r}>
+							<MenuItem key={r} value={r}>
 								{r}
-							</option>
+							</MenuItem>
 						))}
 					</TextField>
 
@@ -303,35 +346,10 @@ export function EventMembersPage() {
 						disabled={addDisabled}
 						sx={{ height: 40 }}
 					>
-						Agregar
+						{addMutation.isPending ? "Agregando..." : "Agregar"}
 					</Button>
 				</Stack>
 			</Stack>
-
-			{(addMutation.isError ||
-				updateRoleMutation.isError ||
-				removeMutation.isError) && (
-				<Paper
-					sx={{
-						p: 2,
-						bgcolor: "error.lighter",
-						color: "error.main",
-						border: 1,
-						borderColor: "error.light",
-					}}
-				>
-					<Typography variant="body2" fontWeight={600}>
-						Ocurrió un error:
-					</Typography>
-					<Typography variant="body2">
-						{getErrorMessage(
-							addMutation.error ||
-								updateRoleMutation.error ||
-								removeMutation.error,
-						)}
-					</Typography>
-				</Paper>
-			)}
 
 			<Paper
 				variant="outlined"
@@ -343,6 +361,7 @@ export function EventMembersPage() {
 					getRowId={(r) => r.userId}
 					disableRowSelectionOnClick
 					disableColumnMenu
+					loading={isLoading || busy}
 					pageSizeOptions={[25, 50, 100]}
 					initialState={{
 						pagination: {

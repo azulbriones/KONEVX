@@ -2,6 +2,7 @@ export type ContactRequirement = "EMAIL" | "PHONE";
 
 export type PublicFieldType =
 	| "TEXT"
+	| "TEXTAREA"
 	| "NUMBER"
 	| "DATE"
 	| "SELECT"

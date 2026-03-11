@@ -1,13 +1,17 @@
 import AlternateEmailIcon from "@mui/icons-material/AlternateEmail";
-import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import ImageIcon from "@mui/icons-material/Image";
 import TagIcon from "@mui/icons-material/Tag";
 import VideoFileIcon from "@mui/icons-material/VideoFile";
+import ViewCarouselIcon from "@mui/icons-material/ViewCarousel";
+import WallpaperIcon from "@mui/icons-material/Wallpaper";
+
+import ImagePreview from "@/components/media/ImagePreview";
+import MultipleImagePreview from "@/components/media/MultipleImagePreview";
+import VideoPreview from "@/components/media/VideoPreview";
 import {
 	Divider,
 	Grid,
 	InputAdornment,
-	MenuItem,
 	TextField,
 	Typography,
 } from "@mui/material";
@@ -17,11 +21,18 @@ import type { CreateEventInput } from "../../types";
 export function MediaConfigFields({ disabled }: { disabled: boolean }) {
 	const {
 		register,
+		watch,
 		formState: { errors },
 	} = useFormContext<CreateEventInput>();
 
+	const logoFile = watch("logo");
+	const heroImageFile = watch("heroImage" as any);
+	const backgroundImageFile = watch("backgroundImage" as any);
+	const promotionalImagesFiles = watch("promotionalImages");
+	const promotionalVideoFile = watch("promotionalVideo");
+
 	return (
-		<Grid container spacing={3}>
+		<Grid container spacing={3} sx={{ width: "100%" }}>
 			<Grid item xs={12}>
 				<Typography
 					variant="subtitle1"
@@ -33,61 +44,7 @@ export function MediaConfigFields({ disabled }: { disabled: boolean }) {
 				</Typography>
 				<Divider sx={{ my: 1 }} />
 			</Grid>
-			<Grid item xs={12} sm={6} md={3}>
-				<TextField
-					fullWidth
-					label="Capacidad *"
-					type="number"
-					{...register("capacity")}
-					error={!!errors.capacity}
-					helperText={errors.capacity?.message}
-					disabled={disabled}
-				/>
-			</Grid>
-			<Grid item xs={12} sm={6} md={3}>
-				<TextField
-					fullWidth
-					label="Costo"
-					type="number"
-					{...register("cost")}
-					error={!!errors.cost}
-					helperText={errors.cost?.message}
-					disabled={disabled}
-					InputProps={{
-						startAdornment: (
-							<InputAdornment position="start">
-								<AttachMoneyIcon fontSize="small" />
-							</InputAdornment>
-						),
-					}}
-				/>
-			</Grid>
-			<Grid item xs={12} sm={6} md={3}>
-				<TextField
-					fullWidth
-					label="Edad mínima"
-					type="number"
-					{...register("minAge")}
-					error={!!errors.minAge}
-					helperText={errors.minAge?.message}
-					disabled={disabled}
-				/>
-			</Grid>
-			<Grid item xs={12} sm={6} md={3}>
-				<TextField
-					fullWidth
-					select
-					label="Contacto requerido *"
-					defaultValue="EMAIL"
-					{...register("contactRequirement")}
-					error={!!errors.contactRequirement}
-					helperText={errors.contactRequirement?.message}
-					disabled={disabled}
-				>
-					<MenuItem value="EMAIL">Email</MenuItem>
-					<MenuItem value="PHONE">Teléfono</MenuItem>
-				</TextField>
-			</Grid>
+
 			<Grid item xs={12} sm={6}>
 				<TextField
 					fullWidth
@@ -106,7 +63,76 @@ export function MediaConfigFields({ disabled }: { disabled: boolean }) {
 						),
 					}}
 				/>
+				<ImagePreview value={logoFile} label="Logo" />
 			</Grid>
+
+			<Grid item xs={12} sm={6}>
+				<TextField
+					fullWidth
+					type="file"
+					label="Imagen Principal (Hero)"
+					InputLabelProps={{ shrink: true }}
+					inputProps={{ accept: "image/*" }}
+					{...register("heroImage" as any)}
+					error={!!(errors as any).heroImage}
+					disabled={disabled}
+					InputProps={{
+						startAdornment: (
+							<InputAdornment position="start">
+								<ViewCarouselIcon fontSize="small" />
+							</InputAdornment>
+						),
+					}}
+				/>
+				<ImagePreview value={heroImageFile} label="Imagen Principal" />
+			</Grid>
+
+			<Grid item xs={12} sm={6}>
+				<TextField
+					fullWidth
+					type="file"
+					label="Imagen de Fondo (Background)"
+					InputLabelProps={{ shrink: true }}
+					inputProps={{ accept: "image/*" }}
+					{...register("backgroundImage" as any)}
+					error={!!(errors as any).backgroundImage}
+					disabled={disabled}
+					InputProps={{
+						startAdornment: (
+							<InputAdornment position="start">
+								<WallpaperIcon fontSize="small" />
+							</InputAdornment>
+						),
+					}}
+				/>
+				<ImagePreview value={backgroundImageFile} label="Fondo" />
+			</Grid>
+
+			<Grid item xs={12} sm={6}>
+				<TextField
+					fullWidth
+					type="file"
+					label="Imágenes de promoción (Máx 3)"
+					InputLabelProps={{ shrink: true }}
+					inputProps={{ multiple: true, accept: "image/*" }}
+					{...register("promotionalImages")}
+					error={!!errors.promotionalImages}
+					helperText={errors.promotionalImages?.message}
+					disabled={disabled}
+					InputProps={{
+						startAdornment: (
+							<InputAdornment position="start">
+								<ImageIcon fontSize="small" />
+							</InputAdornment>
+						),
+					}}
+				/>
+				<MultipleImagePreview
+					value={promotionalImagesFiles}
+					label="Imágenes Promocionales"
+				/>
+			</Grid>
+
 			<Grid item xs={12} sm={6}>
 				<TextField
 					fullWidth
@@ -129,25 +155,9 @@ export function MediaConfigFields({ disabled }: { disabled: boolean }) {
 						),
 					}}
 				/>
-			</Grid>
-			<Grid item xs={12} sm={6}>
-				<TextField
-					fullWidth
-					type="file"
-					label="Imágenes de promoción (Máx 3)"
-					InputLabelProps={{ shrink: true }}
-					inputProps={{ multiple: true, accept: "image/*" }}
-					{...register("promotionalImages")}
-					error={!!errors.promotionalImages}
-					helperText={errors.promotionalImages?.message}
-					disabled={disabled}
-					InputProps={{
-						startAdornment: (
-							<InputAdornment position="start">
-								<ImageIcon fontSize="small" />
-							</InputAdornment>
-						),
-					}}
+				<VideoPreview
+					value={promotionalVideoFile}
+					label="Video Promocional"
 				/>
 			</Grid>
 			<Grid item xs={12} sm={6}>

@@ -3,29 +3,24 @@ import { prisma } from "../db/prisma.js";
 import { HttpError } from "../lib/httpError.js";
 import type { CreateEventInput } from "../schemas/events.schema.js";
 
-export async function createEvent(input: CreateEventInput, userId: number) {
+type CreateEventServiceInput = Omit<CreateEventInput, "promotionalImages"> & {
+	logo?: string | null;
+	promotionalVideo?: string | null;
+	promotionalImages?: string[] | null;
+	backgroundImage?: string | null;
+	heroImage?: string | null;
+};
+
+export async function createEvent(input: CreateEventServiceInput, userId: number) {
 	try {
+		const { promotionalImages, ...restInput } = input;
+
 		return await prisma.event.create({
 			data: {
-				name: input.name,
-				slug: input.slug,
-				capacity: input.capacity,
-				contactRequirement: input.contactRequirement,
+				...restInput,
+				promotionalImages: promotionalImages ? promotionalImages : undefined,
+
 				isPublished: input.isPublished ?? false,
-				organizerName: input.organizerName,
-				slogan: input.slogan,
-				description: input.description,
-				footerDescription: input.footerDescription,
-				location: input.location,
-				startDate: input.startDate,
-				endDate: input.endDate,
-				entryTime: input.entryTime,
-				exitTime: input.exitTime,
-				cost: input.cost,
-				minAge: input.minAge,
-				contactInfo: input.contactInfo,
-				socialMediaInfo: input.socialMediaInfo,
-				hashtag: input.hashtag,
 
 				eventMembers: {
 					create: {
@@ -53,4 +48,26 @@ export async function createEvent(input: CreateEventInput, userId: number) {
 		}
 		throw err;
 	}
+}
+
+export async function updateEvent(eventId: number, data: Prisma.EventUpdateInput) {
+	try {
+		return await prisma.event.update({
+			where: { id: eventId },
+			data,
+		});
+	} catch (err: unknown) {
+		if (err instanceof Prisma.PrismaClientKnownRequestError) {
+			if (err.code === "P2002") {
+				throw new HttpError(409, "SLUG_TAKEN", "El slug ya está en uso");
+			}
+		}
+		throw err;
+	}
+}
+
+export async function deleteEvent(eventId: number) {
+	return await prisma.event.delete({
+		where: { id: eventId },
+	});
 }

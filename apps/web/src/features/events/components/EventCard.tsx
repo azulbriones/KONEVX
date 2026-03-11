@@ -1,59 +1,96 @@
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import {
+	Box,
 	Card,
 	CardActionArea,
 	CardContent,
 	Chip,
-	Stack,
+	CircularProgress,
+	IconButton,
 	Typography,
 } from "@mui/material";
-import type { EventListItem } from "../types";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDeleteEvent, useSetPublish } from "../hooks/useEvents";
+import { EventListItem } from "../types";
+import { DeleteEventDialog } from "./DeleteEventDialog";
+import { EventActionsMenu } from "./EventActionsMenu";
 
-type Props = {
-	event: EventListItem;
-	onClick: () => void;
-};
+export function EventCard({ event }: { event: EventListItem }) {
+	const navigate = useNavigate();
+	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+	const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-export function EventCard({ event, onClick }: Props) {
+	const setPublishMutation = useSetPublish(event.id);
+	const deleteMutation = useDeleteEvent();
+
+	const handleMenuOpen = (e: React.MouseEvent<HTMLElement>) => {
+		e.stopPropagation();
+		setAnchorEl(e.currentTarget);
+	};
+
+	const handleConfirmDelete = () => {
+		deleteMutation.mutate(event.id, {
+			onSuccess: () => setShowDeleteModal(false),
+		});
+	};
+
+	const isPending = setPublishMutation.isPending || deleteMutation.isPending;
+
 	return (
-		<Card variant="outlined">
-			<CardActionArea onClick={onClick}>
+		<Card sx={{ opacity: isPending ? 0.7 : 1 }}>
+			<Box
+				sx={{
+					display: "flex",
+					justifyContent: "space-between",
+					p: 2,
+					pb: 0,
+				}}
+			>
+				<Chip
+					label={event.isPublished ? "Publicado" : "Borrador"}
+					color={event.isPublished ? "success" : "default"}
+				/>
+				<IconButton onClick={handleMenuOpen} disabled={isPending}>
+					{isPending ? (
+						<CircularProgress size={20} />
+					) : (
+						<MoreVertIcon />
+					)}
+				</IconButton>
+			</Box>
+
+			<CardActionArea onClick={() => navigate(`/events/${event.id}`)}>
 				<CardContent>
-					<Stack spacing={1}>
-						<Stack direction="row" spacing={1} alignItems="center">
-							<Typography
-								variant="h6"
-								fontWeight={700}
-								sx={{ flexGrow: 1 }}
-							>
-								{event.name}
-							</Typography>
-
-							<Chip
-								size="small"
-								label={
-									event.isPublished ? "Publicado" : "Borrador"
-								}
-								color={
-									event.isPublished ? "success" : "default"
-								}
-							/>
-						</Stack>
-
-						<Typography variant="body2" color="text.secondary">
-							slug: <b>{event.slug}</b>
-						</Typography>
-
-						<Typography variant="body2" color="text.secondary">
-							capacidad: <b>{event.capacity}</b> · contacto:{" "}
-							<b>{event.contactRequirement}</b>
-						</Typography>
-
-						<Typography variant="caption" color="text.secondary">
-							creado: {new Date(event.createdAt).toLocaleString()}
-						</Typography>
-					</Stack>
+					<Typography variant="h6" fontWeight={800}>
+						{event.name}
+					</Typography>
 				</CardContent>
 			</CardActionArea>
+
+			<EventActionsMenu
+				anchorEl={anchorEl}
+				open={Boolean(anchorEl)}
+				onClose={() => setAnchorEl(null)}
+				isPublished={event.isPublished}
+				onView={() => navigate(`/events/${event.id}`)}
+				onEdit={() => navigate(`/events/${event.id}/edit`)}
+				onTogglePublish={() =>
+					setPublishMutation.mutate(!event.isPublished)
+				}
+				onDelete={() => {
+					setAnchorEl(null);
+					setShowDeleteModal(true);
+				}}
+			/>
+
+			<DeleteEventDialog
+				open={showDeleteModal}
+				onClose={() => setShowDeleteModal(false)}
+				onConfirm={handleConfirmDelete}
+				eventName={event.name}
+				isLoading={deleteMutation.isPending}
+			/>
 		</Card>
 	);
 }

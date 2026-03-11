@@ -1,5 +1,10 @@
 import { AppRouter } from "@/routes/AppRouter";
+import { NotificationProvider } from "./components/ui/NotificationContext";
 
 export default function App() {
-	return <AppRouter />;
+	return (
+		<NotificationProvider>
+			<AppRouter />
+		</NotificationProvider>
+	);
 }

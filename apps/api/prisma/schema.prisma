@@ -28,6 +28,8 @@ model Event {
     minAge             Int?
     promotionalVideo   String?
     promotionalImages  Json?
+    backgroundImage    String?
+    heroImage          String?
     contactInfo        String?
     socialMediaInfo    String?
     hashtag            String?
@@ -48,6 +50,7 @@ model Event {
 
 enum FieldType {
     TEXT
+    TEXTAREA
     NUMBER
     DATE
     SELECT
@@ -80,7 +83,6 @@ enum RegistrationStatus {
     CANCELLED
     CONFIRMED
     ATTENDED
-    NO_SHOW
 }
 
 model Participant {

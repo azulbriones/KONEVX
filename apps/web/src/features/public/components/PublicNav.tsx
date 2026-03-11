@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { env } from "@/config/env";
 
 type Props = {
 	brand?: string;
@@ -21,7 +21,7 @@ export function PublicNav({
 				<div className="public-logo">
 					{logo ? (
 						<img
-							src={`${API_URL}${logo}`}
+							src={`${env.API_BASE_URL}${logo}`}
 							alt={slug}
 							className="public-logo-image"
 							onError={(e) => {
@@ -30,21 +30,7 @@ export function PublicNav({
 							}}
 						/>
 					) : (
-						<div
-							style={{
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								width: "100%",
-								height: "100%",
-								fontWeight: "bold",
-								color: "var(--primary-color, #f97316)",
-								backgroundColor:
-									"var(--surface-color, #fef3c7)",
-							}}
-						>
-							EP
-						</div>
+						<div className="public-logo-placeholder">EP</div>
 					)}
 				</div>
 				<span className="public-brand-name">{brand}</span>

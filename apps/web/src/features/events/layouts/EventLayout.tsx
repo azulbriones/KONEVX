@@ -3,7 +3,6 @@ import { getErrorMessage } from "@/features/utils/getErrorMessage";
 import {
 	Box,
 	Button,
-	Chip,
 	CircularProgress,
 	Container,
 	Paper,
@@ -28,6 +27,7 @@ const TABS = [
 		path: "members",
 		gate: (a: any) => a?.canManageMembers,
 	},
+	{ label: "Ajustes", path: "edit", gate: (a: any) => a?.canWrite },
 ] as const;
 
 export function EventLayout() {
@@ -74,60 +74,24 @@ export function EventLayout() {
 				sx={{
 					borderBottom: 1,
 					borderColor: "divider",
-					pt: 3,
-					px: { xs: 2, md: 4 },
-					bgcolor: "background.paper",
+					bgcolor: "transparent",
+					px: 1,
 				}}
 			>
-				<Stack spacing={3}>
-					<Stack
-						direction={{ xs: "column", sm: "row" }}
-						justifyContent="space-between"
-						alignItems={{ xs: "flex-start", sm: "center" }}
-						spacing={2}
-					>
-						<Stack
-							direction="row"
-							alignItems="center"
-							spacing={1.5}
-						>
-							<Typography variant="h4" fontWeight={800}>
-								{event.name}
-							</Typography>
-							<Chip
-								size="small"
-								label={
-									event.isPublished ? "Publicado" : "Borrador"
-								}
-								color={
-									event.isPublished ? "success" : "default"
-								}
-								variant="outlined"
-							/>
-						</Stack>
-
-						<Button
-							variant={
-								event.isPublished ? "outlined" : "contained"
-							}
-							color={event.isPublished ? "warning" : "primary"}
-							onClick={() =>
-								publishMutation.mutate(!event.isPublished)
-							}
-							disabled={
-								publishMutation.isPending || !access.canWrite
-							}
-						>
-							{event.isPublished
-								? "Pasar a borrador"
-								: "Publicar evento"}
-						</Button>
-					</Stack>
-
+				<Stack
+					direction="row"
+					justifyContent="space-between"
+					alignItems="flex-end"
+					flexWrap="wrap-reverse"
+					gap={2}
+				>
 					<Tabs
 						value={currentTab}
 						textColor="primary"
 						indicatorColor="primary"
+						variant="scrollable"
+						scrollButtons="auto"
+						sx={{ minHeight: 48 }}
 					>
 						{TABS.map((tab) => {
 							const enabled = tab.gate(access);
@@ -142,15 +106,38 @@ export function EventLayout() {
 									sx={{
 										textTransform: "none",
 										fontWeight: 600,
+										fontSize: "0.95rem",
+										minWidth: 100,
 									}}
 								/>
 							);
 						})}
 					</Tabs>
+
+					<Box sx={{ pb: 1 }}>
+						<Button
+							variant={
+								event.isPublished ? "outlined" : "contained"
+							}
+							color={event.isPublished ? "warning" : "primary"}
+							onClick={() =>
+								publishMutation.mutate(!event.isPublished)
+							}
+							disabled={
+								publishMutation.isPending || !access.canWrite
+							}
+							size="small"
+							sx={{ borderRadius: 2, fontWeight: 700 }}
+						>
+							{event.isPublished
+								? "Pasar a borrador"
+								: "Publicar evento"}
+						</Button>
+					</Box>
 				</Stack>
 			</Paper>
 
-			<Box sx={{ p: { xs: 2, md: 4 } }}>
+			<Box sx={{ py: 4 }}>
 				<Outlet context={{ event, stats, access }} />
 			</Box>
 		</Stack>

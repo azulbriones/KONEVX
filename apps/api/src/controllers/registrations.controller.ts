@@ -16,15 +16,10 @@ export const listRegistrationsHandler: RequestHandler<
 > = async (req, res, next) => {
 	try {
 		const eventId = parseId(req.params.eventId);
-
 		const parsed = RegistrationsQuerySchema.safeParse(req.query);
+
 		if (!parsed.success) {
-			throw new HttpError(
-				400,
-				"VALIDATION_ERROR",
-				"Invalid query",
-				parsed.error.flatten().fieldErrors,
-			);
+			throw new HttpError(400, "VALIDATION_ERROR", "Invalid query", parsed.error.flatten().fieldErrors);
 		}
 
 		const { page = 1, limit = 20, status, q } = parsed.data;
@@ -38,21 +33,13 @@ export const listRegistrationsHandler: RequestHandler<
 		if (q) {
 			const searchNormalized = q.trim();
 			const phoneClean = q.replace(/\s+/g, "");
-
 			where.OR = [
-				{
-					participant: {
-						emailNormalized: {
-							contains: searchNormalized,
-							mode: "insensitive",
-						},
-					},
-				},
+				{ participant: { emailNormalized: { contains: searchNormalized, mode: "insensitive" } } },
 				{ participant: { phoneNormalized: { contains: phoneClean } } },
 			];
 		}
 
-		const [total, items] = await prisma.$transaction([
+		const [total, rows] = await prisma.$transaction([
 			prisma.registration.count({ where }),
 			prisma.registration.findMany({
 				where,
@@ -70,21 +57,45 @@ export const listRegistrationsHandler: RequestHandler<
 							phoneNormalized: true,
 						},
 					},
+
+					fieldValues: {
+						select: {
+							value: true,
+							eventField: { select: { key: true, label: true, type: true, order: true } }
+						}
+					}
 				},
 			}),
 		]);
+
+		const items = rows.map((r) => ({
+			id: r.id,
+			status: r.status,
+			createdAt: r.createdAt,
+			contact: {
+				id: r.participant.id,
+				email: r.participant.emailNormalized,
+				phone: r.participant.phoneNormalized,
+			},
+			answers: Object.fromEntries(
+				r.fieldValues.map((fv) => [
+					fv.eventField.key,
+					{
+						label: fv.eventField.label,
+						type: fv.eventField.type,
+						value: fv.value,
+						order: fv.eventField.order,
+					},
+				])
+			),
+		}));
 
 		const totalPages = Math.max(1, Math.ceil(total / limit));
 
 		res.json({
 			ok: true,
 			data: {
-				meta: {
-					page,
-					limit,
-					total,
-					totalPages,
-				},
+				meta: { page, limit, total, totalPages },
 				items,
 			},
 		});

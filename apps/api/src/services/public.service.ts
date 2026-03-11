@@ -25,6 +25,8 @@ const EVENT_DETAIL_SELECT = {
 	socialMediaInfo: true,
 	hashtag: true,
 	logo: true,
+	backgroundImage: true,
+	heroImage: true,
 	thingsToBring: true,
 	thingsNotToBring: true,
 	note: true,

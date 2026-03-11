@@ -1,3 +1,6 @@
+/* =========================================
+   1. VARIABLES Y RESET GLOBAL
+========================================= */
 :root {
 	--primary: #2563eb;
 	--primary-dark: #1e40af;
@@ -18,6 +21,10 @@
 	--r-2xl: 1.25rem;
 }
 
+html {
+	scroll-behavior: smooth;
+}
+
 * {
 	box-sizing: border-box;
 	margin: 0;
@@ -33,6 +40,9 @@
 		Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
 }
 
+/* =========================================
+   2. NAVEGACIÓN (NAVBAR)
+========================================= */
 .public-nav {
 	position: sticky;
 	top: 0;
@@ -54,15 +64,34 @@
 }
 
 .public-logo {
-	width: 40px;
-	height: 40px;
+	width: 48px;
+	height: 48px;
 	border-radius: 9999px;
-	background: var(--primary);
-	color: white;
+	overflow: hidden;
+	flex-shrink: 0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-weight: 900;
+	background-color: transparent;
+}
+
+.public-logo-image {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	display: block;
+}
+
+.public-logo-placeholder {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: bold;
+	color: var(--orange);
+	background-color: #fef3c7;
+	border-radius: inherit;
 }
 
 .public-brand-name {
@@ -71,102 +100,9 @@
 	white-space: nowrap;
 }
 
-.public-cta {
-	background: var(--orange);
-	color: white;
-	border: none;
-	border-radius: 9999px;
-	padding: 0.6rem 1.2rem;
-	font-weight: 800;
-	font-size: 0.9rem;
-	text-decoration: none;
-	box-shadow: 0 10px 20px rgba(249, 115, 22, 0.18);
-	transition: 0.2s;
-	display: inline-flex;
-	align-items: center;
-	gap: 0.5rem;
-}
-
-.public-cta:hover {
-	transform: translateY(-2px);
-	background: var(--orange-hover);
-}
-
-.hero {
-	background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #4338ca 100%);
-	color: white;
-	padding: 6rem 1.5rem 10rem;
-	text-align: center;
-	position: relative;
-	overflow: hidden;
-}
-
-.hero::before {
-	content: "";
-	position: absolute;
-	top: 0;
-	right: 0;
-	width: 320px;
-	height: 320px;
-	background: rgba(255, 255, 255, 0.12);
-	border-radius: 9999px;
-	transform: translate(35%, -35%);
-	filter: blur(70px);
-}
-
-.hero-inner {
-	max-width: 980px;
-	margin: 0 auto;
-	position: relative;
-	z-index: 1;
-}
-
-.hero-tag {
-	display: inline-block;
-	background: var(--orange);
-	padding: 0.35rem 1.15rem;
-	border-radius: 9999px;
-	font-size: 0.75rem;
-	font-weight: 900;
-	letter-spacing: 0.08em;
-	margin-bottom: 1.5rem;
-	animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-
-	0%,
-	100% {
-		transform: translateY(0);
-	}
-
-	50% {
-		transform: translateY(-8px);
-	}
-}
-
-.hero h1 {
-	font-size: clamp(2.25rem, 4vw, 4rem);
-	font-weight: 950;
-	line-height: 1.1;
-	margin-bottom: 1rem;
-}
-
-.hero p {
-	font-size: clamp(1.05rem, 2vw, 1.35rem);
-	opacity: 0.92;
-	max-width: 720px;
-	margin: 0 auto 2rem;
-	font-style: italic;
-}
-
-.hero-actions {
-	display: flex;
-	justify-content: center;
-	gap: 0.75rem;
-	flex-wrap: wrap;
-}
-
+/* =========================================
+   3. BOTONES GLOBALES
+========================================= */
 .btn {
 	border: none;
 	border-radius: 1rem;
@@ -194,6 +130,208 @@
 	color: var(--primary-dark);
 }
 
+.btn--disabled,
+.btn-disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+	pointer-events: none;
+	transform: none !important;
+	box-shadow: none;
+}
+
+.public-cta {
+	background: var(--orange);
+	color: white;
+	border: none;
+	border-radius: 9999px;
+	padding: 0.6rem 1.2rem;
+	font-weight: 800;
+	font-size: 0.9rem;
+	text-decoration: none;
+	box-shadow: 0 10px 20px rgba(249, 115, 22, 0.18);
+	transition: 0.2s;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.public-cta:hover {
+	transform: translateY(-2px);
+	background: var(--orange-hover);
+}
+
+.public-cta--disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+	pointer-events: none;
+	transform: none !important;
+	box-shadow: none;
+}
+
+/* =========================================
+   4. SECCIÓN HERO (CABECERA PRINCIPAL)
+========================================= */
+.hero {
+	color: white;
+	padding: 6rem 1.5rem 10rem;
+	position: relative;
+	overflow: hidden;
+	/* El background (imagen y gradiente) se inyecta desde React */
+}
+
+.hero::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 320px;
+	height: 320px;
+	background: rgba(255, 255, 255, 0.12);
+	border-radius: 9999px;
+	transform: translate(35%, -35%);
+	filter: blur(70px);
+	pointer-events: none;
+}
+
+.hero-inner {
+	max-width: 1200px;
+	margin: 0 auto;
+	position: relative;
+	z-index: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 3.5rem;
+}
+
+/* Variante: Hero sin imagen secundaria (Centrado) */
+.hero--centered .hero-inner {
+	text-align: center;
+}
+
+.hero--centered .hero-p,
+.hero--centered p {
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.hero--centered .hero-actions {
+	justify-content: center;
+}
+
+.hero-text {
+	flex: 1;
+	width: 100%;
+}
+
+.hero-tag {
+	display: inline-block;
+	background: var(--orange);
+	padding: 0.35rem 1.15rem;
+	border-radius: 9999px;
+	font-size: 0.75rem;
+	font-weight: 900;
+	letter-spacing: 0.08em;
+	margin-bottom: 1.5rem;
+	animation: float 3s ease-in-out infinite;
+	text-transform: uppercase;
+}
+
+.hero h1 {
+	font-size: clamp(2.25rem, 4vw, 4rem);
+	font-weight: 950;
+	line-height: 1.1;
+	margin-bottom: 1rem;
+	text-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.hero p {
+	font-size: clamp(1.05rem, 2vw, 1.35rem);
+	opacity: 0.92;
+	max-width: 720px;
+	margin: 0 auto 2rem;
+	font-style: italic;
+	line-height: 1.6;
+}
+
+.hero-actions {
+	display: flex;
+	justify-content: center;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+
+/* Elementos de la Imagen Flotante del Hero */
+.hero-image-wrapper {
+	flex: 1;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 100%;
+	max-width: 400px;
+	animation: floatImage 6s ease-in-out infinite;
+	perspective: 1000px;
+}
+
+.hero-image-card {
+	position: relative;
+	width: 100%;
+	/* Mantiene una proporción elegante tipo retrato cuadrado u horizontal */
+	aspect-ratio: 4/5;
+	border-radius: 1.5rem;
+	overflow: hidden;
+	/* Sombra profunda y elegante */
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6),
+		0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+	/* Borde semi-transparente estilo Glassmorphism */
+	border: 4px solid rgba(255, 255, 255, 0.15);
+	background-color: rgba(255, 255, 255, 0.05);
+	/* Por si la imagen tarda en cargar */
+	transform: rotateY(-5deg) rotateX(5deg);
+	/* Ligera rotación 3D para darle profundidad */
+	transition: transform 0.5s ease;
+}
+
+.hero-image-card:hover {
+	transform: rotateY(0) rotateX(0) scale(1.02);
+	/* Se "endereza" al pasar el mouse */
+}
+
+.hero-floating-img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+/* Animaciones del Hero */
+@keyframes float {
+
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+
+	50% {
+		transform: translateY(-8px);
+	}
+}
+
+@keyframes floatImage {
+
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+
+	50% {
+		transform: translateY(-20px);
+	}
+}
+
+/* =========================================
+   5. TARJETAS DE ESTADÍSTICAS (INFO)
+========================================= */
 .stats {
 	max-width: 1200px;
 	margin: -4.75rem auto 0;
@@ -217,6 +355,18 @@
 	justify-content: center;
 }
 
+.stat-card.is-ok {
+	border-color: #bbf7d0;
+}
+
+.stat-card.is-warn {
+	border-color: #fde68a;
+}
+
+.stat-card.is-full {
+	border-color: #fecaca;
+}
+
 .stat-label {
 	font-size: 0.65rem;
 	text-transform: uppercase;
@@ -232,10 +382,32 @@
 	margin-top: 0.3rem;
 }
 
+.stat-sub {
+	margin-top: 0.35rem;
+	font-size: 0.8rem;
+	color: var(--muted);
+	font-weight: 700;
+}
+
+.stat-hint {
+	margin-top: 0.45rem;
+	color: var(--muted);
+	font-size: 0.8rem;
+	font-weight: 700;
+}
+
+/* =========================================
+   6. SECCIONES GENERALES Y GALERÍA (BENTO)
+========================================= */
 .section {
 	max-width: 1200px;
 	margin: 0 auto;
 	padding: 5.5rem 1.5rem;
+}
+
+.section-tight {
+	padding-top: 2rem;
+	padding-bottom: 0;
 }
 
 .section-title {
@@ -253,16 +425,16 @@
 .bento {
 	display: grid;
 	grid-template-columns: 1fr;
-	gap: 1.25rem;
+	gap: 1.5rem;
+	height: auto;
 }
 
 .bento-item {
 	border-radius: var(--r-3xl);
 	overflow: hidden;
 	position: relative;
-	box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 	background: #cbd5e1;
-	min-height: 240px;
 }
 
 .bento-item img {
@@ -270,19 +442,27 @@
 	height: 100%;
 	object-fit: cover;
 	transition: 0.5s;
+	display: block;
+	/* Para evitar espacios fantasma debajo de las imágenes */
 }
 
 .bento-item:hover img {
 	transform: scale(1.05);
 }
 
+.bento-main {
+	/* En móviles (por defecto), mantenemos una proporción de video */
+	aspect-ratio: 16/9;
+}
+
 .bento-overlay {
 	position: absolute;
 	inset: 0;
-	background: rgba(0, 0, 0, 0.25);
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	pointer-events: none;
+	/* Para que el usuario pueda hacer click en el video si tiene controles */
 }
 
 .play {
@@ -294,13 +474,16 @@
 	align-items: center;
 	justify-content: center;
 	color: var(--primary);
+	pointer-events: auto;
+	/* El botón de play sí debe ser clickeable si no hay autoplay */
 }
 
 .bento-caption {
 	position: absolute;
-	bottom: 1.5rem;
-	left: 1.5rem;
+	bottom: 2rem;
+	left: 2rem;
 	color: white;
+	z-index: 2;
 }
 
 .bento-caption small {
@@ -310,10 +493,13 @@
 
 .bento-caption h3 {
 	font-weight: 950;
-	font-size: 1.3rem;
+	font-size: 1.5rem;
 	margin-top: 0.25rem;
 }
 
+/* =========================================
+   7. LISTAS Y CHECKLISTS (QUÉ LLEVAR)
+========================================= */
 .checklists {
 	display: grid;
 	grid-template-columns: 1fr;
@@ -360,6 +546,9 @@
 	line-height: 1.4;
 }
 
+/* =========================================
+   8. FORMULARIO DE REGISTRO
+========================================= */
 .form-wrap {
 	background: #f1f5f9;
 	padding: 6rem 1.5rem;
@@ -367,7 +556,7 @@
 
 .form-card {
 	max-width: 860px;
-	margin: 0 auto;
+	margin: 50px auto;
 	background: white;
 	padding: 3rem;
 	border-radius: var(--r-3xl);
@@ -504,86 +693,9 @@
 	margin: 0 auto 1.25rem;
 }
 
-.footer {
-	background: #0f172a;
-	color: #94a3b8;
-	padding: 4.5rem 1.5rem;
-}
-
-.footer-grid {
-	max-width: 1200px;
-	margin: 0 auto;
-	display: grid;
-	grid-template-columns: 1fr;
-	gap: 2.25rem;
-}
-
-.footer h4,
-.footer h5 {
-	color: white;
-}
-
-.footer-bottom {
-	margin-top: 3rem;
-	padding-top: 1.5rem;
-	border-top: 1px solid #1e293b;
-	text-align: center;
-	font-size: 0.75rem;
-	letter-spacing: 0.12em;
-	text-transform: uppercase;
-}
-
-@media (min-width: 768px) {
-	.stats {
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-	}
-
-	.bento {
-		grid-template-columns: repeat(12, minmax(0, 1fr));
-		height: 600px;
-	}
-
-	.bento-main {
-		grid-column: span 8;
-		height: 100%;
-	}
-
-	.bento-side {
-		grid-column: span 4;
-		display: grid;
-		grid-template-rows: repeat(2, minmax(0, 1fr));
-		gap: 1.25rem;
-	}
-
-	.bento-mini {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 1.25rem;
-	}
-
-	.checklists {
-		grid-template-columns: 1fr 1fr;
-	}
-
-	.form-grid {
-		grid-template-columns: 1fr 1fr;
-	}
-
-	.full {
-		grid-column: span 2;
-	}
-
-	.footer-grid {
-		grid-template-columns: 2fr 1fr 1fr;
-	}
-}
-
-@media (min-width: 1024px) {
-	.stats {
-		grid-template-columns: repeat(6, minmax(0, 1fr));
-	}
-}
-
+/* =========================================
+   9. COMPONENTES DE ESTADO (BADGES Y BANNERS)
+========================================= */
 .availability {
 	display: inline-flex;
 	align-items: center;
@@ -636,65 +748,6 @@
 	background: #ef4444;
 }
 
-.stat-card.is-ok {
-	border-color: #bbf7d0;
-}
-
-.stat-card.is-warn {
-	border-color: #fde68a;
-}
-
-.stat-card.is-full {
-	border-color: #fecaca;
-}
-
-.stat-sub {
-	margin-top: 0.35rem;
-	font-size: 0.8rem;
-	color: var(--muted);
-	font-weight: 700;
-}
-
-.section-tight {
-	padding-top: 2rem;
-	padding-bottom: 0;
-}
-
-.banner {
-	border-radius: 1rem;
-	padding: 0.95rem 1.1rem;
-	font-weight: 700;
-	border: 1px solid var(--border);
-	background: white;
-}
-
-.banner--warn {
-	background: #fffbeb;
-	border-color: #fef3c7;
-	color: #92400e;
-}
-
-.banner--danger {
-	background: #fef2f2;
-	border-color: #fee2e2;
-	color: #991b1b;
-}
-
-.public-cta--disabled {
-	opacity: 0.6;
-	cursor: not-allowed;
-	transform: none !important;
-	box-shadow: none;
-	pointer-events: none;
-}
-
-.btn-disabled {
-	opacity: 0.7;
-	cursor: not-allowed;
-	pointer-events: none;
-	box-shadow: none;
-}
-
 .availability-badge {
 	margin-top: 0.75rem;
 	display: inline-flex;
@@ -724,29 +777,6 @@
 	background: #fef2f2;
 	border-color: #fee2e2;
 	color: #991b1b;
-}
-
-.public-cta--disabled {
-	opacity: 0.55;
-	cursor: not-allowed;
-	pointer-events: none;
-	transform: none !important;
-	box-shadow: none;
-}
-
-.public-banner {
-	max-width: 1200px;
-	margin: 1rem auto -1.5rem;
-	padding: 0 1.5rem;
-}
-
-.public-banner--full {
-	background: #fee2e2;
-	color: #991b1b;
-	border: 1px solid #fecaca;
-	border-radius: 1rem;
-	padding: 0.9rem 1rem;
-	font-weight: 900;
 }
 
 .badge {
@@ -779,17 +809,147 @@
 	border-color: #fecaca;
 }
 
-.stat-hint {
-	margin-top: 0.45rem;
-	color: var(--muted);
-	font-size: 0.8rem;
+.banner {
+	border-radius: 1rem;
+	padding: 0.95rem 1.1rem;
 	font-weight: 700;
+	border: 1px solid var(--border);
+	background: white;
 }
 
-.btn--disabled {
-	opacity: 0.55;
-	cursor: not-allowed;
-	pointer-events: none;
-	transform: none !important;
-	box-shadow: none;
+.banner--warn {
+	background: #fffbeb;
+	border-color: #fef3c7;
+	color: #92400e;
+}
+
+.banner--danger {
+	background: #fef2f2;
+	border-color: #fee2e2;
+	color: #991b1b;
+}
+
+.public-banner {
+	max-width: 1200px;
+	margin: 1rem auto -1.5rem;
+	padding: 0 1.5rem;
+}
+
+.public-banner--full {
+	background: #fee2e2;
+	color: #991b1b;
+	border: 1px solid #fecaca;
+	border-radius: 1rem;
+	padding: 0.9rem 1rem;
+	font-weight: 900;
+}
+
+/* =========================================
+   10. FOOTER
+========================================= */
+.footer {
+	background: #0f172a;
+	color: #94a3b8;
+	padding: 4.5rem 1.5rem;
+}
+
+.footer-grid {
+	max-width: 1200px;
+	margin: 0 auto;
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 2.25rem;
+}
+
+.footer h4,
+.footer h5 {
+	color: white;
+}
+
+.footer-bottom {
+	margin-top: 3rem;
+	padding-top: 1.5rem;
+	border-top: 1px solid #1e293b;
+	text-align: center;
+	font-size: 0.75rem;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+}
+
+/* =========================================
+   11. MEDIA QUERIES (RESPONSIVE)
+========================================= */
+@media (min-width: 768px) {
+	.stats {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	.bento {
+		grid-template-columns: repeat(12, 1fr);
+		height: 600px;
+	}
+
+	.bento-main {
+		grid-column: span 8;
+		height: 100%;
+		max-height: 700px;
+		aspect-ratio: auto;
+	}
+
+	.bento-side {
+		grid-column: span 4;
+		display: grid;
+		grid-template-rows: 3fr 2fr;
+		gap: 1.5rem;
+	}
+
+	.bento-mini {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 1.5rem;
+	}
+
+	.checklists {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.form-grid {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.full {
+		grid-column: span 2;
+	}
+
+	.footer-grid {
+		grid-template-columns: 2fr 1fr 1fr;
+	}
+}
+
+@media (min-width: 992px) {
+
+	.hero--with-image .hero-inner {
+		flex-direction: row;
+		text-align: left;
+		justify-content: space-between;
+	}
+
+	.hero--with-image .hero-actions {
+		justify-content: flex-start;
+	}
+
+	.hero--with-image p {
+		margin: 0 0 2rem 0;
+	}
+
+	.hero-image-wrapper {
+		max-width: 400px;
+		padding-left: 2rem;
+	}
+}
+
+@media (min-width: 1024px) {
+	.stats {
+		grid-template-columns: repeat(6, minmax(0, 1fr));
+	}
 }
