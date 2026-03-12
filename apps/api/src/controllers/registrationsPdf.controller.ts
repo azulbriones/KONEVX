@@ -27,6 +27,7 @@ const generateRegistrationsPdf = (
 	const baseColumns = [
 		{ header: "ID", width: 25, key: "id" },
 		{ header: "ESTADO", width: 60, key: "status" },
+		{ header: "GRUPO", width: 50, key: "assignedGroup" },
 		{ header: "FECHA", width: 55, key: "date" },
 	];
 
@@ -51,7 +52,6 @@ const generateRegistrationsPdf = (
 	const drawHeader = () => {
 		let x = MARGIN;
 		const startY = doc.y;
-
 		doc.fontSize(6).font("Helvetica-Bold");
 
 		ALL_COLUMNS.forEach((col) => {
@@ -105,6 +105,7 @@ const generateRegistrationsPdf = (
 		const dataRow = [
 			String(r.id),
 			STATUS_LABEL[r.status] || r.status,
+			r.assignedGroup || "S/A",
 			r.createdAt instanceof Date ? r.createdAt.toISOString().slice(0, 10) : String(r.createdAt).slice(0, 10),
 			contactValue,
 			...dynamicFields.map(df => answers[df[0]] || "-")

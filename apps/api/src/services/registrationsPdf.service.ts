@@ -14,6 +14,7 @@ export async function getRegistrationsForPdf(eventId: number) {
 		select: {
 			id: true,
 			status: true,
+			assignedGroup: true,
 			createdAt: true,
 			participant: {
 				select: { emailNormalized: true, phoneNormalized: true },

@@ -13,7 +13,17 @@ export const OPTIMIZE_DEPS = [
 	"@emotion/styled",
 	"@mui/x-data-grid",
 	"@mui/material/styles",
-	// states
+	"@mui/material/locale",
+	"@mui/x-data-grid/locales",
+	"@mui/icons-material/Download",
+	"@mui/icons-material/Edit",
+	"@mui/icons-material/MoreVert",
+	"@mui/icons-material/ArrowBack",
+	"@mui/icons-material/ChevronRight",
+	"@mui/icons-material/People",
+	"@mui/icons-material/EventNote",
+	"@mui/icons-material/Visibility",
+	"@mui/icons-material/VisibilityOff",
 	"@tanstack/react-query",
 	"zustand",
 	"react-hook-form",
@@ -22,5 +32,6 @@ export const OPTIMIZE_DEPS = [
 	"@tanstack/react-query-devtools",
 	// utils
 	"dayjs",
+	"dayjs/locale/es",
 	"framer-motion",
 ];

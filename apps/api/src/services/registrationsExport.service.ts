@@ -21,6 +21,7 @@ export async function exportRegistrationsCsv(eventId: number) {
 		select: {
 			id: true,
 			status: true,
+			assignedGroup: true,
 			createdAt: true,
 			participant: {
 				select: { emailNormalized: true, phoneNormalized: true },
@@ -49,6 +50,7 @@ export async function exportRegistrationsCsv(eventId: number) {
 	const header = [
 		"ID",
 		"Estado",
+		"Grupo",
 		"Fecha de Registro",
 		event.contactRequirement === "PHONE" ? "Teléfono" : "Email",
 		...dynamicFields.map(f => f[1]),
@@ -71,6 +73,7 @@ export async function exportRegistrationsCsv(eventId: number) {
 		return [
 			r.id,
 			STATUS_LABEL[r.status] || r.status,
+			r.assignedGroup || "Sin asignar",
 			r.createdAt.toISOString(),
 			contactValue,
 			...dynamicFields.map(f => answersByKey[f[0]] ?? ""),
