@@ -39,6 +39,7 @@ const EVENT_DETAIL_SELECT = {
 	thingsToBring: true,
 	thingsNotToBring: true,
 	note: true,
+	groupingSettings: true,
 	createdAt: true,
 	updatedAt: true,
 } as const;
@@ -273,10 +274,26 @@ export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 				return rest;
 			})();
 
-		const [fieldsCount, registrationsCount] = await Promise.all([
+		const [fieldsCount, registrationsCount, groupStatsRaw] = await Promise.all([
 			prisma.eventField.count({ where: { eventId } }),
 			prisma.registration.count({ where: { eventId } }),
+			prisma.registration.groupBy({
+				by: ['assignedGroup'],
+				where: {
+					eventId,
+					status: { not: "CANCELLED" },
+					assignedGroup: { not: null }
+				},
+				_count: { assignedGroup: true }
+			})
 		]);
+
+		const groupsOccupancy = groupStatsRaw.reduce((acc, curr) => {
+			if (curr.assignedGroup) {
+				acc[curr.assignedGroup] = curr._count.assignedGroup;
+			}
+			return acc;
+		}, {} as Record<string, number>);
 
 		return res.json({
 			ok: true,
@@ -291,6 +308,7 @@ export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 							(registrationsCount / safeEvent.capacity) * 100,
 						)
 						: null,
+					groupsOccupancy,
 				},
 			},
 		});

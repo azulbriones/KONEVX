@@ -49,6 +49,7 @@ export const listRegistrationsHandler: RequestHandler<
 				select: {
 					id: true,
 					status: true,
+					assignedGroup: true,
 					createdAt: true,
 					participant: {
 						select: {
@@ -71,6 +72,7 @@ export const listRegistrationsHandler: RequestHandler<
 		const items = rows.map((r) => ({
 			id: r.id,
 			status: r.status,
+			assignedGroup: r.assignedGroup,
 			createdAt: r.createdAt,
 			contact: {
 				id: r.participant.id,
