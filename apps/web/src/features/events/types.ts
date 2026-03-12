@@ -53,6 +53,18 @@ export type EventDetail = {
 	updatedAt: string;
 };
 
+export interface GroupDistribution {
+	prefix: string;
+	subgroupsCount: number;
+}
+
+export interface GroupingSettings {
+	enabled: boolean;
+	customFieldId: number | "";
+	hasSubgroups: boolean;
+	distribution: Record<string, GroupDistribution>;
+}
+
 export type CreateEventInput = {
 	name: string;
 	slug: string;
@@ -85,6 +97,7 @@ export type CreateEventInput = {
 	logo?: any;
 	promotionalVideo?: any;
 	promotionalImages?: any;
+	groupingSettings?: GroupingSettings;
 };
 
 export type EventOutletCtx = {
@@ -146,6 +159,7 @@ export interface RegistrationItem {
 		type: string;
 		value: any;
 	}>;
+	assignedGroup: string | null;
 };
 
 export type RegistrationsMeta = {

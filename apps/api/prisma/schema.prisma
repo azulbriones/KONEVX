@@ -42,6 +42,7 @@ model Event {
     isPublished        Boolean                  @default(false)
     fields             EventField[]
     registrations      Registration[]
+    groupingSettings   Json?
     values             RegistrationFieldValue[]
     createdAt          DateTime                 @default(now())
     updatedAt          DateTime                 @updatedAt
@@ -102,12 +103,12 @@ model Registration {
     participantId Int
     status        RegistrationStatus @default(REGISTERED)
 
-    event       Event                    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-    participant Participant              @relation(fields: [participantId], references: [id], onDelete: Cascade)
-    fieldValues RegistrationFieldValue[]
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    event         Event                    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    participant   Participant              @relation(fields: [participantId], references: [id], onDelete: Cascade)
+    fieldValues   RegistrationFieldValue[]
+    assignedGroup String?
+    createdAt     DateTime                 @default(now())
+    updatedAt     DateTime                 @updatedAt
 
     @@unique([eventId, participantId])
     @@index([eventId, status])
