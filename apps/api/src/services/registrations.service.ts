@@ -28,6 +28,7 @@ export async function listRegistrationsByEvent(
 			select: {
 				id: true,
 				status: true,
+				assignedGroup: true,
 				createdAt: true,
 				participant: {
 					select: {
@@ -50,6 +51,7 @@ export async function listRegistrationsByEvent(
 	const items = rows.map((r) => ({
 		id: r.id,
 		status: r.status,
+		assignedGroup: r.assignedGroup,
 		createdAt: r.createdAt,
 		contact: {
 			email: r.participant.emailNormalized,
