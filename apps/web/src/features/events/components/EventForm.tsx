@@ -13,6 +13,7 @@ import { CreateEventInput } from "../types";
 import { schema } from "../utils/validationSchema";
 
 import { GeneralInfoFields } from "./form-sections/GeneralInfoFields";
+import { GroupingSettingsFields } from "./form-sections/GroupingSettingsFields";
 import { LocationTimeFields } from "./form-sections/LocationTimeFields";
 import { MediaConfigFields } from "./form-sections/MediaConfigFields";
 import { PublicLinkFields } from "./form-sections/PublicLinkFields";
@@ -95,7 +96,7 @@ export function EventForm({
 							<LocationTimeFields disabled={isPending} />
 							<MediaConfigFields disabled={isPending} />
 							<PublicLinkFields disabled={isPending} />
-
+							<GroupingSettingsFields disabled={isPending} />
 							<Stack
 								direction="row"
 								spacing={2}

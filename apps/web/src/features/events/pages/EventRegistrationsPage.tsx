@@ -3,12 +3,14 @@ import { useMemo, useState } from "react";
 import { useOutletContext, useParams } from "react-router-dom";
 
 import DownloadIcon from "@mui/icons-material/Download";
+import EditIcon from "@mui/icons-material/Edit";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import {
 	Box,
 	Button,
 	Chip,
 	CircularProgress,
+	Divider,
 	IconButton,
 	Menu,
 	MenuItem,
@@ -78,6 +80,9 @@ export function EventRegistrationsPage() {
 	const [activeRow, setActiveRow] = useState<RegistrationItem | null>(null);
 	const menuOpen = Boolean(anchorEl);
 
+	const [isEditingGroup, setIsEditingGroup] = useState(false);
+	const [tempGroup, setTempGroup] = useState("");
+
 	const [isDownloading, setIsDownloading] = useState(false);
 
 	const { access, event } = useOutletContext<
@@ -129,11 +134,14 @@ export function EventRegistrationsPage() {
 		if (!canWrite) return;
 		setAnchorEl(e.currentTarget);
 		setActiveRow(row);
+		setTempGroup(row.assignedGroup || "");
+		setIsEditingGroup(false);
 	};
 
 	const closeMenu = () => {
 		setAnchorEl(null);
 		setActiveRow(null);
+		setIsEditingGroup(false);
 	};
 
 	const onChangeStatus = (newStatus: RegistrationStatus) => {
@@ -154,6 +162,27 @@ export function EventRegistrationsPage() {
 						"Error al cambiar el estado del registro",
 						"error",
 					);
+				},
+			},
+		);
+	};
+
+	const onSaveGroup = () => {
+		if (!activeRow || !canWrite) return;
+
+		updateStatusMutation.mutate(
+			{
+				registrationId: activeRow.id,
+				status: activeRow.status,
+				assignedGroup: tempGroup || null,
+			},
+			{
+				onSuccess: () => {
+					closeMenu();
+					showNotification("Grupo actualizada", "success");
+				},
+				onError: () => {
+					showNotification("Error al actualizar el grupo", "error");
 				},
 			},
 		);
@@ -217,6 +246,21 @@ export function EventRegistrationsPage() {
 						variant="outlined"
 						sx={{ fontWeight: 600 }}
 					/>
+				),
+			},
+			{
+				field: "assignedGroup",
+				headerName: "Grupo",
+				width: 120,
+				sortable: false,
+				renderCell: (params) => (
+					<Typography
+						variant="body2"
+						fontWeight={params.value ? 700 : 400}
+						color={params.value ? "primary" : "text.secondary"}
+					>
+						{params.value || "Sin asignar"}
+					</Typography>
 				),
 			},
 		];
@@ -408,12 +452,74 @@ export function EventRegistrationsPage() {
 				anchorEl={anchorEl}
 				open={menuOpen}
 				onClose={closeMenu}
-				PaperProps={{ sx: { borderRadius: 2, minWidth: 220, mt: 0.5 } }}
+				PaperProps={{ sx: { borderRadius: 2, minWidth: 260, mt: 0.5 } }}
 				transformOrigin={{ horizontal: "right", vertical: "top" }}
 				anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
 			>
+				<Box sx={{ px: 2, pt: 1.5, pb: 1 }}>
+					<Stack
+						direction="row"
+						justifyContent="space-between"
+						alignItems="center"
+					>
+						<Typography
+							variant="caption"
+							color="text.secondary"
+							fontWeight={700}
+						>
+							GRUPO
+						</Typography>
+						{!isEditingGroup && (
+							<IconButton
+								size="small"
+								onClick={() => setIsEditingGroup(true)}
+								sx={{ p: 0 }}
+							>
+								<EditIcon sx={{ fontSize: 16 }} />
+							</IconButton>
+						)}
+					</Stack>
+
+					{isEditingGroup ? (
+						<Stack direction="row" gap={1} mt={1}>
+							<TextField
+								size="small"
+								placeholder="Ej: A1"
+								value={tempGroup}
+								onChange={(e) =>
+									setTempGroup(e.target.value.toUpperCase())
+								}
+								autoFocus
+							/>
+							<Button
+								variant="contained"
+								size="small"
+								onClick={onSaveGroup}
+								disabled={updateStatusMutation.isPending}
+							>
+								OK
+							</Button>
+						</Stack>
+					) : (
+						<Typography
+							variant="body1"
+							fontWeight="bold"
+							color={
+								activeRow?.assignedGroup
+									? "primary"
+									: "text.disabled"
+							}
+							mt={0.5}
+						>
+							{activeRow?.assignedGroup || "Sin asignar"}
+						</Typography>
+					)}
+				</Box>
+
+				<Divider sx={{ my: 1 }} />
+
 				<Typography
-					sx={{ px: 2, pt: 1.5, pb: 1 }}
+					sx={{ px: 2, pt: 1, pb: 1 }}
 					variant="caption"
 					color="text.secondary"
 					fontWeight={700}

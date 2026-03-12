@@ -1,4 +1,40 @@
-import { mixed, number, object, string } from "yup";
+// src/utils/validationSchema.ts
+import { boolean, lazy, mixed, number, object, string } from "yup";
+
+const groupingSettingsSchema = object({
+	enabled: boolean().required(),
+	customFieldId: number().when("enabled", {
+		is: true,
+		then: (schema) => schema.required("Debe seleccionar un campo").positive(),
+		otherwise: (schema) => schema.nullable().transform(() => null),
+	}),
+	hasSubgroups: boolean().required(),
+	distribution: lazy((val) => {
+		if (!val) return mixed().optional();
+
+		const shape: any = {};
+		Object.keys(val).forEach((key) => {
+			shape[key] = object({
+				// 💡 CAMBIO AQUÍ: Transformamos y cortamos espacios en blanco
+				prefix: string()
+					.transform((v) => (v === null || v === undefined ? "" : String(v)))
+					.trim("No dejes solo espacios")
+					.required("El prefijo es requerido"),
+
+				// ... (subgroupsCount se queda igual con el cambio que ya le habíamos hecho)
+				subgroupsCount: number()
+					.transform((_value, originalValue) => {
+						return (originalValue === "" || originalValue === null || originalValue === undefined)
+							? undefined
+							: Number(originalValue);
+					})
+					.min(1, "Mínimo 1 subgrupo")
+					.required("La cantidad es requerida"),
+			});
+		});
+		return object(shape);
+	}).optional(),
+}).optional();
 
 export const schema = object({
 	name: string().required("El nombre del evento es requerido").min(2).max(120),
@@ -46,4 +82,6 @@ export const schema = object({
 	logo: mixed().optional(),
 	promotionalVideo: mixed().optional(),
 	promotionalImages: mixed().optional(),
+
+	groupingSettings: groupingSettingsSchema,
 });

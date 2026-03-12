@@ -3,6 +3,7 @@ import {
 	CalendarMonth,
 	Description,
 	LocationOn,
+	MeetingRoom,
 	OpenInNew,
 	People,
 	Person,
@@ -29,7 +30,7 @@ const CONTACT_LABELS: Record<string, string> = {
 };
 
 export function EventOverviewPage() {
-	const { event, stats } = useOutletContext<Ctx>();
+	const { event, stats } = useOutletContext<Ctx & { stats: any }>();
 
 	const formatDate = (dateString?: Date | string | null) => {
 		if (!dateString) return "No definida";
@@ -38,6 +39,10 @@ export function EventOverviewPage() {
 			timeStyle: "short",
 		}).format(new Date(dateString));
 	};
+	const hasGroups = event.groupingSettings?.enabled && stats.groupsOccupancy;
+	const groupKeys = hasGroups
+		? Object.keys(stats.groupsOccupancy).sort()
+		: [];
 
 	return (
 		<Stack spacing={4}>
@@ -83,6 +88,83 @@ export function EventOverviewPage() {
 					/>
 				</Grid>
 			</Grid>
+
+			{hasGroups && groupKeys.length > 0 && (
+				<Grid container spacing={3}>
+					<Grid item xs={12} sm={12}>
+						<Card
+							variant="outlined"
+							sx={{
+								borderRadius: 3,
+								borderLeft: "6px solid #6366f1",
+							}}
+						>
+							<CardContent sx={{ p: 3 }}>
+								<Stack
+									direction="row"
+									spacing={1}
+									alignItems="center"
+									mb={2}
+								>
+									<MeetingRoom color="primary" />
+									<Typography variant="h6" fontWeight={800}>
+										Distribución por Grupos
+									</Typography>
+								</Stack>
+								<Divider sx={{ mb: 3 }} />
+
+								<Box
+									sx={{
+										display: "flex",
+										flexWrap: "wrap",
+										gap: 2,
+									}}
+								>
+									{groupKeys.map((groupName) => (
+										<Box
+											key={groupName}
+											sx={{
+												p: 2,
+												minWidth: 100,
+												textAlign: "center",
+												bgcolor: "background.default",
+												borderRadius: 2,
+												border: "1px solid",
+												borderColor: "divider",
+											}}
+										>
+											<Typography
+												variant="caption"
+												color="text.secondary"
+												fontWeight={700}
+											>
+												GRUPO {groupName}
+											</Typography>
+											<Typography
+												variant="h5"
+												fontWeight={900}
+												color="primary"
+											>
+												{
+													stats.groupsOccupancy[
+														groupName
+													]
+												}
+											</Typography>
+											<Typography
+												variant="caption"
+												color="text.disabled"
+											>
+												personas
+											</Typography>
+										</Box>
+									))}
+								</Box>
+							</CardContent>
+						</Card>
+					</Grid>
+				</Grid>
+			)}
 
 			<Grid container spacing={3}>
 				<Grid item xs={12} md={7}>

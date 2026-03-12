@@ -22,11 +22,11 @@ export async function listRegistrations(
 export async function updateRegistrationStatus(
 	eventId: number,
 	registrationId: number,
-	status: RegistrationStatus,
+	payload: { status: RegistrationStatus; assignedGroup?: string | null }
 ) {
 	const { data } = await api.patch<
-		ApiResponse<{ registrationId: number; status: RegistrationStatus }>
-	>(`/events/${eventId}/registrations/${registrationId}`, { status });
+		ApiResponse<{ registrationId: number; status: RegistrationStatus; assignedGroup: string | null }>
+	>(`/events/${eventId}/registrations/${registrationId}`, payload);
 
 	if (!data.ok) throw data;
 	return data.data;
