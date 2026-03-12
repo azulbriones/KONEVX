@@ -226,8 +226,7 @@ export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 ) => {
 	try {
 		const user = req.user as { id: number; role: string } | undefined;
-		if (!user)
-			throw new HttpError(401, "UNAUTHENTICATED", "No autenticado");
+		if (!user) throw new HttpError(401, "UNAUTHENTICATED", "No autenticado");
 
 		const eventId = parseId(req.params.eventId);
 		const isSuperAdmin = user.role === "SUPER_ADMIN";
@@ -238,45 +237,16 @@ export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 
 		const event = await prisma.event.findFirst({
 			where: whereClause,
-			select: {
-				...EVENT_DETAIL_SELECT,
-				...(isSuperAdmin
-					? {}
-					: {
-						eventMembers: {
-							where: { userId: user.id },
-							select: { role: true },
-							take: 1,
-						},
-					}),
-			},
+			select: EVENT_DETAIL_SELECT,
 		});
 
 		if (!event) {
-			throw new HttpError(
-				404,
-				"EVENT_NOT_FOUND",
-				"Evento no encontrado o sin acceso",
-			);
+			throw new HttpError(404, "EVENT_NOT_FOUND", "Evento no encontrado");
 		}
-
-		const memberRole = isSuperAdmin
-			? null
-			: (((event as { eventMembers?: Array<{ role: string }> }).eventMembers?.[0]?.role ?? null) as
-				| "EDITOR"
-				| "VIEWER"
-				| null);
-
-		const safeEvent = isSuperAdmin
-			? event
-			: (() => {
-				const { eventMembers, ...rest } = event as typeof event & { eventMembers?: unknown };
-				return rest;
-			})();
 
 		const [fieldsCount, registrationsCount, groupStatsRaw] = await Promise.all([
 			prisma.eventField.count({ where: { eventId } }),
-			prisma.registration.count({ where: { eventId } }),
+			prisma.registration.count({ where: { eventId, status: { not: "CANCELLED" } } }),
 			prisma.registration.groupBy({
 				by: ['assignedGroup'],
 				where: {
@@ -288,12 +258,49 @@ export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 			})
 		]);
 
+		let fieldOccupancy: Record<string, number> = {};
+		const groupingSettings = event.groupingSettings as any;
+
+		if (groupingSettings?.customFieldId) {
+			const fieldStatsRaw = await prisma.registrationFieldValue.groupBy({
+				by: ['value'],
+				where: {
+					eventFieldId: groupingSettings.customFieldId,
+					registration: {
+						eventId,
+						status: { not: "CANCELLED" }
+					}
+				},
+				_count: { value: true }
+			});
+
+			fieldOccupancy = fieldStatsRaw.reduce((acc, curr) => {
+				if (curr.value !== null && curr.value !== undefined) {
+					const key = String(curr.value);
+					acc[key] = curr._count.value;
+				}
+				return acc;
+			}, {} as Record<string, number>);
+		}
+
 		const groupsOccupancy = groupStatsRaw.reduce((acc, curr) => {
-			if (curr.assignedGroup) {
-				acc[curr.assignedGroup] = curr._count.assignedGroup;
+			if (curr.assignedGroup !== null && curr.assignedGroup !== undefined) {
+				const key = String(curr.assignedGroup);
+				acc[key] = curr._count.assignedGroup;
 			}
 			return acc;
 		}, {} as Record<string, number>);
+
+		const memberRole = isSuperAdmin
+			? null
+			: (((event as any).eventMembers?.[0]?.role ?? null) as "EDITOR" | "VIEWER" | null);
+
+		const safeEvent = isSuperAdmin
+			? event
+			: (() => {
+				const { eventMembers, ...rest } = event as typeof event & { eventMembers?: unknown };
+				return rest;
+			})();
 
 		return res.json({
 			ok: true,
@@ -303,12 +310,11 @@ export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 				stats: {
 					fieldsCount,
 					registrationsCount,
-					occupancy: safeEvent.capacity
-						? Math.round(
-							(registrationsCount / safeEvent.capacity) * 100,
-						)
+					occupancy: event.capacity
+						? Math.round((registrationsCount / event.capacity) * 100)
 						: null,
 					groupsOccupancy,
+					fieldOccupancy,
 				},
 			},
 		});

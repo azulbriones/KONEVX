@@ -19,7 +19,6 @@ import { MediaConfigFields } from "./form-sections/MediaConfigFields";
 import { PublicLinkFields } from "./form-sections/PublicLinkFields";
 
 // Función de utilidad para convertir nulls a undefined
-// Esto evita errores de TypeScript cuando la API devuelve nulls
 const sanitizeData = (data: any) => {
 	if (!data) return data;
 	const clean: any = { ...data };
@@ -32,8 +31,6 @@ const sanitizeData = (data: any) => {
 };
 
 interface EventFormProps {
-	// Aceptamos 'any' aquí temporalmente o un tipo que permita nulls
-	// para que el componente padre no de error al pasar data de la API
 	defaultValues?: any;
 	onSubmit: (data: CreateEventInput) => void;
 	isPending: boolean;

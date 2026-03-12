@@ -1,4 +1,3 @@
-// src/components/form-sections/GroupingSettingsFields.tsx
 import {
 	Alert,
 	Box,
@@ -273,7 +272,7 @@ export function GroupingSettingsFields({ disabled }: { disabled?: boolean }) {
 																			value={
 																				field.value ||
 																				""
-																			} // Evita warnings de React
+																			}
 																			label="Prefijo (Ej: A)"
 																			size="small"
 																			disabled={
@@ -298,7 +297,6 @@ export function GroupingSettingsFields({ disabled }: { disabled?: boolean }) {
 																		defaultValue={
 																			1
 																		}
-																		// 💡 CAMBIO AQUÍ: Extraemos value y onChange
 																		render={({
 																			field: {
 																				value,
@@ -315,7 +313,6 @@ export function GroupingSettingsFields({ disabled }: { disabled?: boolean }) {
 																				value={
 																					value
 																				}
-																				// 💡 CAMBIO AQUÍ: Forzamos la conversión a Number
 																				onChange={(
 																					e,
 																				) => {

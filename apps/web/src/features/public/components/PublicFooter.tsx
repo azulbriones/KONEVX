@@ -50,12 +50,12 @@ export function PublicFooter({
 	footerDescription,
 	contactInfo,
 	socialMediaInfo,
-	hashtag, // 👈 1. Añadimos la prop del hashtag
+	hashtag,
 }: {
 	footerDescription?: string | null;
 	contactInfo?: string | null;
 	socialMediaInfo?: string | null;
-	hashtag?: string | null; // 👈 2. Lo declaramos en los tipos
+	hashtag?: string | null;
 }) {
 	const contacts = contactInfo
 		? contactInfo

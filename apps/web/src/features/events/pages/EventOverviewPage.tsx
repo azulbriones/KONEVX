@@ -1,6 +1,7 @@
 import {
 	BarChart,
 	CalendarMonth,
+	Checkroom,
 	Description,
 	LocationOn,
 	MeetingRoom,
@@ -39,10 +40,16 @@ export function EventOverviewPage() {
 			timeStyle: "short",
 		}).format(new Date(dateString));
 	};
-	const hasGroups = event.groupingSettings?.enabled && stats.groupsOccupancy;
-	const groupKeys = hasGroups
-		? Object.keys(stats.groupsOccupancy).sort()
-		: [];
+
+	const groupingFieldName =
+		event.groupingSettings?.fieldLabel || "Campo de Agrupación";
+
+	const hasFieldStats =
+		stats.fieldOccupancy && Object.keys(stats.fieldOccupancy).length > 0;
+	const hasGroups =
+		event.groupingSettings?.enabled &&
+		stats.groupsOccupancy &&
+		Object.keys(stats.groupsOccupancy).length > 0;
 
 	return (
 		<Stack spacing={4}>
@@ -89,9 +96,70 @@ export function EventOverviewPage() {
 				</Grid>
 			</Grid>
 
-			{hasGroups && groupKeys.length > 0 && (
-				<Grid container spacing={3}>
-					<Grid item xs={12} sm={12}>
+			<Grid container spacing={3}>
+				{/* 💡 SECCIÓN NUEVA: TOTALES POR CAMPO (Ej: Tallas) */}
+				{hasFieldStats && (
+					<Grid item xs={12} md={hasGroups ? 6 : 12}>
+						<Card
+							variant="outlined"
+							sx={{
+								borderRadius: 3,
+								borderLeft: "6px solid #f59e0b",
+							}}
+						>
+							<CardContent sx={{ p: 3 }}>
+								<Stack
+									direction="row"
+									spacing={1}
+									alignItems="center"
+									mb={2}
+								>
+									<Checkroom sx={{ color: "#f59e0b" }} />
+									<Typography variant="h6" fontWeight={800}>
+										Resumen por {groupingFieldName}
+									</Typography>
+								</Stack>
+								<Divider sx={{ mb: 2 }} />
+								<Stack spacing={1}>
+									{Object.entries(stats.fieldOccupancy).map(
+										([label, count]: any) => (
+											<Box
+												key={label}
+												sx={{
+													display: "flex",
+													justifyContent:
+														"space-between",
+													alignItems: "center",
+													p: 1,
+													bgcolor:
+														"background.default",
+													borderRadius: 1,
+												}}
+											>
+												<Typography
+													variant="body2"
+													fontWeight={600}
+												>
+													{label}
+												</Typography>
+												<Chip
+													label={`${count} registros`}
+													size="small"
+													color="warning"
+													variant="outlined"
+												/>
+											</Box>
+										),
+									)}
+								</Stack>
+							</CardContent>
+						</Card>
+					</Grid>
+				)}
+
+				{/* 💡 SECCIÓN: DISTRIBUCIÓN POR GRUPOS (Logística) */}
+				{hasGroups && (
+					<Grid item xs={12} md={hasFieldStats ? 6 : 12}>
 						<Card
 							variant="outlined"
 							sx={{
@@ -108,63 +176,34 @@ export function EventOverviewPage() {
 								>
 									<MeetingRoom color="primary" />
 									<Typography variant="h6" fontWeight={800}>
-										Distribución por Grupos
+										Distribución de Grupos
 									</Typography>
 								</Stack>
-								<Divider sx={{ mb: 3 }} />
-
+								<Divider sx={{ mb: 2 }} />
 								<Box
 									sx={{
 										display: "flex",
 										flexWrap: "wrap",
-										gap: 2,
+										gap: 1,
 									}}
 								>
-									{groupKeys.map((groupName) => (
-										<Box
-											key={groupName}
-											sx={{
-												p: 2,
-												minWidth: 100,
-												textAlign: "center",
-												bgcolor: "background.default",
-												borderRadius: 2,
-												border: "1px solid",
-												borderColor: "divider",
-											}}
-										>
-											<Typography
-												variant="caption"
-												color="text.secondary"
-												fontWeight={700}
-											>
-												GRUPO {groupName}
-											</Typography>
-											<Typography
-												variant="h5"
-												fontWeight={900}
+									{Object.entries(stats.groupsOccupancy).map(
+										([group, count]: any) => (
+											<Chip
+												key={group}
+												label={`${group}: ${count}`}
+												variant="filled"
 												color="primary"
-											>
-												{
-													stats.groupsOccupancy[
-														groupName
-													]
-												}
-											</Typography>
-											<Typography
-												variant="caption"
-												color="text.disabled"
-											>
-												personas
-											</Typography>
-										</Box>
-									))}
+												sx={{ fontWeight: 700 }}
+											/>
+										),
+									)}
 								</Box>
 							</CardContent>
 						</Card>
 					</Grid>
-				</Grid>
-			)}
+				)}
+			</Grid>
 
 			<Grid container spacing={3}>
 				<Grid item xs={12} md={7}>

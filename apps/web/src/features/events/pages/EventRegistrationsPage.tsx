@@ -34,7 +34,11 @@ import { getErrorMessage } from "@/features/utils/getErrorMessage";
 import { useDebounce } from "@/hooks/useDebounce";
 
 import {
-	downloadRegistrationsCsv,
+	ExportConfigDialog,
+	ExportOptions,
+} from "@/components/ui/ExportConfigDialog";
+import {
+	downloadRegistrationsExcel,
 	downloadRegistrationsPdf,
 } from "../api/registrations.service";
 import { EventPermissionGate } from "../components/EventPermissionGate";
@@ -84,6 +88,9 @@ export function EventRegistrationsPage() {
 	const [tempGroup, setTempGroup] = useState("");
 
 	const [isDownloading, setIsDownloading] = useState(false);
+
+	const [exportDialogOpen, setExportDialogOpen] = useState(false);
+	const [exportType, setExportType] = useState<"xlsx" | "pdf">("xlsx");
 
 	const { access, event } = useOutletContext<
 		EventOutletCtx & { event: any }
@@ -144,6 +151,46 @@ export function EventRegistrationsPage() {
 		setIsEditingGroup(false);
 	};
 
+	const dynamicFieldsList = useMemo(() => {
+		const firstRow = rows[0];
+		if (!firstRow?.answers) return [];
+		return Object.entries(firstRow.answers).map(([key, val]: any) => ({
+			key,
+			label: val.label,
+		}));
+	}, [rows]);
+
+	const handleDownloadClick = (type: "xlsx" | "pdf") => {
+		setExportType(type);
+		setExportDialogOpen(true);
+	};
+
+	const executeDownload = async (options: ExportOptions) => {
+		try {
+			setIsDownloading(true);
+			const downloadParams = {
+				...params,
+				groupBy: options.groupBy || undefined,
+				pageBreak: options.pageBreak,
+				columns: options.columns.join(","),
+			};
+
+			if (exportType === "xlsx") {
+				await downloadRegistrationsExcel(id, downloadParams);
+			} else {
+				await downloadRegistrationsPdf(id, downloadParams);
+			}
+			showNotification(
+				`Archivo ${exportType.toUpperCase()} generado`,
+				"success",
+			);
+		} catch (err) {
+			showNotification("Error al generar el archivo", "error");
+		} finally {
+			setIsDownloading(false);
+		}
+	};
+
 	const onChangeStatus = (newStatus: RegistrationStatus) => {
 		if (!activeRow || !canWrite) return;
 		updateStatusMutation.mutate(
@@ -186,29 +233,6 @@ export function EventRegistrationsPage() {
 				},
 			},
 		);
-	};
-
-	const handleDownload = async (type: "csv" | "pdf") => {
-		try {
-			setIsDownloading(true);
-			if (type === "csv") {
-				await downloadRegistrationsCsv(id, params);
-			} else {
-				await downloadRegistrationsPdf(id, params);
-			}
-			showNotification(
-				`Archivo ${type.toUpperCase()} descargado con éxito`,
-				"success",
-			);
-		} catch (err) {
-			console.error("Error al descargar el archivo:", err);
-			showNotification(
-				`Hubo un error al generar el ${type.toUpperCase()}`,
-				"error",
-			);
-		} finally {
-			setIsDownloading(false);
-		}
 	};
 
 	const columns: GridColDef<RegistrationItem>[] = useMemo(() => {
@@ -382,12 +406,12 @@ export function EventRegistrationsPage() {
 									<DownloadIcon />
 								)
 							}
-							onClick={() => handleDownload("csv")}
+							onClick={() => handleDownloadClick("xlsx")}
 							disabled={
 								isLoading || rowCount === 0 || isDownloading
 							}
 						>
-							CSV
+							EXCEL
 						</Button>
 
 						<Button
@@ -403,13 +427,20 @@ export function EventRegistrationsPage() {
 									<DownloadIcon />
 								)
 							}
-							onClick={() => handleDownload("pdf")}
+							onClick={() => handleDownloadClick("pdf")}
 							disabled={
 								isLoading || rowCount === 0 || isDownloading
 							}
 						>
 							PDF
 						</Button>
+						<ExportConfigDialog
+							open={exportDialogOpen}
+							type={exportType}
+							dynamicFields={dynamicFieldsList}
+							onClose={() => setExportDialogOpen(false)}
+							onConfirm={executeDownload}
+						/>
 					</Stack>
 				)}
 			</Stack>
