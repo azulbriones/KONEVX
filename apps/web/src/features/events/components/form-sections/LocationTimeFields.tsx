@@ -72,7 +72,7 @@ export function LocationTimeFields({ disabled }: { disabled: boolean }) {
 							label="Fecha de inicio"
 							InputLabelProps={{ shrink: true }}
 							{...field}
-							value={formatForDateInput(field.value)} // 👈 Aquí ocurre la magia
+							value={formatForDateInput(field.value)}
 							error={!!(errors as any).startDate}
 							helperText={
 								(errors as any).startDate?.message as string

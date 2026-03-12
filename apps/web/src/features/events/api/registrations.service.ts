@@ -22,21 +22,21 @@ export async function listRegistrations(
 export async function updateRegistrationStatus(
 	eventId: number,
 	registrationId: number,
-	status: RegistrationStatus,
+	payload: { status: RegistrationStatus; assignedGroup?: string | null }
 ) {
 	const { data } = await api.patch<
-		ApiResponse<{ registrationId: number; status: RegistrationStatus }>
-	>(`/events/${eventId}/registrations/${registrationId}`, { status });
+		ApiResponse<{ registrationId: number; status: RegistrationStatus; assignedGroup: string | null }>
+	>(`/events/${eventId}/registrations/${registrationId}`, payload);
 
 	if (!data.ok) throw data;
 	return data.data;
 }
 
-export async function downloadRegistrationsCsv(
+export async function downloadRegistrationsExcel(
 	eventId: number,
 	query: Partial<ListRegistrationsQuery>,
 ) {
-	const response = await api.get(`/events/${eventId}/registrations.csv`, {
+	const response = await api.get(`/events/${eventId}/registrations.xlsx`, {
 		params: query,
 		responseType: "blob",
 	});
@@ -44,7 +44,7 @@ export async function downloadRegistrationsCsv(
 	const url = window.URL.createObjectURL(new Blob([response.data]));
 	const link = document.createElement("a");
 	link.href = url;
-	link.setAttribute("download", `evento-${eventId}-registros.csv`);
+	link.setAttribute("download", `evento-${eventId}-registros.xlsx`);
 	document.body.appendChild(link);
 	link.click();
 

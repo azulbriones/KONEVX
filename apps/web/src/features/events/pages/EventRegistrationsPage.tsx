@@ -3,12 +3,14 @@ import { useMemo, useState } from "react";
 import { useOutletContext, useParams } from "react-router-dom";
 
 import DownloadIcon from "@mui/icons-material/Download";
+import EditIcon from "@mui/icons-material/Edit";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import {
 	Box,
 	Button,
 	Chip,
 	CircularProgress,
+	Divider,
 	IconButton,
 	Menu,
 	MenuItem,
@@ -32,7 +34,11 @@ import { getErrorMessage } from "@/features/utils/getErrorMessage";
 import { useDebounce } from "@/hooks/useDebounce";
 
 import {
-	downloadRegistrationsCsv,
+	ExportConfigDialog,
+	ExportOptions,
+} from "@/components/ui/ExportConfigDialog";
+import {
+	downloadRegistrationsExcel,
 	downloadRegistrationsPdf,
 } from "../api/registrations.service";
 import { EventPermissionGate } from "../components/EventPermissionGate";
@@ -78,7 +84,13 @@ export function EventRegistrationsPage() {
 	const [activeRow, setActiveRow] = useState<RegistrationItem | null>(null);
 	const menuOpen = Boolean(anchorEl);
 
+	const [isEditingGroup, setIsEditingGroup] = useState(false);
+	const [tempGroup, setTempGroup] = useState("");
+
 	const [isDownloading, setIsDownloading] = useState(false);
+
+	const [exportDialogOpen, setExportDialogOpen] = useState(false);
+	const [exportType, setExportType] = useState<"xlsx" | "pdf">("xlsx");
 
 	const { access, event } = useOutletContext<
 		EventOutletCtx & { event: any }
@@ -129,11 +141,54 @@ export function EventRegistrationsPage() {
 		if (!canWrite) return;
 		setAnchorEl(e.currentTarget);
 		setActiveRow(row);
+		setTempGroup(row.assignedGroup || "");
+		setIsEditingGroup(false);
 	};
 
 	const closeMenu = () => {
 		setAnchorEl(null);
 		setActiveRow(null);
+		setIsEditingGroup(false);
+	};
+
+	const dynamicFieldsList = useMemo(() => {
+		const firstRow = rows[0];
+		if (!firstRow?.answers) return [];
+		return Object.entries(firstRow.answers).map(([key, val]: any) => ({
+			key,
+			label: val.label,
+		}));
+	}, [rows]);
+
+	const handleDownloadClick = (type: "xlsx" | "pdf") => {
+		setExportType(type);
+		setExportDialogOpen(true);
+	};
+
+	const executeDownload = async (options: ExportOptions) => {
+		try {
+			setIsDownloading(true);
+			const downloadParams = {
+				...params,
+				groupBy: options.groupBy || undefined,
+				pageBreak: options.pageBreak,
+				columns: options.columns.join(","),
+			};
+
+			if (exportType === "xlsx") {
+				await downloadRegistrationsExcel(id, downloadParams);
+			} else {
+				await downloadRegistrationsPdf(id, downloadParams);
+			}
+			showNotification(
+				`Archivo ${exportType.toUpperCase()} generado`,
+				"success",
+			);
+		} catch (err) {
+			showNotification("Error al generar el archivo", "error");
+		} finally {
+			setIsDownloading(false);
+		}
 	};
 
 	const onChangeStatus = (newStatus: RegistrationStatus) => {
@@ -159,27 +214,25 @@ export function EventRegistrationsPage() {
 		);
 	};
 
-	const handleDownload = async (type: "csv" | "pdf") => {
-		try {
-			setIsDownloading(true);
-			if (type === "csv") {
-				await downloadRegistrationsCsv(id, params);
-			} else {
-				await downloadRegistrationsPdf(id, params);
-			}
-			showNotification(
-				`Archivo ${type.toUpperCase()} descargado con éxito`,
-				"success",
-			);
-		} catch (err) {
-			console.error("Error al descargar el archivo:", err);
-			showNotification(
-				`Hubo un error al generar el ${type.toUpperCase()}`,
-				"error",
-			);
-		} finally {
-			setIsDownloading(false);
-		}
+	const onSaveGroup = () => {
+		if (!activeRow || !canWrite) return;
+
+		updateStatusMutation.mutate(
+			{
+				registrationId: activeRow.id,
+				status: activeRow.status,
+				assignedGroup: tempGroup || null,
+			},
+			{
+				onSuccess: () => {
+					closeMenu();
+					showNotification("Grupo actualizada", "success");
+				},
+				onError: () => {
+					showNotification("Error al actualizar el grupo", "error");
+				},
+			},
+		);
 	};
 
 	const columns: GridColDef<RegistrationItem>[] = useMemo(() => {
@@ -217,6 +270,21 @@ export function EventRegistrationsPage() {
 						variant="outlined"
 						sx={{ fontWeight: 600 }}
 					/>
+				),
+			},
+			{
+				field: "assignedGroup",
+				headerName: "Grupo",
+				width: 120,
+				sortable: false,
+				renderCell: (params) => (
+					<Typography
+						variant="body2"
+						fontWeight={params.value ? 700 : 400}
+						color={params.value ? "primary" : "text.secondary"}
+					>
+						{params.value || "Sin asignar"}
+					</Typography>
 				),
 			},
 		];
@@ -338,12 +406,12 @@ export function EventRegistrationsPage() {
 									<DownloadIcon />
 								)
 							}
-							onClick={() => handleDownload("csv")}
+							onClick={() => handleDownloadClick("xlsx")}
 							disabled={
 								isLoading || rowCount === 0 || isDownloading
 							}
 						>
-							CSV
+							EXCEL
 						</Button>
 
 						<Button
@@ -359,13 +427,20 @@ export function EventRegistrationsPage() {
 									<DownloadIcon />
 								)
 							}
-							onClick={() => handleDownload("pdf")}
+							onClick={() => handleDownloadClick("pdf")}
 							disabled={
 								isLoading || rowCount === 0 || isDownloading
 							}
 						>
 							PDF
 						</Button>
+						<ExportConfigDialog
+							open={exportDialogOpen}
+							type={exportType}
+							dynamicFields={dynamicFieldsList}
+							onClose={() => setExportDialogOpen(false)}
+							onConfirm={executeDownload}
+						/>
 					</Stack>
 				)}
 			</Stack>
@@ -408,12 +483,74 @@ export function EventRegistrationsPage() {
 				anchorEl={anchorEl}
 				open={menuOpen}
 				onClose={closeMenu}
-				PaperProps={{ sx: { borderRadius: 2, minWidth: 220, mt: 0.5 } }}
+				PaperProps={{ sx: { borderRadius: 2, minWidth: 260, mt: 0.5 } }}
 				transformOrigin={{ horizontal: "right", vertical: "top" }}
 				anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
 			>
+				<Box sx={{ px: 2, pt: 1.5, pb: 1 }}>
+					<Stack
+						direction="row"
+						justifyContent="space-between"
+						alignItems="center"
+					>
+						<Typography
+							variant="caption"
+							color="text.secondary"
+							fontWeight={700}
+						>
+							GRUPO
+						</Typography>
+						{!isEditingGroup && (
+							<IconButton
+								size="small"
+								onClick={() => setIsEditingGroup(true)}
+								sx={{ p: 0 }}
+							>
+								<EditIcon sx={{ fontSize: 16 }} />
+							</IconButton>
+						)}
+					</Stack>
+
+					{isEditingGroup ? (
+						<Stack direction="row" gap={1} mt={1}>
+							<TextField
+								size="small"
+								placeholder="Ej: A1"
+								value={tempGroup}
+								onChange={(e) =>
+									setTempGroup(e.target.value.toUpperCase())
+								}
+								autoFocus
+							/>
+							<Button
+								variant="contained"
+								size="small"
+								onClick={onSaveGroup}
+								disabled={updateStatusMutation.isPending}
+							>
+								OK
+							</Button>
+						</Stack>
+					) : (
+						<Typography
+							variant="body1"
+							fontWeight="bold"
+							color={
+								activeRow?.assignedGroup
+									? "primary"
+									: "text.disabled"
+							}
+							mt={0.5}
+						>
+							{activeRow?.assignedGroup || "Sin asignar"}
+						</Typography>
+					)}
+				</Box>
+
+				<Divider sx={{ my: 1 }} />
+
 				<Typography
-					sx={{ px: 2, pt: 1.5, pb: 1 }}
+					sx={{ px: 2, pt: 1, pb: 1 }}
 					variant="caption"
 					color="text.secondary"
 					fontWeight={700}

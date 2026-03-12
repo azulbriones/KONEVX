@@ -32,11 +32,12 @@ export function useUpdateRegistrationStatus(eventId: number) {
 		mutationFn: (input: {
 			registrationId: number;
 			status: RegistrationStatus;
+			assignedGroup?: string | null;
 		}) =>
 			updateRegistrationStatus(
 				eventId,
 				input.registrationId,
-				input.status,
+				{ status: input.status, assignedGroup: input.assignedGroup }
 			),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: registrationsKeys.all(eventId) });

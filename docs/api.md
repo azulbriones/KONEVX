@@ -170,7 +170,7 @@ Roles por evento:
 
 ## Reports (admin)
 
-- CSV export
+- EXCEL export
 - PDF export
 
 (Depende de tus rutas actuales; si quieres lo dejamos con el path exacto tal cual lo tengas en router.)

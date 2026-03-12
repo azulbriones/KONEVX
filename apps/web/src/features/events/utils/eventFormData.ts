@@ -4,7 +4,7 @@ export const prepareEventFormData = (values: any) => {
 	Object.keys(values).forEach((key) => {
 		const val = values[key];
 
-		if (["promotionalVideo", "promotionalImages", "logo", "backgroundImage", "heroImage"].includes(key)) {
+		if (["promotionalVideo", "promotionalImages", "logo", "backgroundImage", "heroImage", "groupingSettings"].includes(key)) {
 			return;
 		}
 
@@ -12,7 +12,6 @@ export const prepareEventFormData = (values: any) => {
 			formData.append(key, val);
 		}
 	});
-
 
 	if (values.logo && typeof values.logo !== "string" && values.logo.length > 0) {
 		formData.append("logo", values.logo[0]);
@@ -34,6 +33,10 @@ export const prepareEventFormData = (values: any) => {
 
 	if (values.heroImage && typeof values.heroImage !== "string" && values.heroImage.length > 0) {
 		formData.append("heroImage", values.heroImage[0]);
+	}
+
+	if (values.groupingSettings) {
+		formData.append("groupingSettings", JSON.stringify(values.groupingSettings));
 	}
 
 	return formData;

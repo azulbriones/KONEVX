@@ -1,8 +1,10 @@
 import {
 	BarChart,
 	CalendarMonth,
+	Checkroom,
 	Description,
 	LocationOn,
+	MeetingRoom,
 	OpenInNew,
 	People,
 	Person,
@@ -29,7 +31,7 @@ const CONTACT_LABELS: Record<string, string> = {
 };
 
 export function EventOverviewPage() {
-	const { event, stats } = useOutletContext<Ctx>();
+	const { event, stats } = useOutletContext<Ctx & { stats: any }>();
 
 	const formatDate = (dateString?: Date | string | null) => {
 		if (!dateString) return "No definida";
@@ -38,6 +40,16 @@ export function EventOverviewPage() {
 			timeStyle: "short",
 		}).format(new Date(dateString));
 	};
+
+	const groupingFieldName =
+		event.groupingSettings?.fieldLabel || "Campo de Agrupación";
+
+	const hasFieldStats =
+		stats.fieldOccupancy && Object.keys(stats.fieldOccupancy).length > 0;
+	const hasGroups =
+		event.groupingSettings?.enabled &&
+		stats.groupsOccupancy &&
+		Object.keys(stats.groupsOccupancy).length > 0;
 
 	return (
 		<Stack spacing={4}>
@@ -82,6 +94,115 @@ export function EventOverviewPage() {
 						bgColor="#fffbeb"
 					/>
 				</Grid>
+			</Grid>
+
+			<Grid container spacing={3}>
+				{/* 💡 SECCIÓN NUEVA: TOTALES POR CAMPO (Ej: Tallas) */}
+				{hasFieldStats && (
+					<Grid item xs={12} md={hasGroups ? 6 : 12}>
+						<Card
+							variant="outlined"
+							sx={{
+								borderRadius: 3,
+								borderLeft: "6px solid #f59e0b",
+							}}
+						>
+							<CardContent sx={{ p: 3 }}>
+								<Stack
+									direction="row"
+									spacing={1}
+									alignItems="center"
+									mb={2}
+								>
+									<Checkroom sx={{ color: "#f59e0b" }} />
+									<Typography variant="h6" fontWeight={800}>
+										Resumen por {groupingFieldName}
+									</Typography>
+								</Stack>
+								<Divider sx={{ mb: 2 }} />
+								<Stack spacing={1}>
+									{Object.entries(stats.fieldOccupancy).map(
+										([label, count]: any) => (
+											<Box
+												key={label}
+												sx={{
+													display: "flex",
+													justifyContent:
+														"space-between",
+													alignItems: "center",
+													p: 1,
+													bgcolor:
+														"background.default",
+													borderRadius: 1,
+												}}
+											>
+												<Typography
+													variant="body2"
+													fontWeight={600}
+												>
+													{label}
+												</Typography>
+												<Chip
+													label={`${count} registros`}
+													size="small"
+													color="warning"
+													variant="outlined"
+												/>
+											</Box>
+										),
+									)}
+								</Stack>
+							</CardContent>
+						</Card>
+					</Grid>
+				)}
+
+				{/* 💡 SECCIÓN: DISTRIBUCIÓN POR GRUPOS (Logística) */}
+				{hasGroups && (
+					<Grid item xs={12} md={hasFieldStats ? 6 : 12}>
+						<Card
+							variant="outlined"
+							sx={{
+								borderRadius: 3,
+								borderLeft: "6px solid #6366f1",
+							}}
+						>
+							<CardContent sx={{ p: 3 }}>
+								<Stack
+									direction="row"
+									spacing={1}
+									alignItems="center"
+									mb={2}
+								>
+									<MeetingRoom color="primary" />
+									<Typography variant="h6" fontWeight={800}>
+										Distribución de Grupos
+									</Typography>
+								</Stack>
+								<Divider sx={{ mb: 2 }} />
+								<Box
+									sx={{
+										display: "flex",
+										flexWrap: "wrap",
+										gap: 1,
+									}}
+								>
+									{Object.entries(stats.groupsOccupancy).map(
+										([group, count]: any) => (
+											<Chip
+												key={group}
+												label={`${group}: ${count}`}
+												variant="filled"
+												color="primary"
+												sx={{ fontWeight: 700 }}
+											/>
+										),
+									)}
+								</Box>
+							</CardContent>
+						</Card>
+					</Grid>
+				)}
 			</Grid>
 
 			<Grid container spacing={3}>

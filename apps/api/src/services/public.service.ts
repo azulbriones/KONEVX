@@ -30,6 +30,7 @@ const EVENT_DETAIL_SELECT = {
 	thingsToBring: true,
 	thingsNotToBring: true,
 	note: true,
+	groupingSettings: true,
 	createdAt: true,
 	updatedAt: true,
 } as const;
