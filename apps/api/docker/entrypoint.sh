@@ -3,7 +3,7 @@ set -eu
 
 log() { echo "[$(date -u +'%Y-%m-%dT%H:%M:%SZ')] $*"; }
 
-log "🔧 KONEVX API entrypoint"
+log "🔧 Konevx API entrypoint"
 
 : "${DATABASE_URL:?DATABASE_URL is required}"
 : "${AUTH_ACCESS_TOKEN_SECRET:?AUTH_ACCESS_TOKEN_SECRET is required}"
@@ -14,10 +14,10 @@ DEMO_MODE="${DEMO_MODE:-false}"
 
 # Control flags
 RUN_MIGRATIONS="${RUN_MIGRATIONS:-true}"
-RUN_SEEDS="${RUN_SEEDS:-true}"
+RUN_SEEDS="${RUN_SEEDS:-false}"
 
 # Demo seed behavior
-SEED_DEMO_RESET="${SEED_DEMO_RESET:-true}" # true => reset+seed
+SEED_DEMO_RESET="${SEED_DEMO_RESET:-false}"
 
 log "NODE_ENV=$NODE_ENV"
 log "DEMO_MODE=$DEMO_MODE"

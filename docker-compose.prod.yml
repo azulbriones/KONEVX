@@ -1,6 +1,7 @@
 services:
     db:
         image: postgres:16-alpine
+        restart: unless-stopped
         env_file: .env.prod
         environment:
             POSTGRES_USER: ${POSTGRES_USER}
@@ -23,6 +24,7 @@ services:
             context: .
             dockerfile: apps/api/Dockerfile
             target: runtime
+        restart: unless-stopped
         volumes:
             - /var/eventplanner/uploads:/app/apps/api/public/uploads
         env_file: .env.prod
@@ -58,16 +60,31 @@ services:
             target: runtime
             args:
                 VITE_API_URL: ${VITE_API_URL}
+        restart: unless-stopped
         depends_on:
             api:
                 condition: service_healthy
-        ports:
-            - "80:80"
         healthcheck:
-            test: ["CMD-SHELL", "wget -qO- http://localhost/ || exit 1"]
+            test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ || exit 1"]
             interval: 10s
             timeout: 3s
             retries: 20
 
+    caddy:
+        image: caddy:2-alpine
+        restart: unless-stopped
+        depends_on:
+            - web
+            - api
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ./Caddyfile:/etc/caddy/Caddyfile:ro
+            - caddy_data:/data
+            - caddy_config:/config
+
 volumes:
     db_prod:
+    caddy_data:
+    caddy_config:

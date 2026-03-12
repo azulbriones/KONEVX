@@ -1,20 +1,25 @@
 /* =========================================
-   1. VARIABLES Y RESET GLOBAL
+	1. VARIABLES Y RESET GLOBAL
 ========================================= */
 :root {
-	--primary: #0f172a;
+	--primary: #2563eb;
 	--primary-light: #1e293b;
+	--primary-dark: #1e40af;
 	--orange: #f97316;
 	--orange-hover: #ea580c;
 
 	--bg: #f8fafc;
 	--card: #ffffff;
+
 	--text: #0f172a;
 	--muted: #64748b;
-	--border: #e2e8f0;
 
-	--shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1),
-		0 10px 10px -5px rgba(15, 23, 42, 0.04);
+	--border: #e2e8f0;
+	--shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+		0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+	--r-3xl: 2rem;
+	--r-2xl: 1.25rem;
 }
 
 html {
@@ -37,7 +42,7 @@ html {
 }
 
 /* =========================================
-   2. NAVEGACIÓN (NAVBAR)
+	2. NAVEGACIÓN (NAVBAR)
 ========================================= */
 .public-nav {
 	position: sticky;
@@ -97,7 +102,7 @@ html {
 }
 
 /* =========================================
-   3. BOTONES GLOBALES
+	3. BOTONES GLOBALES
 ========================================= */
 .btn {
 	border: none;
@@ -165,7 +170,7 @@ html {
 }
 
 /* =========================================
-   4. SECCIÓN HERO (CABECERA PRINCIPAL)
+	4. SECCIÓN HERO (CABECERA PRINCIPAL)
 ========================================= */
 .hero {
 	color: white;
@@ -272,25 +277,19 @@ html {
 .hero-image-card {
 	position: relative;
 	width: 100%;
-	/* Mantiene una proporción elegante tipo retrato cuadrado u horizontal */
 	aspect-ratio: 4/5;
 	border-radius: 1.5rem;
 	overflow: hidden;
-	/* Sombra profunda y elegante */
 	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6),
 		0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-	/* Borde semi-transparente estilo Glassmorphism */
 	border: 4px solid rgba(255, 255, 255, 0.15);
 	background-color: rgba(255, 255, 255, 0.05);
-	/* Por si la imagen tarda en cargar */
 	transform: rotateY(-5deg) rotateX(5deg);
-	/* Ligera rotación 3D para darle profundidad */
 	transition: transform 0.5s ease;
 }
 
 .hero-image-card:hover {
 	transform: rotateY(0) rotateX(0) scale(1.02);
-	/* Se "endereza" al pasar el mouse */
 }
 
 .hero-floating-img {
@@ -326,7 +325,7 @@ html {
 }
 
 /* =========================================
-   5. TARJETAS DE ESTADÍSTICAS (INFO)
+	5. TARJETAS DE ESTADÍSTICAS (INFO)
 ========================================= */
 .stats {
 	max-width: 1200px;
@@ -393,7 +392,7 @@ html {
 }
 
 /* =========================================
-   6. SECCIONES GENERALES Y GALERÍA (BENTO)
+	6. SECCIONES GENERALES Y GALERÍA (BENTO)
 ========================================= */
 .section {
 	max-width: 1200px;
@@ -439,7 +438,6 @@ html {
 	object-fit: cover;
 	transition: 0.5s;
 	display: block;
-	/* Para evitar espacios fantasma debajo de las imágenes */
 }
 
 .bento-item:hover img {
@@ -447,7 +445,6 @@ html {
 }
 
 .bento-main {
-	/* En móviles (por defecto), mantenemos una proporción de video */
 	aspect-ratio: 16/9;
 }
 
@@ -458,7 +455,6 @@ html {
 	align-items: center;
 	justify-content: center;
 	pointer-events: none;
-	/* Para que el usuario pueda hacer click en el video si tiene controles */
 }
 
 .play {
@@ -494,7 +490,7 @@ html {
 }
 
 /* =========================================
-   7. LISTAS Y CHECKLISTS (QUÉ LLEVAR)
+	7. LISTAS Y CHECKLISTS (QUÉ LLEVAR)
 ========================================= */
 .checklists {
 	display: grid;
@@ -543,7 +539,7 @@ html {
 }
 
 /* =========================================
-   8. FORMULARIO DE REGISTRO
+	8. FORMULARIO DE REGISTRO
 ========================================= */
 .form-wrap {
 	background: #f1f5f9;
@@ -690,7 +686,7 @@ html {
 }
 
 /* =========================================
-   9. COMPONENTES DE ESTADO (BADGES Y BANNERS)
+	9. COMPONENTES DE ESTADO (BADGES Y BANNERS)
 ========================================= */
 .availability {
 	display: inline-flex;
@@ -841,7 +837,7 @@ html {
 }
 
 /* =========================================
-   10. FOOTER
+	10. FOOTER
 ========================================= */
 .footer {
 	background: #0f172a;
@@ -873,7 +869,7 @@ html {
 }
 
 /* =========================================
-   11. MEDIA QUERIES (RESPONSIVE)
+	11. MEDIA QUERIES (RESPONSIVE)
 ========================================= */
 @media (min-width: 768px) {
 	.stats {

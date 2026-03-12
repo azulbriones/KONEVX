@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { exportRegistrationsCsvHandler } from "../controllers/registrationsExport.controller.js";
+import { exportRegistrationsExcelHandler } from "../controllers/registrationsExport.controller.js";
 
 export const registrationsExportRouter = Router({ mergeParams: true });
 
-// GET /api/events/:eventId/registrations.csv
+// GET /api/events/:eventId/registrations.xlsx
 registrationsExportRouter.get(
-	"/registrations.csv",
-	exportRegistrationsCsvHandler,
+	"/registrations.xlsx",
+	exportRegistrationsExcelHandler,
 );

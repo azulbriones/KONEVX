@@ -6,6 +6,7 @@ export const ListRegistrationsQuerySchema = z.object({
 		.optional(),
 	skip: z.coerce.number().int().min(0).optional().default(0),
 	take: z.coerce.number().int().min(1).max(100).optional().default(20),
+	assignedGroup: z.string().nullable().optional(),
 });
 
 export type ListRegistrationsQuery = z.infer<

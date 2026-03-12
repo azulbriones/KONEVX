@@ -2,6 +2,26 @@ import { z } from "zod";
 
 const emptyToUndefined = (val: unknown) => (val === "" ? undefined : val);
 
+export const GroupDistributionSchema = z.object({
+	prefix: z.string().min(1, "El prefijo es requerido"),
+	subgroupsCount: z.number().int().min(1, "Debe haber al menos 1 subgrupo"),
+});
+
+export const GroupingSettingsSchema = z.object({
+	enabled: z.boolean(),
+	customFieldId: z.number().int().positive("Debe seleccionar un campo válido").nullable().optional(),
+	hasSubgroups: z.boolean(),
+	distribution: z.record(z.string(), GroupDistributionSchema).optional().default({}),
+}).refine((data) => {
+	if (data.enabled && !data.customFieldId) {
+		return false;
+	}
+	return true;
+}, {
+	message: "Debe seleccionar un campo válido cuando la agrupación está activada",
+	path: ["customFieldId"],
+});
+
 export const CreateEventSchema = z.object({
 	name: z.string().min(2).max(200),
 	slug: z
@@ -39,6 +59,13 @@ export const CreateEventSchema = z.object({
 	thingsToBring: z.string().optional(),
 	thingsNotToBring: z.string().optional(),
 	note: z.string().optional(),
+
+	groupingSettings: z.preprocess((val) => {
+		if (typeof val === "string") {
+			try { return JSON.parse(val); } catch (e) { return val; }
+		}
+		return val;
+	}, GroupingSettingsSchema.optional()),
 });
 
 export const UpdateEventSchema = CreateEventSchema.partial();

@@ -26,7 +26,16 @@ export function EditEventPage() {
 
 	return (
 		<EventForm
-			defaultValues={data?.event}
+			defaultValues={
+				data?.event
+					? {
+							...data.event,
+							slogan: data.event.slogan ?? undefined,
+							footerDescription:
+								data.event.footerDescription ?? undefined,
+						}
+					: undefined
+			}
 			onSubmit={handleUpdate}
 			isPending={updateMutation.isPending}
 			submitLabel="Guardar Cambios"

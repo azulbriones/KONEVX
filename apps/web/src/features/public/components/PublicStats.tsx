@@ -109,11 +109,6 @@ export function PublicStats({
 						{badge.text}
 					</span>
 				</div>
-				<div className="stat-hint">
-					{remaining <= 0
-						? "Ya no hay lugares disponibles."
-						: `Quedan ${remaining} lugares`}
-				</div>
 			</div>
 		</section>
 	);

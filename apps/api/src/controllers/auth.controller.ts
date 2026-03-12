@@ -6,6 +6,7 @@ import {
 	CSRF_COOKIE,
 	REFRESH_COOKIE,
 	baseCookieOptions,
+	clearLegacyAndScopedCookies,
 	csrfCookieOptions,
 } from "../lib/cookies.js";
 import { generateCsrfToken } from "../lib/crypto.js";
@@ -29,6 +30,7 @@ const setAuthCookies = (
 	accessToken: string,
 	refreshToken: string,
 ) => {
+	clearLegacyAndScopedCookies(res);
 	const csrf = generateCsrfToken();
 
 	res.cookie(ACCESS_COOKIE, accessToken, {
@@ -149,7 +151,7 @@ export const logoutHandler: RequestHandler = async (req, res, next) => {
 	try {
 		const refresh = req.cookies?.[REFRESH_COOKIE] ?? null;
 		await logoutSession(refresh);
-
+		clearLegacyAndScopedCookies(res);
 		res.clearCookie(ACCESS_COOKIE, baseCookieOptions());
 		res.clearCookie(REFRESH_COOKIE, baseCookieOptions());
 		res.clearCookie(CSRF_COOKIE, csrfCookieOptions());

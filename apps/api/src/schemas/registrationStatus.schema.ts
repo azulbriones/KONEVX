@@ -7,6 +7,7 @@ export const UpdateRegistrationStatusSchema = z.object({
 		"CONFIRMED",
 		"ATTENDED",
 	]),
+	assignedGroup: z.string().nullable().optional(),
 });
 
 export type UpdateRegistrationStatusInput = z.infer<
