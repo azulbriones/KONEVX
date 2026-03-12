@@ -1,18 +1,32 @@
 import { prisma } from "../db/prisma.js";
 import { hashPassword } from "../lib/crypto.js";
 
-const email =
-	process.env.SEED_ADMIN_EMAIL ??
-	process.env.DEMO_EDITOR_EMAIL ?? // fallback en demo si quieres
-	"admin@eventplanner.demo";
+function requireEnv(name: string): string {
+	const value = process.env[name]?.trim();
 
-const password =
-	process.env.SEED_ADMIN_PASSWORD ??
-	process.env.DEMO_EDITOR_PASSWORD ?? // fallback en demo si quieres
-	"ChangeMe123!";
+	if (!value) {
+		throw new Error(`${name} is required`);
+	}
+
+	return value;
+}
+
+const isDemo = process.env.DEMO_MODE === "true";
+
+const email = isDemo
+	? process.env.SEED_ADMIN_EMAIL?.trim() ||
+	process.env.DEMO_EDITOR_EMAIL?.trim() ||
+	"admin@eventplanner.demo"
+	: requireEnv("SEED_ADMIN_EMAIL");
+
+const password = isDemo
+	? process.env.SEED_ADMIN_PASSWORD?.trim() ||
+	process.env.DEMO_EDITOR_PASSWORD?.trim() ||
+	"ChangeMe123!"
+	: requireEnv("SEED_ADMIN_PASSWORD");
 
 async function main() {
-	const emailNorm = email.trim().toLowerCase();
+	const emailNorm = email.toLowerCase();
 	const passwordHash = await hashPassword(password);
 
 	const user = await prisma.user.upsert({
@@ -34,7 +48,7 @@ async function main() {
 
 main()
 	.catch((e) => {
-		console.error(e);
+		console.error("❌ Failed to ensure admin:", e);
 		process.exit(1);
 	})
 	.finally(async () => {

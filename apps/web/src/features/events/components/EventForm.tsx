@@ -17,8 +17,23 @@ import { LocationTimeFields } from "./form-sections/LocationTimeFields";
 import { MediaConfigFields } from "./form-sections/MediaConfigFields";
 import { PublicLinkFields } from "./form-sections/PublicLinkFields";
 
+// Función de utilidad para convertir nulls a undefined
+// Esto evita errores de TypeScript cuando la API devuelve nulls
+const sanitizeData = (data: any) => {
+	if (!data) return data;
+	const clean: any = { ...data };
+	Object.keys(clean).forEach((key) => {
+		if (clean[key] === null) {
+			clean[key] = undefined;
+		}
+	});
+	return clean;
+};
+
 interface EventFormProps {
-	defaultValues?: Partial<CreateEventInput>;
+	// Aceptamos 'any' aquí temporalmente o un tipo que permita nulls
+	// para que el componente padre no de error al pasar data de la API
+	defaultValues?: any;
 	onSubmit: (data: CreateEventInput) => void;
 	isPending: boolean;
 	submitLabel: string;
@@ -33,32 +48,27 @@ export function EventForm({
 	onCancel,
 }: EventFormProps) {
 	const methods = useForm<CreateEventInput>({
-		resolver: yupResolver(schema),
+		resolver: yupResolver(schema) as any,
 		defaultValues: {
 			name: "",
 			slug: "",
 			capacity: 100,
 			contactRequirement: "EMAIL",
-			...defaultValues,
+			...sanitizeData(defaultValues),
 		},
 	});
 
 	useEffect(() => {
 		if (defaultValues) {
-			methods.reset(defaultValues);
+			methods.reset(sanitizeData(defaultValues));
 		}
 	}, [defaultValues, methods]);
 
-	const title = defaultValues?.id ? "Editar" : "Crear";
+	const isEdit = !!(defaultValues as any)?.id;
+	const title = isEdit ? "Editar" : "Crear";
 
 	return (
-		<Box
-			sx={{
-				display: "flex",
-				justifyContent: "center",
-				py: 4,
-			}}
-		>
+		<Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
 			<Paper
 				sx={{
 					width: "100%",
@@ -69,48 +79,33 @@ export function EventForm({
 				}}
 				variant="outlined"
 			>
-				<Typography
-					variant="h4"
-					fontWeight={800}
-					gutterBottom
-					sx={{
-						alignSelf: "flex-start",
-						maxWidth: 900,
-						mx: "auto",
-						width: "100%",
-						px: 2,
-					}}
-				>
+				<Typography variant="h4" fontWeight={800} gutterBottom px={2}>
 					{`${title} evento`}
 				</Typography>
+
 				<FormProvider {...methods}>
 					<Box
-						sx={{ width: "100%" }}
 						component="form"
 						onSubmit={methods.handleSubmit(onSubmit)}
 						noValidate
+						sx={{ width: "100%" }}
 					>
-						<Stack spacing={4} sx={{ width: "100%" }}>
+						<Stack spacing={4}>
 							<GeneralInfoFields disabled={isPending} />
 							<LocationTimeFields disabled={isPending} />
-							<MediaConfigFields
-								disabled={isPending}
-								currentLogo={defaultValues?.logo}
-							/>
+							<MediaConfigFields disabled={isPending} />
 							<PublicLinkFields disabled={isPending} />
 
 							<Stack
 								direction="row"
 								spacing={2}
 								justifyContent="flex-end"
-								sx={{ mt: 2 }}
 							>
 								<Button
 									variant="outlined"
 									color="inherit"
 									onClick={onCancel}
 									disabled={isPending}
-									sx={{ borderRadius: 2 }}
 								>
 									Cancelar
 								</Button>
@@ -118,14 +113,14 @@ export function EventForm({
 									type="submit"
 									variant="contained"
 									disabled={isPending}
-									sx={{ borderRadius: 2, px: 4 }}
+									sx={{ px: 4 }}
 									startIcon={
-										isPending ? (
+										isPending && (
 											<CircularProgress
 												size={18}
 												color="inherit"
 											/>
-										) : null
+										)
 									}
 								>
 									{isPending ? "Procesando..." : submitLabel}

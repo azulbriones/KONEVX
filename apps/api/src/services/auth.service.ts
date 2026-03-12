@@ -155,8 +155,8 @@ export async function logoutSession(refreshToken: string | null) {
 
 		await prisma.session
 			.delete({ where: { id: sessionId } })
-			.catch(() => {});
-	} catch {}
+			.catch(() => { });
+	} catch { }
 }
 
 export async function issueTokensForUser(

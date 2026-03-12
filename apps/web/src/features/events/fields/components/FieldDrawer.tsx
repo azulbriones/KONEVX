@@ -111,7 +111,7 @@ export function FieldDrawer({
 		reset,
 		formState: { errors },
 	} = useForm<FormValues>({
-		resolver: yupResolver(schema),
+		resolver: yupResolver(schema) as any,
 		defaultValues: {
 			key: "",
 			label: "",
@@ -171,7 +171,9 @@ export function FieldDrawer({
 		>
 			<Box
 				component="form"
-				onSubmit={handleSubmit(onFormSubmit)}
+				onSubmit={handleSubmit((values) =>
+					onFormSubmit(values as FormValues),
+				)}
 				sx={{
 					display: "flex",
 					flexDirection: "column",

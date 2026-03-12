@@ -1,0 +1,11 @@
+konevx.com {
+	reverse_proxy web:80
+}
+
+www.konevx.com {
+	redir https://konevx.com{uri} 301
+}
+
+api.konevx.com {
+	reverse_proxy api:3001
+}

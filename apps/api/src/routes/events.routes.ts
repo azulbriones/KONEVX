@@ -30,6 +30,7 @@ eventsRouter.get("/", requireAuth, listEventsHandler);
 eventsRouter.post(
 	"/",
 	requireAuth,
+	requireCsrf,
 	upload.fields([
 		{ name: 'logo', maxCount: 1 },
 		{ name: 'promotionalVideo', maxCount: 1 },
