@@ -1,4 +1,3 @@
-// src/utils/validationSchema.ts
 import { boolean, lazy, mixed, number, object, string } from "yup";
 
 const groupingSettingsSchema = object({
@@ -15,13 +14,11 @@ const groupingSettingsSchema = object({
 		const shape: any = {};
 		Object.keys(val).forEach((key) => {
 			shape[key] = object({
-				// 💡 CAMBIO AQUÍ: Transformamos y cortamos espacios en blanco
 				prefix: string()
 					.transform((v) => (v === null || v === undefined ? "" : String(v)))
 					.trim("No dejes solo espacios")
 					.required("El prefijo es requerido"),
 
-				// ... (subgroupsCount se queda igual con el cambio que ya le habíamos hecho)
 				subgroupsCount: number()
 					.transform((_value, originalValue) => {
 						return (originalValue === "" || originalValue === null || originalValue === undefined)

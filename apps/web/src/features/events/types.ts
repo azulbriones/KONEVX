@@ -1,7 +1,5 @@
 export type ContactRequirement = "EMAIL" | "PHONE";
-
 export type EventMemberRole = "EDITOR" | "VIEWER";
-
 export type EventAccessScope = "SUPER_ADMIN" | "MEMBER" | "NONE";
 
 export type EventAccess = {
@@ -15,43 +13,7 @@ export type EventAccess = {
 	canExport: boolean;
 };
 
-export type EventDetail = {
-	id: number;
-	name: string;
-	slug: string;
-	isPublished: boolean;
-	capacity: number;
-	contactRequirement: ContactRequirement;
-
-	organizerName: string;
-	slogan: string | null;
-	description: string;
-	footerDescription: string | null;
-	location: string;
-
-	startDate: string | null;
-	endDate: string | null;
-	entryTime: string | null;
-	exitTime: string | null;
-
-	cost: number | null;
-	minAge: number | null;
-
-	logo: string | null;
-	promotionalVideo: string | null;
-	promotionalImages: string[] | null;
-
-	contactInfo: string | null;
-	socialMediaInfo: string | null;
-	hashtag: string | null;
-
-	thingsToBring: string | null;
-	thingsNotToBring: string | null;
-	note: string | null;
-
-	createdAt: string;
-	updatedAt: string;
-};
+// --- Grouping & Logistics ---
 
 export interface GroupDistribution {
 	prefix: string;
@@ -60,10 +22,60 @@ export interface GroupDistribution {
 
 export interface GroupingSettings {
 	enabled: boolean;
-	customFieldId: number | "";
-	hasSubgroups: boolean;
-	distribution: Record<string, GroupDistribution>;
+	customFieldId: number | null | "";
+	fieldLabel?: string;
+	hasSubgroups?: boolean;
+	rules: {
+		type: 'STRICT' | 'BALANCED';
+		maxPerGroup?: number;
+		prefix?: string;
+	};
+	distribution?: Record<string, GroupDistribution>;
 }
+
+// --- Event Detail ---
+
+export type EventDetail = {
+	id: number;
+	name: string;
+	slug: string;
+	isPublished: boolean;
+	capacity: number;
+	contactRequirement: ContactRequirement;
+	organizerName: string;
+	slogan: string | null;
+	description: string;
+	footerDescription: string | null;
+	location: string;
+	startDate: string | null;
+	endDate: string | null;
+	entryTime: string | null;
+	exitTime: string | null;
+	cost: number | null;
+	minAge: number | null;
+	logo: string | null;
+	promotionalVideo: string | null;
+	promotionalImages: string[] | null;
+	contactInfo: string | null;
+	socialMediaInfo: string | null;
+	hashtag: string | null;
+	thingsToBring: string | null;
+	thingsNotToBring: string | null;
+	note: string | null;
+	groupingSettings: GroupingSettings | null;
+	createdAt: string;
+	updatedAt: string;
+};
+
+export type EventStats = {
+	fieldsCount: number;
+	registrationsCount: number;
+	occupancy: number | null;
+	groupsOccupancy?: Record<string, number>;
+	fieldOccupancy?: Record<string, number>;
+};
+
+// --- Inputs & Contexts ---
 
 export type CreateEventInput = {
 	name: string;
@@ -74,26 +86,20 @@ export type CreateEventInput = {
 	organizerName: string;
 	description: string;
 	location: string;
-
 	slogan?: string;
 	footerDescription?: string;
-
 	startDate?: string;
 	endDate?: string;
 	entryTime?: string;
 	exitTime?: string;
-
 	cost?: number;
 	minAge?: number;
-
 	contactInfo?: string;
 	socialMediaInfo?: string;
 	hashtag?: string;
-
 	thingsToBring?: string;
 	thingsNotToBring?: string;
 	note?: string;
-
 	logo?: any;
 	promotionalVideo?: any;
 	promotionalImages?: any;
@@ -106,6 +112,8 @@ export type EventOutletCtx = {
 	access: EventAccess;
 };
 
+export type Ctx = EventOutletCtx;
+
 export type EventListItem = {
 	id: number;
 	name: string;
@@ -117,21 +125,7 @@ export type EventListItem = {
 	access: EventAccess;
 };
 
-export type EventStats = {
-	fieldsCount: number;
-	registrationsCount: number;
-	occupancy: number | null;
-};
-
 export type EventDetailResponse = {
-	event: EventDetail;
-	access: EventAccess;
-	stats: EventStats;
-};
-
-
-
-export type Ctx = {
 	event: EventDetail;
 	access: EventAccess;
 	stats: EventStats;
