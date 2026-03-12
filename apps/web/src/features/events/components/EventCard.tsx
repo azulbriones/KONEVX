@@ -38,7 +38,7 @@ export function EventCard({ event }: { event: EventListItem }) {
 	const isPending = setPublishMutation.isPending || deleteMutation.isPending;
 
 	return (
-		<Card sx={{ opacity: isPending ? 0.7 : 1 }}>
+		<Card sx={{ opacity: isPending ? 0.7 : 1, width: "100%" }}>
 			<Box
 				sx={{
 					display: "flex",

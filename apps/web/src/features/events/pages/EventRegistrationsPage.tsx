@@ -368,7 +368,6 @@ export function EventRegistrationsPage() {
 							setPage(0);
 						}}
 						fullWidth
-						sx={{ maxWidth: 350 }}
 					/>
 
 					<TextField

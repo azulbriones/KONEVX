@@ -95,7 +95,7 @@ export function DashboardPage() {
 			</Stack>
 
 			{events.length > 0 ? (
-				<Grid container spacing={3}>
+				<Grid container sx={{ width: "100%" }} spacing={3}>
 					{events.map((e) => (
 						<Grid item xs={12} sm={6} md={4} key={e.id}>
 							<EventCard event={e} />

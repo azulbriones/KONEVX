@@ -69,7 +69,7 @@ export function EventOverviewPage() {
 				</Button>
 			</Stack>
 
-			<Grid container spacing={3}>
+			<Grid container sx={{ width: "100%" }} spacing={3}>
 				<Grid item xs={12} sm={4}>
 					<StatCard
 						title="Registros"
@@ -96,7 +96,7 @@ export function EventOverviewPage() {
 				</Grid>
 			</Grid>
 
-			<Grid container spacing={3}>
+			<Grid container sx={{ width: "100%" }} spacing={3}>
 				{/* 💡 SECCIÓN NUEVA: TOTALES POR CAMPO (Ej: Tallas) */}
 				{hasFieldStats && (
 					<Grid item xs={12} md={hasGroups ? 6 : 12}>
@@ -205,7 +205,7 @@ export function EventOverviewPage() {
 				)}
 			</Grid>
 
-			<Grid container spacing={3}>
+			<Grid container sx={{ width: "100%" }} spacing={3}>
 				<Grid item xs={12} md={7}>
 					<Card
 						variant="outlined"

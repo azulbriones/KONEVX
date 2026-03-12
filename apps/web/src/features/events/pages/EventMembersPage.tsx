@@ -306,7 +306,7 @@ export function EventMembersPage() {
 				<Stack
 					component="form"
 					onSubmit={onAdd}
-					direction={{ xs: "column", sm: "row" }}
+					direction={{ xs: "row", sm: "row" }}
 					gap={1.5}
 					alignItems="center"
 				>
