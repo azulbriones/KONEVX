@@ -1,28 +1,40 @@
 import { prisma } from "../db/prisma.js";
 import { HttpError } from "../lib/httpError.js";
 
-export async function getRegistrationsForPdf(eventId: number) {
+export async function getRegistrationsForPdf(eventId: number, filters: {
+	status?: string,
+	groupBy?: string,
+	pageBreak?: boolean
+}) {
 	const event = await prisma.event.findUnique({
 		where: { id: eventId },
-		select: { id: true, name: true, contactRequirement: true },
+		select: { id: true, name: true, contactRequirement: true, groupingSettings: true },
 	});
+
 	if (!event) throw new HttpError(404, "EVENT_NOT_FOUND", "Event not found");
 
+	const orderBy: any = [];
+	if (filters.groupBy === 'group') {
+		orderBy.push({ assignedGroup: 'asc' });
+	}
+	orderBy.push({ createdAt: 'desc' });
+
 	const rows = await prisma.registration.findMany({
-		where: { eventId },
-		orderBy: { createdAt: "desc" },
+		where: {
+			eventId,
+			status: filters.status as any || undefined,
+		},
+		orderBy,
 		select: {
 			id: true,
 			status: true,
 			assignedGroup: true,
 			createdAt: true,
-			participant: {
-				select: { emailNormalized: true, phoneNormalized: true },
-			},
+			participant: { select: { emailNormalized: true, phoneNormalized: true } },
 			fieldValues: {
 				select: {
 					value: true,
-					eventField: { select: { key: true, label: true, order: true } },
+					eventField: { select: { id: true, key: true, label: true, order: true } },
 				},
 			},
 		},
