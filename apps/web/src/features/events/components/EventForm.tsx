@@ -52,6 +52,10 @@ export function EventForm({
 			slug: "",
 			capacity: 100,
 			contactRequirement: "EMAIL",
+			groupingSettings: {
+				enabled: false,
+				hasSubgroups: false,
+			},
 			...sanitizeData(defaultValues),
 		},
 	});
