@@ -16,6 +16,7 @@ import { DashboardPage } from "@/features/dashboard/components/DashboardPage";
 import { NotFoundPage } from "@/features/dashboard/components/NotFoundPage";
 import { CreateEventPage } from "@/features/events/pages/CreateEventPage";
 import { EditEventPage } from "@/features/events/pages/EditEventPage";
+import { EventCheckInPage } from "@/features/events/pages/EventCheckInPage";
 import { EventFieldsPage } from "@/features/events/pages/EventFieldsPage";
 import { EventMembersPage } from "@/features/events/pages/EventMembersPage";
 import { EventOverviewPage } from "@/features/events/pages/EventOverviewPage";
@@ -66,6 +67,7 @@ const router = createBrowserRouter([
 							},
 							{ path: "fields", element: <EventFieldsPage /> },
 							{ path: "members", element: <EventMembersPage /> },
+							{ path: "check-in", element: <EventCheckInPage /> },
 						],
 					},
 				],

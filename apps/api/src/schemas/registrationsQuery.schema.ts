@@ -6,5 +6,6 @@ export const RegistrationsQuerySchema = z.object({
 	status: z
 		.enum(["REGISTERED", "CANCELLED", "CONFIRMED", "ATTENDED"])
 		.optional(),
-	q: z.string().trim().min(1).max(200).optional(),
+	q: z.string().trim().max(200).optional(),
+	fieldId: z.string().optional(),
 });

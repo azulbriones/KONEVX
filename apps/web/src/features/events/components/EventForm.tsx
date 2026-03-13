@@ -18,7 +18,6 @@ import { LocationTimeFields } from "./form-sections/LocationTimeFields";
 import { MediaConfigFields } from "./form-sections/MediaConfigFields";
 import { PublicLinkFields } from "./form-sections/PublicLinkFields";
 
-// Función de utilidad para convertir nulls a undefined
 const sanitizeData = (data: any) => {
 	if (!data) return data;
 	const clean: any = { ...data };

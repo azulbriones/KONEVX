@@ -8,13 +8,16 @@ export async function getRegistrationsForPdf(eventId: number, filters: {
 }) {
 	const event = await prisma.event.findUnique({
 		where: { id: eventId },
-		select: { id: true, name: true, contactRequirement: true, groupingSettings: true },
+		select: { id: true, name: true, contactRequirement: true },
 	});
 
 	if (!event) throw new HttpError(404, "EVENT_NOT_FOUND", "Event not found");
 
 	const orderBy: any = [];
-	if (filters.groupBy === 'group') {
+
+	if (filters.groupBy === 'assignedGroup' || filters.groupBy === 'groupBase') {
+		orderBy.push({ assignedGroup: 'asc' });
+	} else if (filters.groupBy) {
 		orderBy.push({ assignedGroup: 'asc' });
 	}
 	orderBy.push({ createdAt: 'desc' });
@@ -22,13 +25,14 @@ export async function getRegistrationsForPdf(eventId: number, filters: {
 	const rows = await prisma.registration.findMany({
 		where: {
 			eventId,
-			status: filters.status as any || undefined,
+			status: (filters.status as any) || undefined,
 		},
 		orderBy,
 		select: {
 			id: true,
 			status: true,
 			assignedGroup: true,
+			checkInNotes: true,
 			createdAt: true,
 			participant: { select: { emailNormalized: true, phoneNormalized: true } },
 			fieldValues: {
@@ -53,10 +57,5 @@ export async function getRegistrationsForPdf(eventId: number, filters: {
 		.sort((a, b) => a[1].order - b[1].order)
 		.map(([key, val]) => [key, val.label] as [string, string]);
 
-	return {
-		eventName: event.name,
-		contactRequirement: event.contactRequirement,
-		rows,
-		dynamicFields
-	};
+	return { eventName: event.name, contactRequirement: event.contactRequirement, rows, dynamicFields };
 }

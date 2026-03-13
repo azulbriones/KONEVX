@@ -73,3 +73,41 @@ export async function downloadRegistrationsPdf(
 	link.remove();
 	window.URL.revokeObjectURL(url);
 }
+
+export async function markAttendance(
+	eventId: number,
+	registrationId: number,
+	checkInNotes?: string
+) {
+	const { data } = await api.patch<ApiResponse<{
+		id: number;
+		status: "ATTENDED";
+		assignedGroup: string | null;
+		checkInNotes: string | null;
+	}>>(
+		`/events/${eventId}/registrations/${registrationId}/check-in`,
+		{ checkInNotes }
+	);
+
+	if (!data.ok) throw data;
+	return data.data;
+}
+export async function cancelAttendance(eventId: number, registrationId: number) {
+	const { data } = await api.delete<ApiResponse<any>>(
+		`/events/${eventId}/registrations/${registrationId}/check-in`
+	);
+	if (!data.ok) throw data;
+	return data.data;
+}
+
+export async function quickRegistration(
+	eventId: number,
+	payload: { name: string; contact: string; assignedGroup?: string }
+) {
+	const { data } = await api.post<ApiResponse<any>>(
+		`/events/${eventId}/registrations/quick`,
+		payload
+	);
+	if (!data.ok) throw data;
+	return data.data;
+}

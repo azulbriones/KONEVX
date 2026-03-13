@@ -34,7 +34,6 @@ export interface ExportOptions {
 	columns: string[];
 }
 
-// Columnas fijas del sistema
 const SYSTEM_COLUMNS = [
 	{ key: "id", label: "ID" },
 	{ key: "status", label: "Estado" },
@@ -53,7 +52,6 @@ export function ExportConfigDialog({
 	const [groupBy, setGroupBy] = useState("");
 	const [pageBreak, setPageBreak] = useState(false);
 
-	// 💡 Estado para las columnas seleccionadas
 	const allAvailableColumns = [...SYSTEM_COLUMNS, ...dynamicFields];
 	const [selectedColumns, setSelectedColumns] = useState(allAvailableColumns);
 
@@ -96,7 +94,6 @@ export function ExportConfigDialog({
 						</Select>
 					</FormControl>
 
-					{/* 💡 Selector de Columnas */}
 					<Autocomplete
 						multiple
 						size="small"

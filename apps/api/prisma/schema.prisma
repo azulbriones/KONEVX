@@ -107,6 +107,7 @@ model Registration {
     participant   Participant              @relation(fields: [participantId], references: [id], onDelete: Cascade)
     fieldValues   RegistrationFieldValue[]
     assignedGroup String?
+    checkInNotes  String?                  @db.Text
     createdAt     DateTime                 @default(now())
     updatedAt     DateTime                 @updatedAt
 
