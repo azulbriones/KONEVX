@@ -20,6 +20,7 @@ import {
 
 const TABS = [
 	{ label: "Resumen", path: "overview", gate: (a: any) => a?.canRead },
+	{ label: "Check-in", path: "check-in", gate: (a: any) => a?.canWrite },
 	{ label: "Registros", path: "registrations", gate: (a: any) => a?.canRead },
 	{ label: "Campos", path: "fields", gate: (a: any) => a?.canManageFields },
 	{

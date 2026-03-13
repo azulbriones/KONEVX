@@ -73,6 +73,12 @@ export type EventStats = {
 	occupancy: number | null;
 	groupsOccupancy?: Record<string, number>;
 	fieldOccupancy?: Record<string, number>;
+	statusCounts?: {
+		REGISTERED: number;
+		CONFIRMED: number;
+		ATTENDED: number;
+		CANCELLED: number;
+	};
 };
 
 // --- Inputs & Contexts ---
