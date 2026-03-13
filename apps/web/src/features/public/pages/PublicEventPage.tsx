@@ -139,6 +139,7 @@ export function PublicEventPage() {
 				endDate={event.endDate}
 				location={event.location}
 				entryTime={event.entryTime}
+				exitTime={event.exitTime}
 				cost={event.cost}
 				minAge={event.minAge}
 				remaining={event.remaining}
