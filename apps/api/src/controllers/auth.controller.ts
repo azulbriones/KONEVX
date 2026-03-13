@@ -108,7 +108,6 @@ export const registerHandler: RequestHandler = async (req, res, next) => {
 		const saltRounds = 10;
 		const passwordHash = await bcrypt.hash(password, saltRounds);
 
-		// Nota: Según tu schema, el rol por defecto será EVENT_ADMIN
 		const newUser = await prisma.user.create({
 			data: {
 				email: emailNormalized,

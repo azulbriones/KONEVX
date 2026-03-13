@@ -71,3 +71,51 @@ export async function deleteEvent(eventId: number) {
 		where: { id: eventId },
 	});
 }
+
+export async function createQuickRegistration(
+	eventId: number,
+	payload: { name: string; contact: string; assignedGroup?: string }
+) {
+	const event = await prisma.event.findUnique({
+		where: { id: eventId },
+		select: { id: true, contactRequirement: true }
+	});
+
+	if (!event) throw new HttpError(404, "EVENT_NOT_FOUND", "Evento no encontrado");
+
+	const primaryField = await prisma.eventField.findFirst({
+		where: { eventId },
+		orderBy: { order: 'asc' }
+	});
+
+	if (!primaryField) {
+		throw new HttpError(400, "NO_FIELDS_CONFIGURED", "El evento no tiene campos configurados.");
+	}
+
+	const contactData = event.contactRequirement === "PHONE"
+		? { phoneNormalized: payload.contact }
+		: { emailNormalized: payload.contact };
+
+	let participant = await prisma.participant.upsert({
+		where: contactData,
+		update: {},
+		create: contactData
+	});
+
+	return await prisma.registration.create({
+		data: {
+			eventId,
+			participantId: participant.id,
+			status: "ATTENDED",
+			assignedGroup: payload.assignedGroup || null,
+			checkInNotes: "Registro Express en puerta",
+			fieldValues: {
+				create: {
+					eventFieldId: primaryField.id,
+					value: payload.name
+				}
+			}
+		},
+		select: { id: true, status: true, assignedGroup: true }
+	});
+}

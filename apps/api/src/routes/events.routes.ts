@@ -4,6 +4,7 @@ import {
 	deleteEventHandler,
 	getEventHandler,
 	listEventsHandler,
+	quickRegistrationHandler,
 	setPublishHandler,
 	updateEventHandler,
 } from "../controllers/events.controller.js";
@@ -117,4 +118,11 @@ eventsRouter.use(
 	requireAuth,
 	requireEventRead,
 	registrationsPdfRouter,
+);
+
+eventsRouter.post(
+	"/:eventId/registrations/quick",
+	requireAuth,
+	requireEventRead,
+	quickRegistrationHandler
 );
