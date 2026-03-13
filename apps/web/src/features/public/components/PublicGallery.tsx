@@ -54,7 +54,6 @@ export function PublicGallery({
 	return (
 		<section id="info" className="section">
 			<div className="section-title">
-				{/* 💡 Mejorado: Usa var(--primary) para el ícono */}
 				<CameraAltIcon htmlColor="var(--primary)" />
 				<h2>Vive la experiencia</h2>
 			</div>
@@ -69,6 +68,7 @@ export function PublicGallery({
 							muted
 							loop
 							playsInline
+							controls
 							style={{
 								width: "100%",
 								height: "100%",
