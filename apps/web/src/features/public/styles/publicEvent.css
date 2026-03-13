@@ -45,10 +45,12 @@ html {
 	2. NAVEGACIÓN (NAVBAR)
 ========================================= */
 .public-nav {
-	position: sticky;
+	position: fixed;
 	top: 0;
-	z-index: 50;
-	background: rgba(255, 255, 255, 0.8);
+	left: 0;
+	right: 0;
+	z-index: 1000;
+	background: rgba(255, 255, 255, 0.85);
 	backdrop-filter: blur(12px);
 	border-bottom: 1px solid var(--border);
 	padding: 1rem 1.5rem;
@@ -56,7 +58,6 @@ html {
 	align-items: center;
 	justify-content: space-between;
 	gap: 1rem;
-	flex-wrap: wrap;
 }
 
 .public-brand {
