@@ -106,7 +106,6 @@ export function PublicEventPage() {
 
 	const canRegister = event.remaining > 0;
 	const isFull = event.remaining <= 0;
-	console.log({ event });
 
 	return (
 		<div className="public-page">
@@ -161,6 +160,9 @@ export function PublicEventPage() {
 				contactRequirement={event.contactRequirement}
 				fields={fields}
 				disabled={!canRegister}
+				thingsToBring={event.thingsToBring}
+				thingsNotToBring={event.thingsNotToBring}
+				socialMediaInfo={event.socialMediaInfo}
 			/>
 
 			<PublicFooter
