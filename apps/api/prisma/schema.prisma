@@ -133,14 +133,15 @@ model RegistrationFieldValue {
 
 enum UserRole {
     SUPER_ADMIN
-    EVENT_ADMIN
+    USER
 }
 
 model User {
     id           Int      @id @default(autoincrement())
+    username     String   @unique @default(cuid())
     email        String   @unique
     passwordHash String
-    role         UserRole @default(EVENT_ADMIN)
+    role         UserRole @default(USER)
 
     sessions Session[]
 
@@ -167,6 +168,7 @@ model Session {
 enum EventRole {
     EDITOR
     VIEWER
+    CHECKIN
 }
 
 model EventMember {

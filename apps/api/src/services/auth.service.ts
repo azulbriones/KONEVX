@@ -35,14 +35,19 @@ function signRefreshToken(
 	});
 }
 
-export async function loginWithEmailPassword(email: string, password: string) {
-	const user = await prisma.user.findUnique({
-		where: { email },
-		select: { id: true, email: true, passwordHash: true, role: true },
+export async function loginWithCredentials(identifier: string, password: string) {
+	const user = await prisma.user.findFirst({
+		where: {
+			OR: [
+				{ email: identifier.toLowerCase() },
+				{ username: identifier.toLowerCase() }
+			]
+		},
+		select: { id: true, email: true, username: true, passwordHash: true, role: true },
 	});
 
 	if (!user || !(await verifyPassword(password, user.passwordHash))) {
-		throw new HttpError(401, "INVALID_CREDENTIALS", "Invalid credentials");
+		throw new HttpError(401, "INVALID_CREDENTIALS", "Credenciales inválidas");
 	}
 
 	const sessionId = crypto.randomUUID();
@@ -68,7 +73,7 @@ export async function loginWithEmailPassword(email: string, password: string) {
 	});
 
 	return {
-		user: { id: user.id, email: user.email, role: user.role },
+		user: { id: user.id, username: user.username, email: user.email, role: user.role },
 		accessToken,
 		refreshToken,
 	};
