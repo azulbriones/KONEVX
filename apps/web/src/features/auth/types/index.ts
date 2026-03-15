@@ -1,13 +1,9 @@
-import { InferType } from "yup";
-import { schema } from "../utils/validationSchema";
-
-export type UserRole = "SUPER_ADMIN" | "EVENT_ADMIN";
+export type UserRole = "SUPER_ADMIN" | "USER";
 
 export interface User {
 	id: number;
+	username: string;
 	email: string;
 	role: UserRole;
 	createdAt?: string;
 }
-
-export type FormValues = InferType<typeof schema>;

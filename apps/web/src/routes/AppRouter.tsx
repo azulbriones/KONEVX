@@ -10,8 +10,7 @@ import { ProtectedRoute } from "./ProtectedRoute";
 
 // Pages
 import { MainLayout } from "@/components/layout/MainLayout";
-import { LoginPage } from "@/features/auth/pages/LoginPage";
-import { RegisterPage } from "@/features/auth/pages/RegisterPage";
+import { AuthPage } from "@/features/auth/pages/AuthPage";
 import { DashboardPage } from "@/features/dashboard/components/DashboardPage";
 import { NotFoundPage } from "@/features/dashboard/components/NotFoundPage";
 import { CreateEventPage } from "@/features/events/pages/CreateEventPage";
@@ -30,11 +29,11 @@ const router = createBrowserRouter([
 	},
 	{
 		path: "/login",
-		element: <LoginPage />,
+		element: <AuthPage />,
 	},
 	{
 		path: "/register",
-		element: <RegisterPage />,
+		element: <AuthPage />,
 	},
 	{
 		element: <ProtectedRoute />,
