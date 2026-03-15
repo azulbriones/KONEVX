@@ -14,16 +14,28 @@ export async function listRegistrationsByEvent(
 
 	if (!event) throw new HttpError(404, "EVENT_NOT_FOUND", "Event not found");
 
-	const where = {
+	const where: any = {
 		eventId,
 		...(query.status ? { status: query.status } : {}),
-	} as const;
+	};
+
+	if (query.q) {
+		const search = query.q.toLowerCase();
+		where.OR = [
+			{ participant: { emailNormalized: { contains: search } } },
+			{ participant: { phoneNormalized: { contains: search } } },
+			{ fieldValues: { some: { value: { contains: search } } } }
+		];
+	}
+
+	const orderByField = query.orderBy || "createdAt";
+	const orderDirection = query.orderDir || "asc";
 
 	const [total, rows] = await prisma.$transaction([
 		prisma.registration.count({ where }),
 		prisma.registration.findMany({
 			where,
-			orderBy: { createdAt: "desc" },
+			orderBy: { [orderByField]: orderDirection },
 			skip: query.skip,
 			take: query.take,
 			select: {
@@ -42,7 +54,7 @@ export async function listRegistrationsByEvent(
 					select: {
 						value: true,
 						eventField: {
-							select: { key: true, label: true, type: true },
+							select: { key: true, label: true, type: true, order: true },
 						},
 					},
 				},
@@ -61,14 +73,16 @@ export async function listRegistrationsByEvent(
 			phone: r.participant.phoneNormalized,
 		},
 		answers: Object.fromEntries(
-			r.fieldValues.map((fv) => [
-				fv.eventField.key,
-				{
-					label: fv.eventField.label,
-					type: fv.eventField.type,
-					value: fv.value,
-				},
-			]),
+			r.fieldValues
+				.sort((a, b) => (a.eventField.order || 0) - (b.eventField.order || 0))
+				.map((fv) => [
+					fv.eventField.key,
+					{
+						label: fv.eventField.label,
+						type: fv.eventField.type,
+						value: fv.value,
+					},
+				]),
 		),
 	}));
 

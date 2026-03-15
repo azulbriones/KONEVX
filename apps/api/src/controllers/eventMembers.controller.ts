@@ -4,8 +4,8 @@ import { prisma } from "../db/prisma.js";
 import { HttpError } from "../lib/httpError.js";
 import { parseId } from "../lib/parser.js";
 import {
-    AddMemberSchema,
-    UpdateMemberRoleSchema,
+	AddMemberSchema,
+	UpdateMemberRoleSchema,
 } from "../schemas/eventMembers.schema.js";
 
 type AddMemberBody = z.infer<typeof AddMemberSchema>;
@@ -27,7 +27,7 @@ export const listEventMembersHandler: RequestHandler<{
 			select: {
 				role: true,
 				createdAt: true,
-				user: { select: { id: true, email: true, role: true } },
+				user: { select: { id: true, email: true, username: true, role: true } },
 			},
 		});
 
@@ -102,6 +102,7 @@ export const addEventMemberHandler: RequestHandler<
 			data: {
 				userId: member.user.id,
 				email: member.user.email,
+				username: (member.user as any).username,
 				eventRole: member.role,
 			},
 		});
@@ -143,6 +144,7 @@ export const updateEventMemberRoleHandler: RequestHandler<
 			data: {
 				userId: updated.user.id,
 				email: updated.user.email,
+				username: (updated.user as any).username,
 				eventRole: updated.role,
 			},
 		});

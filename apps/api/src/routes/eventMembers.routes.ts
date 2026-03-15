@@ -5,49 +5,42 @@ import {
 	removeEventMemberHandler,
 	updateEventMemberRoleHandler,
 } from "../controllers/eventMembers.controller.js";
+import { requireEventAdmin, requireEventView } from "../lib/eventAccess.js";
 import { requireAuth, requireCsrf } from "../middlewares/auth.js";
-import {
-	requireEventRead,
-	requireEventWrite,
-} from "../middlewares/eventAccess.js";
 import { writeLimiter } from "../middlewares/rateLimiters.js";
 
 export const eventMembersRouter = Router({ mergeParams: true });
 
-// GET /api/events/:eventId/members (read)
 eventMembersRouter.get(
 	"/",
 	requireAuth,
-	requireEventRead,
+	requireEventView,
 	listEventMembersHandler,
 );
 
-// POST /api/events/:eventId/members (write)
 eventMembersRouter.post(
 	"/",
 	writeLimiter,
 	requireAuth,
 	requireCsrf,
-	requireEventWrite,
+	requireEventAdmin,
 	addEventMemberHandler,
 );
 
-// PATCH /api/events/:eventId/members/:userId (write)
 eventMembersRouter.patch(
 	"/:userId",
 	writeLimiter,
 	requireAuth,
 	requireCsrf,
-	requireEventWrite,
+	requireEventAdmin,
 	updateEventMemberRoleHandler,
 );
 
-// DELETE /api/events/:eventId/members/:userId (write)
 eventMembersRouter.delete(
 	"/:userId",
 	writeLimiter,
 	requireAuth,
 	requireCsrf,
-	requireEventWrite,
+	requireEventAdmin,
 	removeEventMemberHandler,
 );

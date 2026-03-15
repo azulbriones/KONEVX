@@ -20,7 +20,7 @@ export async function getRegistrationsForPdf(eventId: number, filters: {
 	} else if (filters.groupBy) {
 		orderBy.push({ assignedGroup: 'asc' });
 	}
-	orderBy.push({ createdAt: 'desc' });
+	orderBy.push({ createdAt: 'asc' });
 
 	const rows = await prisma.registration.findMany({
 		where: {

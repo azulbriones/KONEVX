@@ -237,7 +237,13 @@ export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 
 		const event = await prisma.event.findFirst({
 			where: whereClause,
-			select: EVENT_DETAIL_SELECT,
+			select: {
+				...EVENT_DETAIL_SELECT,
+				eventMembers: isSuperAdmin ? false : {
+					where: { userId: user.id },
+					select: { role: true }
+				}
+			},
 		});
 
 		if (!event) {
@@ -311,14 +317,9 @@ export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 
 		const memberRole = isSuperAdmin
 			? null
-			: (((event as any).eventMembers?.[0]?.role ?? null) as "EDITOR" | "VIEWER" | null);
+			: ((event as any).eventMembers?.[0]?.role ?? null);
 
-		const safeEvent = isSuperAdmin
-			? event
-			: (() => {
-				const { eventMembers, ...rest } = event as typeof event & { eventMembers?: unknown };
-				return rest;
-			})();
+		const { eventMembers, ...safeEvent } = event as any;
 
 		return res.json({
 			ok: true,
