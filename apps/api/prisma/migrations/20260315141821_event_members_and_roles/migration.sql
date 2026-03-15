@@ -1,24 +1,20 @@
 -- AlterEnum
 ALTER TYPE "EventRole" ADD VALUE IF NOT EXISTS 'CHECKIN';
 
+-- Crear columna username nullable primero
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "username" TEXT;
-¡
+
+-- Poblar username para usuarios existentes
 UPDATE "User"
 SET "username" = lower(split_part(email, '@', 1)) || '_' || id
 WHERE "username" IS NULL OR "username" = '';
 
-UPDATE "User"
-SET "role" = 'EVENT_ADMIN'
-WHERE "role" IS NULL;
+-- Cambiar enum UserRole de forma segura
+BEGIN;
 
-DO $$
-BEGIN
-	IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'UserRole_new') THEN
-		CREATE TYPE "UserRole_new" AS ENUM ('SUPER_ADMIN', 'USER');
-	END IF;
-END $$;
+CREATE TYPE "UserRole_new" AS ENUM ('SUPER_ADMIN', 'USER');
 
-ALTER TABLE "User" ALTER COLUMN "role" DROP DEFAULT;
+ALTER TABLE "public"."User" ALTER COLUMN "role" DROP DEFAULT;
 
 ALTER TABLE "User"
 ALTER COLUMN "role" TYPE "UserRole_new"
@@ -31,8 +27,11 @@ USING (
 
 ALTER TYPE "UserRole" RENAME TO "UserRole_old";
 ALTER TYPE "UserRole_new" RENAME TO "UserRole";
-DROP TYPE "UserRole_old";
+DROP TYPE "public"."UserRole_old";
 
 ALTER TABLE "User" ALTER COLUMN "role" SET DEFAULT 'USER';
 
+COMMIT;
+
+-- Índice único para username
 CREATE UNIQUE INDEX IF NOT EXISTS "User_username_key" ON "User"("username");
