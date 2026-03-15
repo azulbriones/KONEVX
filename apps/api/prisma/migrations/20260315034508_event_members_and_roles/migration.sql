@@ -1,38 +1,28 @@
+/*
+  Warnings:
+
+  - The values [EVENT_ADMIN] on the enum `UserRole` will be removed. If these variants are still used in the database, this will fail.
+  - A unique constraint covering the columns `[username]` on the table `User` will be added. If there are existing duplicate values, this will fail.
+  - The required column `username` was added to the `User` table with a prisma-level default value. This is not possible if the table is not empty. Please add this column as optional, then populate it before making it required.
+
+*/
 -- AlterEnum
-ALTER TYPE "EventRole" ADD VALUE IF NOT EXISTS 'CHECKIN';
+ALTER TYPE "EventRole" ADD VALUE 'CHECKIN';
 
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "username" TEXT;
-¡
-UPDATE "User"
-SET "username" = lower(split_part(email, '@', 1)) || '_' || id
-WHERE "username" IS NULL OR "username" = '';
-
-UPDATE "User"
-SET "role" = 'EVENT_ADMIN'
-WHERE "role" IS NULL;
-
-DO $$
-BEGIN
-	IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'UserRole_new') THEN
-		CREATE TYPE "UserRole_new" AS ENUM ('SUPER_ADMIN', 'USER');
-	END IF;
-END $$;
-
-ALTER TABLE "User" ALTER COLUMN "role" DROP DEFAULT;
-
-ALTER TABLE "User"
-ALTER COLUMN "role" TYPE "UserRole_new"
-USING (
-	CASE
-		WHEN "role"::text = 'EVENT_ADMIN' THEN 'USER'::"UserRole_new"
-		ELSE "role"::text::"UserRole_new"
-	END
-);
-
+-- AlterEnum
+BEGIN;
+CREATE TYPE "UserRole_new" AS ENUM ('SUPER_ADMIN', 'USER');
+ALTER TABLE "public"."User" ALTER COLUMN "role" DROP DEFAULT;
+ALTER TABLE "User" ALTER COLUMN "role" TYPE "UserRole_new" USING ("role"::text::"UserRole_new");
 ALTER TYPE "UserRole" RENAME TO "UserRole_old";
 ALTER TYPE "UserRole_new" RENAME TO "UserRole";
-DROP TYPE "UserRole_old";
-
+DROP TYPE "public"."UserRole_old";
 ALTER TABLE "User" ALTER COLUMN "role" SET DEFAULT 'USER';
+COMMIT;
 
-CREATE UNIQUE INDEX IF NOT EXISTS "User_username_key" ON "User"("username");
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "username" TEXT NOT NULL,
+ALTER COLUMN "role" SET DEFAULT 'USER';
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
