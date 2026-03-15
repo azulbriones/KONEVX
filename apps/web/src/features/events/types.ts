@@ -1,5 +1,5 @@
 export type ContactRequirement = "EMAIL" | "PHONE";
-export type EventMemberRole = "EDITOR" | "VIEWER";
+export type EventMemberRole = "VIEWER" | "CHECKIN" | "EDITOR";
 export type EventAccessScope = "SUPER_ADMIN" | "MEMBER" | "NONE";
 
 export type EventAccess = {
@@ -11,6 +11,8 @@ export type EventAccess = {
 	canManageMembers: boolean;
 	canManageFields: boolean;
 	canExport: boolean;
+	canCheckIn: boolean;
+	canView: boolean;
 };
 
 // --- Grouping & Logistics ---

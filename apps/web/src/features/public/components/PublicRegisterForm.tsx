@@ -8,7 +8,13 @@ import SendIcon from "@mui/icons-material/Send";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import XIcon from "@mui/icons-material/X";
 import YouTubeIcon from "@mui/icons-material/YouTube";
-import { Box, Divider, Stack, Typography } from "@mui/material";
+import {
+	Box,
+	CircularProgress,
+	Divider,
+	Stack,
+	Typography,
+} from "@mui/material";
 import confetti from "canvas-confetti";
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "react-qr-code";

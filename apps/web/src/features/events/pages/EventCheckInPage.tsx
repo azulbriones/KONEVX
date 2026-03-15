@@ -57,7 +57,8 @@ import {
 export function EventCheckInPage() {
 	const { eventId } = useParams();
 	const queryClient = useQueryClient();
-	const { access, stats } = useOutletContext<Ctx>();
+
+	const { access, stats, event } = useOutletContext<Ctx & { event: any }>();
 
 	const [searchTerm, setSearchTerm] = useState("");
 	const [loadingId, setLoadingId] = useState<number | null>(null);
@@ -113,7 +114,7 @@ export function EventCheckInPage() {
 	};
 
 	// ==========================================
-	// LÓGICA DE MUTACIONES RESILIENTES (OFFLINE FIRST)
+	// LÓGICA DE MUTACIONES RESILIENTES
 	// ==========================================
 	const checkInMutation = useMutation({
 		mutationFn: ({ regId, notes }: { regId: number; notes?: string }) =>
@@ -142,7 +143,7 @@ export function EventCheckInPage() {
 			});
 			return { previousData };
 		},
-		onError: (err: any, variables, context) => {
+		onError: (err: any, _variables, context) => {
 			if (context?.previousData)
 				queryClient.setQueryData(queryKey, context.previousData);
 			setStatusMsg({
@@ -187,7 +188,7 @@ export function EventCheckInPage() {
 			});
 			return { previousData };
 		},
-		onError: (err, variables, context) => {
+		onError: (_err, _variables, context) => {
 			if (context?.previousData)
 				queryClient.setQueryData(queryKey, context.previousData);
 			setStatusMsg({
@@ -240,7 +241,6 @@ export function EventCheckInPage() {
 	const handleQRScan = (scannedText: string) => {
 		setQrScannerOpen(false);
 		const regId = parseInt(scannedText, 10);
-
 		if (isNaN(regId)) {
 			setStatusMsg({
 				type: "error",
@@ -248,7 +248,6 @@ export function EventCheckInPage() {
 			});
 			return;
 		}
-
 		handleCheckIn(regId, "Entrada escaneada por QR");
 	};
 
@@ -291,7 +290,7 @@ export function EventCheckInPage() {
 	return (
 		<Box sx={{ maxWidth: 600, mx: "auto", pb: 10, px: { xs: 1, sm: 0 } }}>
 			<Stack spacing={2.5}>
-				{/* === HEADER === */}
+				{/* === RESUMEN DE ESTADOS === */}
 				<Box sx={{ pt: 2, pb: 1 }}>
 					<Grid container spacing={1.5} mb={2}>
 						<Grid item xs={6}>
@@ -464,10 +463,9 @@ export function EventCheckInPage() {
 									},
 								}}
 							/>
-
-							{access.canWrite && (
+							{/* 💡 BOTONES ACCIÓN: Usan access.canCheckIn */}
+							{access.canCheckIn && (
 								<>
-									{/* 💡 BOTÓN ESCÁNER QR */}
 									<Button
 										variant="contained"
 										onClick={() => setQrScannerOpen(true)}
@@ -483,8 +481,6 @@ export function EventCheckInPage() {
 									>
 										<QrCodeScanner />
 									</Button>
-
-									{/* BOTÓN REGISTRO EXPRESS */}
 									<Button
 										variant="contained"
 										onClick={() => setQuickRegOpen(true)}
@@ -535,6 +531,7 @@ export function EventCheckInPage() {
 								reg={reg}
 								loadingId={loadingId}
 								access={access}
+								event={event}
 								onCheckIn={handleCheckIn}
 								onCancelCheckIn={handleCancelCheckIn}
 							/>
@@ -579,7 +576,6 @@ function QuickRegistrationDialog({
 		contact: "",
 		assignedGroup: "",
 	});
-
 	const handleAction = () => {
 		if (!form.name || !form.contact)
 			return alert("Nombre y Teléfono/Email son obligatorios.");
@@ -709,6 +705,7 @@ function RegistrationCard({
 	access,
 	onCheckIn,
 	onCancelCheckIn,
+	event,
 }: any) {
 	const isAttended = reg.status === "ATTENDED";
 	const [localNote, setLocalNote] = useState(reg.checkInNotes || "");
@@ -719,6 +716,10 @@ function RegistrationCard({
 	const primary = sorted[0] as any;
 	const secondary = sorted[1] as any;
 	const others = sorted.slice(2);
+
+	const defaultMessage = encodeURIComponent(
+		`¡Hola ${primary?.value || ""}! Te escribimos del equipo de logística de *${event?.name || "Konevx"}*. Queríamos saludarte y confirmar tu asistencia (ID: #${reg.id}).`,
+	);
 
 	return (
 		<Card
@@ -782,10 +783,12 @@ function RegistrationCard({
 							rows={2}
 							variant="filled"
 							label="Notas de Incidencia / Logística"
-							placeholder="Ej: Pendiente de pago, sin tutor..."
+							placeholder="Ej: Pendiente de pago..."
 							value={localNote}
 							onChange={(e) => setLocalNote(e.target.value)}
-							disabled={loadingId === reg.id || !access.canWrite}
+							disabled={
+								loadingId === reg.id || !access.canCheckIn
+							}
 							InputProps={{
 								startAdornment: (
 									<InputAdornment position="start">
@@ -841,7 +844,7 @@ function RegistrationCard({
 									}}
 									onClick={() =>
 										window.open(
-											`https://wa.me/${reg.contact.phone.replace(/\D/g, "")}`,
+											`https://wa.me/${reg.contact.phone.replace(/\D/g, "")}?text=${defaultMessage}`,
 											"_blank",
 										)
 									}
@@ -910,7 +913,9 @@ function RegistrationCard({
 							variant="contained"
 							fullWidth
 							onClick={() => onCheckIn(reg.id, localNote)}
-							disabled={loadingId === reg.id || !access.canWrite}
+							disabled={
+								loadingId === reg.id || !access.canCheckIn
+							}
 							sx={{
 								borderRadius: "1rem",
 								py: 1.8,
@@ -954,7 +959,9 @@ function RegistrationCard({
 								color="error"
 								startIcon={<Undo />}
 								onClick={() => onCancelCheckIn(reg.id)}
-								disabled={loadingId === reg.id}
+								disabled={
+									loadingId === reg.id || !access.canCheckIn
+								}
 								sx={{ fontWeight: 800, alignSelf: "center" }}
 							>
 								Anular entrada
@@ -1006,40 +1013,29 @@ function StatCard({ label, value, color, icon }: any) {
 function QRScannerDialog({ open, onClose, onScan }: any) {
 	useEffect(() => {
 		if (!open) return;
-
 		let scanner: Html5QrcodeScanner | null = null;
-
 		const timeout = setTimeout(() => {
 			if (!document.getElementById("reader")) return;
-
 			scanner = new Html5QrcodeScanner(
 				"reader",
 				{ fps: 10, qrbox: { width: 250, height: 250 } },
 				false,
 			);
-
 			scanner.render(
 				(decodedText) => {
 					if (scanner) {
 						scanner.clear();
+						onScan(decodedText);
 					}
-					onScan(decodedText);
 				},
 				(error) => {
-					console.log(error);
+					console.warn(error);
 				},
 			);
 		}, 150);
-
 		return () => {
 			clearTimeout(timeout);
-			if (scanner) {
-				scanner
-					.clear()
-					.catch((err) =>
-						console.error("Error al limpiar escáner", err),
-					);
-			}
+			if (scanner) scanner.clear().catch((err) => console.error(err));
 		};
 	}, [open, onScan]);
 
@@ -1058,7 +1054,6 @@ function QRScannerDialog({ open, onClose, onScan }: any) {
 				<Typography variant="body2" color="text.secondary" mb={2}>
 					Apunta la cámara al código QR del participante.
 				</Typography>
-
 				<Box
 					id="reader"
 					sx={{
@@ -1069,7 +1064,6 @@ function QRScannerDialog({ open, onClose, onScan }: any) {
 						border: "2px solid #e2e8f0",
 					}}
 				/>
-
 				<Stack mt={3}>
 					<Button
 						variant="outlined"

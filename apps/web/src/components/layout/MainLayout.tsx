@@ -11,6 +11,7 @@ import {
 	Chip,
 	CircularProgress,
 	Container,
+	Divider,
 	IconButton,
 	Menu,
 	MenuItem,
@@ -48,8 +49,13 @@ export function MainLayout() {
 		logoutMutation.mutate();
 	};
 
-	const userInitials = user?.email?.charAt(0).toUpperCase() || "U";
+	const userInitials =
+		user?.username?.charAt(0).toUpperCase() ||
+		user?.email?.charAt(0).toUpperCase() ||
+		"U";
+
 	const isHome = location.pathname === "/";
+	console.log({ user, userInitials });
 
 	return (
 		<Box
@@ -171,7 +177,24 @@ export function MainLayout() {
 						{isUserLoading ? (
 							<CircularProgress size={24} />
 						) : user ? (
-							<>
+							<Box
+								sx={{
+									display: "flex",
+									alignItems: "center",
+									gap: 1.5,
+								}}
+							>
+								{/* 💡 Mostramos el username al lado del avatar (se oculta en celulares extra pequeños) */}
+								<Typography
+									variant="body2"
+									fontWeight="700"
+									sx={{
+										display: { xs: "none", sm: "block" },
+									}}
+								>
+									{user.username}
+								</Typography>
+
 								<IconButton
 									onClick={handleMenuOpen}
 									size="small"
@@ -211,20 +234,42 @@ export function MainLayout() {
 										elevation: 4,
 										sx: {
 											mt: 1.5,
-											minWidth: 180,
+											minWidth: 200,
 											borderRadius: 2,
 										},
 									}}
 								>
+									{/* 💡 Agregamos la información del usuario en el menú */}
+									<Box sx={{ px: 2, py: 1.5 }}>
+										<Typography
+											variant="body1"
+											fontWeight="800"
+										>
+											@{user.username}
+										</Typography>
+										<Typography
+											variant="caption"
+											color="text.secondary"
+										>
+											{user.email}
+										</Typography>
+									</Box>
+
+									<Divider sx={{ my: 0.5 }} />
+
 									<MenuItem
 										onClick={handleLogout}
-										sx={{ gap: 1.5, py: 1.5 }}
+										sx={{
+											gap: 1.5,
+											py: 1.5,
+											color: "error.main",
+										}}
 									>
 										<LogoutIcon fontSize="small" />
 										Cerrar sesión
 									</MenuItem>
 								</Menu>
-							</>
+							</Box>
 						) : null}
 					</Box>
 				</Toolbar>

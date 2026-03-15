@@ -62,7 +62,8 @@ export function EventFieldsPage() {
 	const [deleteTarget, setDeleteTarget] = useState<EventField | null>(null);
 
 	const { access } = useOutletContext<EventOutletCtx>();
-	const canManageFields = access?.canManageFields ?? false;
+
+	const canManageFields = access?.canWrite ?? false;
 
 	const rows = useMemo(() => normalizeOrder(draft as EventField[]), [draft]);
 

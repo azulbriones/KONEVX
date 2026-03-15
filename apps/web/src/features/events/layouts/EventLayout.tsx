@@ -19,15 +19,11 @@ import {
 } from "react-router-dom";
 
 const TABS = [
-	{ label: "Resumen", path: "overview", gate: (a: any) => a?.canRead },
-	{ label: "Check-in", path: "check-in", gate: (a: any) => a?.canWrite },
-	{ label: "Registros", path: "registrations", gate: (a: any) => a?.canRead },
-	{ label: "Campos", path: "fields", gate: (a: any) => a?.canManageFields },
-	{
-		label: "Miembros",
-		path: "members",
-		gate: (a: any) => a?.canManageMembers,
-	},
+	{ label: "Resumen", path: "overview", gate: (a: any) => a?.canView },
+	{ label: "Check-in", path: "check-in", gate: (a: any) => a?.canCheckIn },
+	{ label: "Registros", path: "registrations", gate: (a: any) => a?.canView },
+	{ label: "Campos", path: "fields", gate: (a: any) => a?.canWrite },
+	{ label: "Miembros", path: "members", gate: (a: any) => a?.canWrite },
 	{ label: "Ajustes", path: "edit", gate: (a: any) => a?.canWrite },
 ] as const;
 
@@ -96,6 +92,8 @@ export function EventLayout() {
 					>
 						{TABS.map((tab) => {
 							const enabled = tab.gate(access);
+							if (!enabled) return null;
+
 							return (
 								<Tab
 									key={tab.path}
@@ -103,7 +101,6 @@ export function EventLayout() {
 									value={tab.path}
 									component={RouterLink}
 									to={tab.path}
-									disabled={!enabled}
 									sx={{
 										textTransform: "none",
 										fontWeight: 600,
@@ -115,26 +112,28 @@ export function EventLayout() {
 						})}
 					</Tabs>
 
-					<Box sx={{ pb: 1 }}>
-						<Button
-							variant={
-								event.isPublished ? "outlined" : "contained"
-							}
-							color={event.isPublished ? "warning" : "primary"}
-							onClick={() =>
-								publishMutation.mutate(!event.isPublished)
-							}
-							disabled={
-								publishMutation.isPending || !access.canWrite
-							}
-							size="small"
-							sx={{ borderRadius: 2, fontWeight: 700 }}
-						>
-							{event.isPublished
-								? "Pasar a borrador"
-								: "Publicar evento"}
-						</Button>
-					</Box>
+					{access.canWrite && (
+						<Box sx={{ pb: 1 }}>
+							<Button
+								variant={
+									event.isPublished ? "outlined" : "contained"
+								}
+								color={
+									event.isPublished ? "warning" : "primary"
+								}
+								onClick={() =>
+									publishMutation.mutate(!event.isPublished)
+								}
+								disabled={publishMutation.isPending}
+								size="small"
+								sx={{ borderRadius: 2, fontWeight: 700 }}
+							>
+								{event.isPublished
+									? "Pasar a borrador"
+									: "Publicar evento"}
+							</Button>
+						</Box>
+					)}
 				</Stack>
 			</Paper>
 
