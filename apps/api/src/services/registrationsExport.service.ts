@@ -28,7 +28,7 @@ export async function getRegistrationsGrouped(eventId: number, options: {
 			participant: true,
 			fieldValues: { include: { eventField: true } }
 		},
-		orderBy: { createdAt: 'desc' }
+		orderBy: { createdAt: 'asc' }
 	});
 
 	const fieldMap = new Map();

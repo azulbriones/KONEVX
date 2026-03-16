@@ -35,10 +35,13 @@ export const createUserHandler: RequestHandler<
 
 		const tempPassword = generateTempPassword(16);
 		const passwordHash = await hashPassword(tempPassword);
+		const baseName = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
+		const autoUsername = `${baseName}_${Math.floor(Math.random() * 10000)}`;
 
 		try {
 			const user = await prisma.user.create({
 				data: {
+					username: autoUsername,
 					email: email.toLowerCase(),
 					role,
 					passwordHash,
@@ -88,11 +91,11 @@ export const listUsersHandler: RequestHandler = async (req, res, next) => {
 
 		const whereClause: Prisma.UserWhereInput = search
 			? {
-					email: {
-						contains: search,
-						mode: "insensitive",
-					},
-				}
+				email: {
+					contains: search,
+					mode: "insensitive",
+				},
+			}
 			: {};
 
 		const [users, total] = await Promise.all([

@@ -4,15 +4,13 @@ import {
 	deleteEventHandler,
 	getEventHandler,
 	listEventsHandler,
+	quickRegistrationHandler,
 	setPublishHandler,
 	updateEventHandler,
 } from "../controllers/events.controller.js";
+import { requireEventAdmin, requireEventCheckin, requireEventView } from "../lib/eventAccess.js";
 import { upload } from "../lib/upload.js";
 import { requireAuth, requireCsrf } from "../middlewares/auth.js";
-import {
-	requireEventRead,
-	requireEventWrite,
-} from "../middlewares/eventAccess.js";
 import { writeLimiter } from "../middlewares/rateLimiters.js";
 import { validateBody } from "../middlewares/validate.js";
 import { SetPublishSchema } from "../schemas/eventPublish.schema.js";
@@ -27,6 +25,7 @@ import { registrationsPdfRouter } from "./registrationsPdf.routes.js";
 export const eventsRouter = Router();
 
 eventsRouter.get("/", requireAuth, listEventsHandler);
+
 eventsRouter.post(
 	"/",
 	requireAuth,
@@ -41,12 +40,13 @@ eventsRouter.post(
 	validateBody(CreateEventSchema),
 	createEventHandler,
 );
+
 eventsRouter.patch(
 	"/:eventId",
 	writeLimiter,
 	requireAuth,
 	requireCsrf,
-	requireEventWrite,
+	requireEventAdmin,
 	upload.fields([
 		{ name: 'logo', maxCount: 1 },
 		{ name: 'promotionalVideo', maxCount: 1 },
@@ -63,33 +63,30 @@ eventsRouter.delete(
 	writeLimiter,
 	requireAuth,
 	requireCsrf,
-	requireEventWrite,
+	requireEventAdmin,
 	deleteEventHandler,
 );
 
-eventsRouter.get("/:eventId", requireAuth, requireEventRead, getEventHandler);
+eventsRouter.get("/:eventId", requireAuth, requireEventView, getEventHandler);
 
-// Fields management (read/write)
 eventsRouter.use(
 	"/:eventId/fields",
 	requireAuth,
-	requireEventRead,
+	requireEventView,
 	eventFieldsRouter,
 );
 
-// Registrations list (read)
 eventsRouter.use(
 	"/:eventId/registrations",
 	requireAuth,
-	requireEventRead,
+	requireEventView,
 	registrationsRouter,
 );
 
-// Registrations status update
 eventsRouter.use(
 	"/:eventId/registrations",
 	requireAuth,
-	requireEventRead,
+	requireEventView,
 	registrationStatusRouter,
 );
 
@@ -100,21 +97,27 @@ eventsRouter.patch(
 	writeLimiter,
 	requireAuth,
 	requireCsrf,
-	requireEventWrite,
+	requireEventAdmin,
 	validateBody(SetPublishSchema),
 	setPublishHandler,
 );
 
-// Reports (read)
 eventsRouter.use(
 	"/:eventId",
 	requireAuth,
-	requireEventRead,
+	requireEventView,
 	registrationsExportRouter,
 );
 eventsRouter.use(
 	"/:eventId",
 	requireAuth,
-	requireEventRead,
+	requireEventView,
 	registrationsPdfRouter,
+);
+
+eventsRouter.post(
+	"/:eventId/registrations/quick",
+	requireAuth,
+	requireEventCheckin,
+	quickRegistrationHandler
 );

@@ -28,7 +28,7 @@ import {
 } from "../hooks/useEventMembers";
 import type { EventMember, EventMemberRole, EventOutletCtx } from "../types";
 
-const ROLE_OPTIONS: EventMemberRole[] = ["VIEWER", "EDITOR"];
+const ROLE_OPTIONS: EventMemberRole[] = ["VIEWER", "CHECKIN", "EDITOR"];
 
 export function EventMembersPage() {
 	const { eventId } = useParams();
@@ -36,7 +36,8 @@ export function EventMembersPage() {
 	const { showNotification } = useNotification();
 
 	const { access } = useOutletContext<EventOutletCtx>();
-	const canManageMembers = access?.canManageMembers ?? false;
+
+	const canManageMembers = access?.canWrite ?? false;
 
 	const { data: me } = useUser();
 
@@ -113,7 +114,7 @@ export function EventMembersPage() {
 		if (!menuRow || isSelf(menuRow)) return;
 		if (
 			menuRow.eventRole === "EDITOR" &&
-			newRole === "VIEWER" &&
+			newRole !== "EDITOR" &&
 			isLastEditorRow(menuRow)
 		)
 			return;
@@ -214,23 +215,29 @@ export function EventMembersPage() {
 			field: "eventRole",
 			headerName: "Permiso",
 			width: 140,
-			renderCell: (params) => (
-				<Chip
-					size="small"
-					label={params.row.eventRole}
-					color={
-						params.row.eventRole === "EDITOR"
-							? "primary"
-							: "default"
-					}
-					variant={
-						params.row.eventRole === "EDITOR"
-							? "filled"
-							: "outlined"
-					}
-					sx={{ fontWeight: 600 }}
-				/>
-			),
+			renderCell: (params) => {
+				const role = params.row.eventRole;
+				let color: "default" | "primary" | "success" = "default";
+				let variant: "outlined" | "filled" = "outlined";
+
+				if (role === "EDITOR") {
+					color = "primary";
+					variant = "filled";
+				} else if (role === "CHECKIN") {
+					color = "success";
+					variant = "outlined";
+				}
+
+				return (
+					<Chip
+						size="small"
+						label={role}
+						color={color}
+						variant={variant}
+						sx={{ fontWeight: 600 }}
+					/>
+				);
+			},
 		},
 		{
 			field: "globalRole",
@@ -399,7 +406,7 @@ export function EventMembersPage() {
 							onClick={() => setMemberRole(r)}
 							disabled={
 								busy ||
-								(r === "VIEWER" ? disableDowngrade : false)
+								(r !== "EDITOR" ? disableDowngrade : false)
 							}
 						>
 							Asignar como {r}

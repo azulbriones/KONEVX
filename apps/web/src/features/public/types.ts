@@ -38,6 +38,7 @@ export type PublicEventSummary = {
 	endDate: string;
 	location: string;
 	entryTime?: string | null;
+	exitTime?: string | null;
 	cost: number;
 	minAge?: number | null;
 

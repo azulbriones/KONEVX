@@ -18,67 +18,67 @@ const generateRegistrationsPdf = (
 	dynamicFields: [string, string][],
 	options: { groupBy?: string; pageBreak?: boolean; columns?: string[] }
 ) => {
-	const doc = new PDFDocument({ size: "A4", layout: "landscape", margin: 40 });
+	const doc = new PDFDocument({
+		size: "A4",
+		layout: "landscape",
+		margin: 30,
+		bufferPages: true
+	});
 	doc.pipe(res);
 
-	const MARGIN = 40;
+	const MARGIN = 30;
 	const PAGE_WIDTH = doc.page.width - MARGIN * 2;
-	const BOTTOM_LIMIT = doc.page.height - MARGIN;
+	const BOTTOM_LIMIT = doc.page.height - MARGIN - 30;
+
+	const C_PRIMARY = "#2563eb";
+	const C_DANGER = "#dc2626";
+	const C_DARK = "#0f172a";
+	const C_MUTED = "#64748b";
+	const C_ZEBRA = "#f8fafc";
+	const C_BORDER = "#e2e8f0";
 
 	const allPossibleColumns = [
-		{ key: "id", header: "ID", width: 30 },
-		{ key: "status", header: "ESTADO", width: 70 },
-		{ key: "assignedGroup", header: "GRUPO", width: 60 },
-		{ key: "createdAt", header: "FECHA", width: 60 },
-		{ key: "contact", header: contactRequirement === "PHONE" ? "TELÉFONO" : "EMAIL", width: 110 },
-		...dynamicFields.map(df => ({ key: df[0], header: df[1].toUpperCase(), width: 0 }))
+		{ key: "id", header: "ID" },
+		{ key: "status", header: "ESTADO" },
+		{ key: "assignedGroup", header: "GRUPO" },
+		{ key: "createdAt", header: "FECHA" },
+		{ key: "contact", header: contactRequirement === "PHONE" ? "TELÉFONO" : "EMAIL" },
+		...dynamicFields.map(df => ({ key: df[0], header: df[1].toUpperCase() }))
 	];
 
 	const ALL_COLUMNS = options.columns && options.columns.length > 0
 		? allPossibleColumns.filter(c => options.columns!.includes(c.key))
 		: allPossibleColumns;
 
-	const fixedWidthTotal = ALL_COLUMNS.reduce((sum, c) => sum + c.width, 0);
-	const flexibleCols = ALL_COLUMNS.filter(c => c.width === 0);
-	const autoWidth = flexibleCols.length > 0 ? (PAGE_WIDTH - fixedWidthTotal) / flexibleCols.length : 0;
+	const COLUMNS_PER_ROW = 4;
+	const COL_WIDTH = PAGE_WIDTH / COLUMNS_PER_ROW;
+	const ROW_HEIGHT = 24;
 
-	ALL_COLUMNS.forEach(c => { if (c.width === 0) c.width = autoWidth; });
-
-	const drawTableHeader = () => {
-		let x = MARGIN;
+	const drawDocumentHeader = (isFirstPage: boolean = false) => {
 		const startY = doc.y;
-		doc.fontSize(7).font("Helvetica-Bold").fillColor("#4b5563");
+		doc.fillColor(C_PRIMARY).rect(MARGIN, startY, 4, 35).fill();
+		doc.fontSize(16).font("Helvetica-Bold").fillColor(C_DARK).text(eventName, MARGIN + 12, startY);
+		doc.fontSize(8).font("Helvetica").fillColor(C_MUTED).text(`Reporte generado: ${new Date().toLocaleString()}`, MARGIN + 12, startY + 18);
 
-		ALL_COLUMNS.forEach((col) => {
-			doc.text(col.header, x, startY, { width: col.width - 2, height: 20, ellipsis: true });
-			x += col.width;
-		});
-
-		doc.y = startY + 15;
-		doc.moveTo(MARGIN, doc.y).lineTo(MARGIN + PAGE_WIDTH, doc.y).strokeColor("#d1d5db").lineWidth(0.5).stroke();
-		doc.moveDown(0.5);
+		if (isFirstPage) {
+			doc.fontSize(10).font("Helvetica-Bold").fillColor(C_PRIMARY)
+				.text(`TOTAL DE REGISTROS: ${rows.length}`, MARGIN, startY + 8, { align: "right", width: PAGE_WIDTH });
+		}
+		doc.y = startY + 45;
 	};
 
 	const drawSectionHeader = (groupName: string) => {
-		if (options.pageBreak && currentGroupValue !== "INITIAL_NULL") {
-			doc.addPage();
-		} else {
-			doc.moveDown(1);
-		}
 		const title = groupName || "SIN ASIGNAR";
-		doc.fillColor("#eff6ff").rect(MARGIN, doc.y, PAGE_WIDTH, 20).fill();
-		doc.fillColor("#1e40af").font("Helvetica-Bold").fontSize(9)
-			.text(`SECCIÓN: ${title}`, MARGIN + 10, doc.y + 6);
-		doc.moveDown(0.8);
-		drawTableHeader();
+		doc.fillColor(C_PRIMARY).rect(MARGIN, doc.y, PAGE_WIDTH, 22).fill();
+		doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(10)
+			.text(`  SECCIÓN: ${title.toUpperCase()}`, MARGIN + 5, doc.y + 7);
+		doc.moveDown(1.5);
 	};
 
-	// --- Renderizado ---
-	doc.fontSize(16).font("Helvetica-Bold").fillColor("#111827").text(eventName, { align: "left" });
-	doc.moveDown(1);
+	drawDocumentHeader(true);
 
 	let currentGroupValue: string | null = "INITIAL_NULL";
-	if (!options.groupBy) drawTableHeader();
+	let rowCount = 0;
 
 	for (const r of rows) {
 		let rowGroupValue = "";
@@ -90,24 +90,43 @@ const generateRegistrationsPdf = (
 		}
 
 		if (options.groupBy && rowGroupValue !== currentGroupValue) {
-			drawSectionHeader(rowGroupValue);
+			const isFirstGroup = currentGroupValue === "INITIAL_NULL";
 			currentGroupValue = rowGroupValue;
+			if (!isFirstGroup && options.pageBreak) {
+				doc.addPage();
+				drawDocumentHeader(false);
+			} else if (!isFirstGroup) {
+				doc.moveDown(1);
+			}
+			drawSectionHeader(rowGroupValue);
+			rowCount = 0;
 		}
 
-		if (doc.y + 20 > BOTTOM_LIMIT) {
+		const totalSubRows = Math.ceil(ALL_COLUMNS.length / COLUMNS_PER_ROW);
+		const hasNotes = !!r.checkInNotes;
+		const blockHeight = (totalSubRows * ROW_HEIGHT) + 12 + (hasNotes ? 18 : 0);
+
+		if (doc.y + blockHeight > BOTTOM_LIMIT) {
 			doc.addPage();
-			drawTableHeader();
+			drawDocumentHeader(false);
+			if (options.groupBy) drawSectionHeader(currentGroupValue!);
 		}
 
-		let x = MARGIN;
-		const currentY = doc.y;
-		doc.fontSize(7).font("Helvetica").fillColor("#374151");
+		const startY = doc.y;
+
+		if (rowCount % 2 !== 0) {
+			doc.fillColor(C_ZEBRA).rect(MARGIN, startY, PAGE_WIDTH, blockHeight).fill();
+		}
 
 		const answers: Record<string, string> = {};
 		r.fieldValues.forEach((fv: any) => {
 			const val = fv.value;
 			answers[fv.eventField.key] = Array.isArray(val) ? val.join(", ") : String(val ?? "-");
 		});
+
+		let currentX = MARGIN + 5;
+		let currentY = startY + 6;
+		let colIndex = 0;
 
 		ALL_COLUMNS.forEach((col) => {
 			let text = "-";
@@ -118,13 +137,31 @@ const generateRegistrationsPdf = (
 			else if (col.key === "contact") text = contactRequirement === "PHONE" ? r.participant.phoneNormalized : r.participant.emailNormalized;
 			else text = answers[col.key] || "-";
 
-			doc.text(text || "-", x, currentY, { width: col.width - 2, lineBreak: false, ellipsis: true });
-			x += col.width;
+			doc.fontSize(6).font("Helvetica-Bold").fillColor(C_MUTED).text(col.header, currentX, currentY, { width: COL_WIDTH - 10, ellipsis: true });
+			doc.fontSize(9).font("Helvetica").fillColor(C_DARK).text(text || "-", currentX, currentY + 9, { width: COL_WIDTH - 10, ellipsis: true });
+
+			colIndex++;
+			if (colIndex % COLUMNS_PER_ROW === 0) {
+				currentX = MARGIN + 5;
+				currentY += ROW_HEIGHT;
+			} else {
+				currentX += COL_WIDTH;
+			}
 		});
 
-		doc.y = currentY + 15;
-		doc.moveTo(MARGIN, doc.y - 2).lineTo(MARGIN + PAGE_WIDTH, doc.y - 2).strokeColor("#f3f4f6").lineWidth(0.2).stroke();
+		if (hasNotes) {
+			const notesY = startY + (totalSubRows * ROW_HEIGHT) + 6;
+			doc.fontSize(7).font("Helvetica-Bold").fillColor(C_DANGER)
+				.text("INCIDENCIA / NOTA:", MARGIN + 5, notesY);
+			doc.fontSize(8).font("Helvetica-Oblique").fillColor(C_DARK)
+				.text(r.checkInNotes, MARGIN + 85, notesY, { width: PAGE_WIDTH - 95, ellipsis: true });
+		}
+
+		doc.y = startY + blockHeight;
+		doc.moveTo(MARGIN, doc.y).lineTo(MARGIN + PAGE_WIDTH, doc.y).strokeColor(C_BORDER).lineWidth(0.5).stroke();
+		rowCount++;
 	}
+
 	doc.end();
 };
 

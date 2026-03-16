@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { getUser, login, LoginInput, logout, register } from "../api/auth.service";
+import { getUser, login, LoginInput, logout, register, RegisterInput } from "../api/auth.service";
 import type { User } from "../types";
 
 export const authKeys = {
@@ -18,7 +18,7 @@ export const useUser = () =>
 
 export function useRegister() {
 	return useMutation({
-		mutationFn: (data: LoginInput) => register(data),
+		mutationFn: (data: RegisterInput) => register(data),
 	});
 }
 

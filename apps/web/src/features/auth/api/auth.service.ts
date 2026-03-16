@@ -4,6 +4,12 @@ import { isAxiosError } from "axios";
 import type { User } from "../types";
 
 export type LoginInput = {
+	identifier: string;
+	password: string;
+};
+
+export type RegisterInput = {
+	username: string;
 	email: string;
 	password: string;
 };
@@ -11,34 +17,24 @@ export type LoginInput = {
 export const getUser = async (): Promise<User | null> => {
 	try {
 		const { data } = await api.get<ApiResponse<{ user: User }>>("/auth/me");
-		if (!data.ok) {
-			throw data;
-		}
+		if (!data.ok) throw data;
 		return data.data.user;
 	} catch (e: unknown) {
 		const isCustom401 = isApiErrorPayload(e) && e.error.code === "HTTP_401";
 		const isNative401 = isAxiosError(e) && e.response?.status === 401;
-		if (isNative401 || isCustom401) {
-			return null;
-		}
+		if (isNative401 || isCustom401) return null;
 		throw e;
 	}
 };
 
-export const register = async (credentials: LoginInput): Promise<User> => {
-	const { data } = await api.post<ApiResponse<User>>(
-		"/auth/register",
-		credentials,
-	);
+export const register = async (credentials: RegisterInput): Promise<User> => {
+	const { data } = await api.post<ApiResponse<User>>("/auth/register", credentials);
 	if (!data.ok) throw data;
 	return data.data;
 };
 
 export const login = async (credentials: LoginInput): Promise<User> => {
-	const { data } = await api.post<ApiResponse<{ user: User }>>(
-		"/auth/login",
-		credentials,
-	);
+	const { data } = await api.post<ApiResponse<{ user: User }>>("/auth/login", credentials);
 	if (!data.ok) throw data;
 	return data.data.user;
 };

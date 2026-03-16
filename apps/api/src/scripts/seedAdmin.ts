@@ -36,6 +36,7 @@ async function main() {
 			role: "SUPER_ADMIN",
 		},
 		create: {
+			username: "superadmin",
 			email: emailNorm,
 			passwordHash,
 			role: "SUPER_ADMIN",

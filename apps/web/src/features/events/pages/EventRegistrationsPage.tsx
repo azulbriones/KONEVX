@@ -2,9 +2,11 @@ import dayjs from "dayjs";
 import { useMemo, useState } from "react";
 import { useOutletContext, useParams } from "react-router-dom";
 
+import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
 import EditIcon from "@mui/icons-material/Edit";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import {
 	Box,
 	Button,
@@ -20,8 +22,15 @@ import {
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
-import { useNotification } from "@/components/ui/NotificationContext";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
+	ExportConfigDialog,
+	ExportOptions,
+} from "@/components/ui/ExportConfigDialog";
+import { useNotification } from "@/components/ui/NotificationContext";
+
+import {
+	useDeleteRegistration,
 	useRegistrations,
 	useUpdateRegistrationStatus,
 } from "@/features/events/hooks/useRegistrations";
@@ -33,10 +42,6 @@ import type {
 import { getErrorMessage } from "@/features/utils/getErrorMessage";
 import { useDebounce } from "@/hooks/useDebounce";
 
-import {
-	ExportConfigDialog,
-	ExportOptions,
-} from "@/components/ui/ExportConfigDialog";
 import {
 	downloadRegistrationsExcel,
 	downloadRegistrationsPdf,
@@ -70,12 +75,10 @@ const STATUS_OPTIONS: RegistrationStatus[] = [
 export function EventRegistrationsPage() {
 	const { eventId } = useParams();
 	const id = Number(eventId);
-
 	const { showNotification } = useNotification();
 
 	const [q, setQ] = useState("");
 	const debouncedQ = useDebounce(q, 500);
-
 	const [status, setStatus] = useState<RegistrationStatus | "">("");
 	const [page, setPage] = useState(0);
 	const [pageSize, setPageSize] = useState(20);
@@ -86,21 +89,24 @@ export function EventRegistrationsPage() {
 
 	const [isEditingGroup, setIsEditingGroup] = useState(false);
 	const [tempGroup, setTempGroup] = useState("");
-
 	const [isDownloading, setIsDownloading] = useState(false);
-
 	const [exportDialogOpen, setExportDialogOpen] = useState(false);
 	const [exportType, setExportType] = useState<"xlsx" | "pdf">("xlsx");
+
+	const [deleteDialog, setDeleteDialog] = useState<{
+		open: boolean;
+		row: RegistrationItem | null;
+	}>({ open: false, row: null });
 
 	const { access, event } = useOutletContext<
 		EventOutletCtx & { event: any }
 	>();
 
-	const canRead = access?.canRead ?? false;
+	const canView = access?.canView ?? false;
 	const canWrite = access?.canWrite ?? false;
-	const canExport = access?.canExport ?? false;
+	const canExport = access?.canView ?? false;
 
-	if (!canRead) {
+	if (!canView) {
 		return (
 			<EventPermissionGate
 				allow={false}
@@ -120,6 +126,8 @@ export function EventRegistrationsPage() {
 			limit: pageSize,
 			q: debouncedQ.trim() || undefined,
 			status: status || undefined,
+			orderBy: "createdAt",
+			orderDir: "asc",
 		}),
 		[page, pageSize, debouncedQ, status],
 	);
@@ -128,8 +136,8 @@ export function EventRegistrationsPage() {
 		id,
 		params,
 	);
-
 	const updateStatusMutation = useUpdateRegistrationStatus(id);
+	const deleteMutation = useDeleteRegistration(id);
 
 	const rows = data?.items ?? [];
 	const rowCount = data?.meta.total ?? 0;
@@ -151,15 +159,6 @@ export function EventRegistrationsPage() {
 		setIsEditingGroup(false);
 	};
 
-	const dynamicFieldsList = useMemo(() => {
-		const firstRow = rows[0];
-		if (!firstRow?.answers) return [];
-		return Object.entries(firstRow.answers).map(([key, val]: any) => ({
-			key,
-			label: val.label,
-		}));
-	}, [rows]);
-
 	const handleDownloadClick = (type: "xlsx" | "pdf") => {
 		setExportType(type);
 		setExportDialogOpen(true);
@@ -174,12 +173,9 @@ export function EventRegistrationsPage() {
 				pageBreak: options.pageBreak,
 				columns: options.columns.join(","),
 			};
-
-			if (exportType === "xlsx") {
+			if (exportType === "xlsx")
 				await downloadRegistrationsExcel(id, downloadParams);
-			} else {
-				await downloadRegistrationsPdf(id, downloadParams);
-			}
+			else await downloadRegistrationsPdf(id, downloadParams);
 			showNotification(
 				`Archivo ${exportType.toUpperCase()} generado`,
 				"success",
@@ -205,10 +201,7 @@ export function EventRegistrationsPage() {
 				},
 				onError: () => {
 					closeMenu();
-					showNotification(
-						"Error al cambiar el estado del registro",
-						"error",
-					);
+					showNotification("Error al cambiar el estado", "error");
 				},
 			},
 		);
@@ -216,7 +209,6 @@ export function EventRegistrationsPage() {
 
 	const onSaveGroup = () => {
 		if (!activeRow || !canWrite) return;
-
 		updateStatusMutation.mutate(
 			{
 				registrationId: activeRow.id,
@@ -226,7 +218,7 @@ export function EventRegistrationsPage() {
 			{
 				onSuccess: () => {
 					closeMenu();
-					showNotification("Grupo actualizada", "success");
+					showNotification("Grupo actualizado", "success");
 				},
 				onError: () => {
 					showNotification("Error al actualizar el grupo", "error");
@@ -235,6 +227,36 @@ export function EventRegistrationsPage() {
 		);
 	};
 
+	const onOpenDeleteConfirm = () => {
+		if (!activeRow || !canWrite) return;
+		setDeleteDialog({ open: true, row: activeRow });
+		closeMenu();
+	};
+
+	const handleConfirmDelete = () => {
+		if (!deleteDialog.row) return;
+
+		deleteMutation.mutate(deleteDialog.row.id, {
+			onSuccess: () => {
+				setDeleteDialog({ open: false, row: null });
+				showNotification(
+					"Registro eliminado permanentemente",
+					"success",
+				);
+			},
+			onError: (err) => {
+				setDeleteDialog({ open: false, row: null });
+				showNotification(
+					getErrorMessage(err) || "Error al eliminar el registro",
+					"error",
+				);
+			},
+		});
+	};
+
+	// ==========================================
+	// DEFINICIÓN DE COLUMNAS
+	// ==========================================
 	const columns: GridColDef<RegistrationItem>[] = useMemo(() => {
 		const baseColumns: GridColDef<RegistrationItem>[] = [
 			{
@@ -242,15 +264,12 @@ export function EventRegistrationsPage() {
 				headerName: "",
 				width: 60,
 				sortable: false,
-				filterable: false,
-				disableColumnMenu: true,
 				align: "center",
 				renderCell: (params) => (
 					<IconButton
 						size="small"
 						disabled={!canWrite}
 						onClick={(e) => openMenu(e, params.row)}
-						aria-label="acciones"
 					>
 						<MoreVertIcon fontSize="small" />
 					</IconButton>
@@ -261,7 +280,6 @@ export function EventRegistrationsPage() {
 				field: "status",
 				headerName: "Estado",
 				width: 130,
-				sortable: false,
 				renderCell: (params) => (
 					<Chip
 						size="small"
@@ -276,7 +294,6 @@ export function EventRegistrationsPage() {
 				field: "assignedGroup",
 				headerName: "Grupo",
 				width: 120,
-				sortable: false,
 				renderCell: (params) => (
 					<Typography
 						variant="body2"
@@ -293,16 +310,39 @@ export function EventRegistrationsPage() {
 			baseColumns.push({
 				field: "phone",
 				headerName: "Teléfono",
-				width: 140,
-				sortable: false,
-				valueGetter: (params) => params.row?.contact?.phone || "-",
+				width: 180,
+				renderCell: (params) => {
+					const phone = params.row?.contact?.phone;
+					if (!phone) return "-";
+					const answers = Object.values(params.row.answers || {});
+					const name = (answers[0] as any)?.value || "";
+					const msg = encodeURIComponent(
+						`¡Hola ${name || ""}! Te escribimos del equipo de logística de *${event?.name || "Konevx"}*. Queríamos saludarte y confirmar tu asistencia (ID: #${params.row.id}).`,
+					);
+					return (
+						<Stack direction="row" alignItems="center" spacing={1}>
+							<Typography variant="body2">{phone}</Typography>
+							<IconButton
+								size="small"
+								sx={{ color: "#25d366" }}
+								onClick={() =>
+									window.open(
+										`https://wa.me/${phone.replace(/\D/g, "")}?text=${msg}`,
+										"_blank",
+									)
+								}
+							>
+								<WhatsAppIcon fontSize="inherit" />
+							</IconButton>
+						</Stack>
+					);
+				},
 			});
 		} else {
 			baseColumns.push({
 				field: "email",
 				headerName: "Email",
 				minWidth: 200,
-				sortable: false,
 				valueGetter: (params) => params.row?.contact?.email || "-",
 			});
 		}
@@ -319,36 +359,89 @@ export function EventRegistrationsPage() {
 
 			sortedKeys.forEach((key) => {
 				const fieldInfo = firstRow.answers[key];
+				const isPhoneField = key.toLowerCase().includes("telefono");
+
 				dynamicColumns.push({
 					field: `answer_${key}`,
 					headerName: fieldInfo.label,
-					width: 180,
+					width: isPhoneField ? 200 : 180,
 					sortable: false,
-					valueGetter: (params) => {
-						const val = params.row?.answers?.[key]?.value;
-						if (val === null || val === undefined || val === "")
-							return "-";
-						if (typeof val === "boolean") return val ? "Sí" : "No";
-						if (Array.isArray(val)) return val.join(", ");
-						return val;
-					},
+					renderCell: isPhoneField
+						? (params) => {
+								const val = params.row?.answers?.[key]?.value;
+								if (!val) return "-";
+								const answers = Object.values(
+									params.row.answers || {},
+								);
+								const name = (answers[0] as any)?.value || "";
+								const msg = encodeURIComponent(
+									`¡Hola ${name}! 👋 Te escribimos de *${event?.name || "Konevx"}* con relación al dato: *${fieldInfo.label}* (${val}).`,
+								);
+								return (
+									<Stack
+										direction="row"
+										alignItems="center"
+										spacing={1}
+									>
+										<Typography variant="body2">
+											{val}
+										</Typography>
+										<IconButton
+											size="small"
+											sx={{ color: "#25d366" }}
+											onClick={() =>
+												window.open(
+													`https://wa.me/${String(val).replace(/\D/g, "")}?text=${msg}`,
+													"_blank",
+												)
+											}
+										>
+											<WhatsAppIcon fontSize="inherit" />
+										</IconButton>
+									</Stack>
+								);
+							}
+						: undefined,
+					valueGetter: !isPhoneField
+						? (params) => {
+								const val = params.row?.answers?.[key]?.value;
+								if (
+									val === null ||
+									val === undefined ||
+									val === ""
+								)
+									return "-";
+								if (typeof val === "boolean")
+									return val ? "Sí" : "No";
+								if (Array.isArray(val)) return val.join(", ");
+								return val;
+							}
+						: undefined,
 				});
 			});
 		}
 
-		const endColumns: GridColDef<RegistrationItem>[] = [
+		return [
+			...baseColumns,
+			...dynamicColumns,
 			{
 				field: "createdAt",
-				headerName: "Fecha de Registro",
+				headerName: "Fecha Registro",
 				width: 160,
-				sortable: false,
-				renderCell: (params) =>
-					dayjs(params.row.createdAt).format("DD MMM YYYY, HH:mm"),
+				renderCell: (p) =>
+					dayjs(p.row.createdAt).format("DD MMM YYYY, HH:mm"),
 			},
 		];
+	}, [rows, canWrite, event]);
 
-		return [...baseColumns, ...dynamicColumns, ...endColumns];
-	}, [rows, canWrite, event?.contactRequirement]);
+	const dynamicFieldsList = useMemo(() => {
+		const firstRow = rows[0];
+		if (!firstRow?.answers) return [];
+		return Object.entries(firstRow.answers).map(([key, val]: any) => ({
+			key,
+			label: val.label,
+		}));
+	}, [rows]);
 
 	return (
 		<Stack spacing={3} sx={{ pt: 2 }}>
@@ -361,7 +454,7 @@ export function EventRegistrationsPage() {
 				<Stack direction={{ xs: "column", sm: "row" }} gap={2} flex={1}>
 					<TextField
 						size="small"
-						label="Buscar email o teléfono..."
+						label="Buscar..."
 						value={q}
 						onChange={(e) => {
 							setQ(e.target.value);
@@ -369,10 +462,9 @@ export function EventRegistrationsPage() {
 						}}
 						fullWidth
 					/>
-
 					<TextField
 						size="small"
-						label="Filtrar por Estado"
+						label="Estado"
 						select
 						value={status}
 						onChange={(e) => {
@@ -381,7 +473,7 @@ export function EventRegistrationsPage() {
 						}}
 						sx={{ minWidth: 200 }}
 					>
-						<MenuItem value="">Todos los registros</MenuItem>
+						<MenuItem value="">Todos</MenuItem>
 						{STATUS_OPTIONS.map((s) => (
 							<MenuItem key={s} value={s}>
 								{STATUS_LABEL[s]}
@@ -391,7 +483,7 @@ export function EventRegistrationsPage() {
 				</Stack>
 
 				{canExport && (
-					<Stack direction="row" gap={1} justifyContent="flex-end">
+					<Stack direction="row" gap={1}>
 						<Button
 							variant="outlined"
 							color="secondary"
@@ -412,7 +504,6 @@ export function EventRegistrationsPage() {
 						>
 							EXCEL
 						</Button>
-
 						<Button
 							variant="outlined"
 							color="error"
@@ -433,13 +524,6 @@ export function EventRegistrationsPage() {
 						>
 							PDF
 						</Button>
-						<ExportConfigDialog
-							open={exportDialogOpen}
-							type={exportType}
-							dynamicFields={dynamicFieldsList}
-							onClose={() => setExportDialogOpen(false)}
-							onConfirm={executeDownload}
-						/>
 					</Stack>
 				)}
 			</Stack>
@@ -464,27 +548,36 @@ export function EventRegistrationsPage() {
 						loading={isLoading || isFetching}
 						disableRowSelectionOnClick
 						pageSizeOptions={[10, 20, 50, 100]}
+						initialState={{
+							sorting: {
+								sortModel: [
+									{ field: "createdAt", sort: "asc" },
+								],
+							},
+						}}
 						sx={{
 							border: "1px solid",
 							borderColor: "divider",
 							bgcolor: "background.paper",
 							borderRadius: 2,
-							"& .MuiDataGrid-cell:focus": { outline: "none" },
-							"& .MuiDataGrid-columnHeader:focus": {
-								outline: "none",
-							},
 						}}
 					/>
 				)}
 			</Box>
+
+			<ExportConfigDialog
+				open={exportDialogOpen}
+				type={exportType}
+				dynamicFields={dynamicFieldsList}
+				onClose={() => setExportDialogOpen(false)}
+				onConfirm={executeDownload}
+			/>
 
 			<Menu
 				anchorEl={anchorEl}
 				open={menuOpen}
 				onClose={closeMenu}
 				PaperProps={{ sx: { borderRadius: 2, minWidth: 260, mt: 0.5 } }}
-				transformOrigin={{ horizontal: "right", vertical: "top" }}
-				anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
 			>
 				<Box sx={{ px: 2, pt: 1.5, pb: 1 }}>
 					<Stack
@@ -497,24 +590,21 @@ export function EventRegistrationsPage() {
 							color="text.secondary"
 							fontWeight={700}
 						>
-							GRUPO
+							GRUPO / DORMITORIO
 						</Typography>
 						{!isEditingGroup && (
 							<IconButton
 								size="small"
 								onClick={() => setIsEditingGroup(true)}
-								sx={{ p: 0 }}
 							>
 								<EditIcon sx={{ fontSize: 16 }} />
 							</IconButton>
 						)}
 					</Stack>
-
 					{isEditingGroup ? (
 						<Stack direction="row" gap={1} mt={1}>
 							<TextField
 								size="small"
-								placeholder="Ej: A1"
 								value={tempGroup}
 								onChange={(e) =>
 									setTempGroup(e.target.value.toUpperCase())
@@ -525,7 +615,6 @@ export function EventRegistrationsPage() {
 								variant="contained"
 								size="small"
 								onClick={onSaveGroup}
-								disabled={updateStatusMutation.isPending}
 							>
 								OK
 							</Button>
@@ -545,9 +634,7 @@ export function EventRegistrationsPage() {
 						</Typography>
 					)}
 				</Box>
-
 				<Divider sx={{ my: 1 }} />
-
 				<Typography
 					sx={{ px: 2, pt: 1, pb: 1 }}
 					variant="caption"
@@ -556,12 +643,10 @@ export function EventRegistrationsPage() {
 				>
 					ACTUALIZAR ESTADO
 				</Typography>
-
 				{STATUS_OPTIONS.map((s) => (
 					<MenuItem
 						key={s}
 						disabled={
-							!canWrite ||
 							updateStatusMutation.isPending ||
 							activeRow?.status === s
 						}
@@ -575,14 +660,33 @@ export function EventRegistrationsPage() {
 							variant={
 								activeRow?.status === s ? "filled" : "outlined"
 							}
-							sx={{ mr: 1.5, minWidth: 90, cursor: "inherit" }}
+							sx={{ mr: 1.5, minWidth: 90 }}
 						/>
-						<Typography variant="body2" color="text.secondary">
-							{activeRow?.status === s ? "(Actual)" : ""}
-						</Typography>
 					</MenuItem>
 				))}
+
+				<Divider sx={{ my: 1 }} />
+				<MenuItem
+					onClick={onOpenDeleteConfirm}
+					sx={{ py: 1.5, color: "error.main" }}
+				>
+					<DeleteIcon fontSize="small" sx={{ mr: 1.5 }} />
+					<Typography variant="body2" fontWeight="bold">
+						Eliminar Registro
+					</Typography>
+				</MenuItem>
 			</Menu>
+
+			<ConfirmDialog
+				open={deleteDialog.open}
+				title="Eliminar Registro"
+				description={`¿Estás seguro de que deseas ELIMINAR permanentemente el registro #${deleteDialog.row?.id}? Esta acción destruirá todas sus respuestas y no se puede deshacer.`}
+				confirmText="Eliminar permanentemente"
+				cancelText="Cancelar"
+				loading={deleteMutation.isPending}
+				onConfirm={handleConfirmDelete}
+				onClose={() => setDeleteDialog({ open: false, row: null })}
+			/>
 		</Stack>
 	);
 }

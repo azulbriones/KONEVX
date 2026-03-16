@@ -11,11 +11,11 @@ import {
 } from "../lib/cookies.js";
 import { generateCsrfToken } from "../lib/crypto.js";
 import { HttpError } from "../lib/httpError.js";
-import { LoginSchema } from "../schemas/auth.schema.js";
+import { LoginSchema, RegisterSchema } from "../schemas/auth.schema.js";
 import {
-	loginWithEmailPassword,
+	loginWithCredentials,
 	logoutSession,
-	refreshSession,
+	refreshSession
 } from "../services/auth.service.js";
 
 const ACCESS_TOKEN_AGE_MS = 15 * 60 * 1000; // 15 minutos
@@ -54,18 +54,11 @@ export const loginHandler: RequestHandler = async (req, res, next) => {
 		const parsed = LoginSchema.safeParse(req.body);
 
 		if (!parsed.success) {
-			return next(
-				new HttpError(
-					400,
-					"VALIDATION_ERROR",
-					"Datos inválidos",
-					parsed.error,
-				),
-			);
+			return next(new HttpError(400, "VALIDATION_ERROR", "Datos inválidos", parsed.error.flatten()));
 		}
 
-		const { email, password } = parsed.data;
-		const result = await loginWithEmailPassword(email, password);
+		const { identifier, password } = parsed.data;
+		const result = await loginWithCredentials(identifier, password);
 
 		setAuthCookies(res, result.accessToken, result.refreshToken);
 
@@ -77,30 +70,40 @@ export const loginHandler: RequestHandler = async (req, res, next) => {
 
 export const registerHandler: RequestHandler = async (req, res, next) => {
 	try {
-		const { email, password } = req.body;
+		const parsed = RegisterSchema.safeParse(req.body);
 
-		if (!email || !password) {
+		if (!parsed.success) {
 			return res.status(400).json({
 				ok: false,
 				error: {
-					code: "BAD_REQUEST",
-					message: "Email y contraseña son obligatorios.",
+					code: "VALIDATION_ERROR",
+					message: "Datos inválidos",
+					details: parsed.error.flatten().fieldErrors
 				},
 			});
 		}
 
-		const emailNormalized = email.trim().toLowerCase();
+		const { username, email, password } = parsed.data;
 
-		const existingUser = await prisma.user.findUnique({
-			where: { email: emailNormalized },
+		const emailNormalized = email.trim().toLowerCase();
+		const usernameNormalized = username.trim().toLowerCase();
+
+		const existingUser = await prisma.user.findFirst({
+			where: {
+				OR: [
+					{ email: emailNormalized },
+					{ username: usernameNormalized }
+				]
+			},
 		});
 
 		if (existingUser) {
+			const isEmail = existingUser.email === emailNormalized;
 			return res.status(400).json({
 				ok: false,
 				error: {
-					code: "EMAIL_IN_USE",
-					message: "Este correo electrónico ya está registrado.",
+					code: "USER_EXISTS",
+					message: isEmail ? "Este correo electrónico ya está registrado." : "Este nombre de usuario ya está en uso.",
 				},
 			});
 		}
@@ -108,9 +111,9 @@ export const registerHandler: RequestHandler = async (req, res, next) => {
 		const saltRounds = 10;
 		const passwordHash = await bcrypt.hash(password, saltRounds);
 
-		// Nota: Según tu schema, el rol por defecto será EVENT_ADMIN
 		const newUser = await prisma.user.create({
 			data: {
+				username: usernameNormalized,
 				email: emailNormalized,
 				passwordHash,
 			},
@@ -120,6 +123,7 @@ export const registerHandler: RequestHandler = async (req, res, next) => {
 			ok: true,
 			data: {
 				id: newUser.id,
+				username: newUser.username,
 				email: newUser.email,
 				role: newUser.role,
 			},

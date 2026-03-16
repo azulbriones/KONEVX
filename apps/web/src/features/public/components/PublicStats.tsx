@@ -1,5 +1,4 @@
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
 import FaceIcon from "@mui/icons-material/Face";
 import PeopleIcon from "@mui/icons-material/People";
@@ -14,12 +13,40 @@ function getRemainingBadge(remaining: number) {
 
 function formatDate(dateString?: string | null) {
 	if (!dateString) return "Por definir";
+
 	const date = new Date(dateString);
 	date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
+
 	return new Intl.DateTimeFormat("es-MX", {
 		day: "numeric",
-		month: "short",
+		month: "long",
 	}).format(date);
+}
+
+function formatTime(time?: string | null) {
+	if (!time) return null;
+
+	const [hours, minutes] = time.split(":").map(Number);
+
+	if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+		return null;
+	}
+
+	const date = new Date();
+	date.setHours(hours, minutes, 0, 0);
+
+	return new Intl.DateTimeFormat("es-MX", {
+		hour: "numeric",
+		minute: "2-digit",
+		hour12: true,
+	}).format(date);
+}
+
+function getDateTimeParts(dateString?: string | null, time?: string | null) {
+	return {
+		date: formatDate(dateString),
+		time: formatTime(time) ?? "Por definir",
+	};
 }
 
 export function PublicStats({
@@ -27,6 +54,7 @@ export function PublicStats({
 	endDate,
 	location,
 	entryTime,
+	exitTime,
 	cost,
 	minAge,
 	remaining,
@@ -35,27 +63,41 @@ export function PublicStats({
 	endDate?: string | null;
 	location?: string | null;
 	entryTime?: string | null;
+	exitTime?: string | null;
 	cost?: number | null;
 	minAge?: number | null;
 	remaining: number;
 }) {
 	const badge = getRemainingBadge(remaining);
 
-	const dateDisplay =
-		startDate && endDate
-			? `${formatDate(startDate)} - ${formatDate(endDate)}`
-			: formatDate(startDate);
+	const entry = getDateTimeParts(startDate, entryTime);
+	const exit = getDateTimeParts(endDate, exitTime);
 
 	return (
 		<section className="stats" aria-label="Detalles del evento">
 			<div className="stat-card">
 				<div style={{ display: "flex", justifyContent: "center" }}>
-					<CalendarTodayIcon htmlColor="#f97316" />
+					<AccessTimeIcon htmlColor="#f97316" />
 				</div>
-				<div className="stat-label">Fecha</div>
-				<div className="stat-value" style={{ fontSize: "1.1rem" }}>
-					{/* Puedes reemplazar dateDisplay por "30, 31 de Mar y 1 de Abr" si prefieres el texto fijo */}
-					{dateDisplay}
+				<div className="stat-label">Fecha de entrada</div>
+				<div className="stat-value stat-value--stacked">
+					<span className="stat-date">{entry.date}</span>
+					<span className="stat-time">{entry.time}</span>
+				</div>
+				<div className="stat-sub">Venir desayunados</div>
+			</div>
+
+			<div className="stat-card">
+				<div style={{ display: "flex", justifyContent: "center" }}>
+					<AccessTimeIcon htmlColor="#f97316" />
+				</div>
+				<div className="stat-label">Santa misa de clausura</div>
+				<div className="stat-value stat-value--stacked">
+					<span className="stat-date">{exit.date}</span>
+					<span className="stat-time">{exit.time}</span>
+				</div>
+				<div className="stat-sub">
+					Familiares invitados a acompañar a los jóvenes
 				</div>
 			</div>
 
@@ -71,22 +113,13 @@ export function PublicStats({
 
 			<div className="stat-card">
 				<div style={{ display: "flex", justifyContent: "center" }}>
-					<AccessTimeIcon htmlColor="#f97316" />
-				</div>
-				<div className="stat-label">Entrada</div>
-				<div className="stat-value">
-					{entryTime ? entryTime : "Por definir"}
-				</div>
-			</div>
-
-			<div className="stat-card">
-				<div style={{ display: "flex", justifyContent: "center" }}>
 					<ConfirmationNumberIcon htmlColor="#f97316" />
 				</div>
 				<div className="stat-label">Donativo</div>
 				<div className="stat-value">
 					{cost ? `$${cost} MXN` : "Gratis"}
 				</div>
+				<div className="stat-sub">El pago se realiza al ingresar.</div>
 			</div>
 
 			<div className="stat-card">

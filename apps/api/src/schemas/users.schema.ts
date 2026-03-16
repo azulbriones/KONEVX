@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const CreateUserSchema = z.object({
 	email: z.string().email(),
-	role: z.enum(["EVENT_ADMIN", "SUPER_ADMIN"]).default("EVENT_ADMIN"),
+	role: z.enum(["USER", "SUPER_ADMIN"]).default("USER"),
 });
 
 export const ListUsersQuerySchema = z.object({

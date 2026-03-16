@@ -7,7 +7,7 @@ import { HttpError } from "../lib/httpError.js";
 import { parseId } from "../lib/parser.js";
 import { SetPublishSchema } from "../schemas/eventPublish.schema.js";
 import { CreateEventSchema, UpdateEventSchema } from "../schemas/events.schema.js";
-import { createEvent, deleteEvent, updateEvent } from "../services/events.service.js";
+import { createEvent, createQuickRegistration, deleteEvent, updateEvent } from "../services/events.service.js";
 
 
 const EVENT_DETAIL_SELECT = {
@@ -237,14 +237,20 @@ export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 
 		const event = await prisma.event.findFirst({
 			where: whereClause,
-			select: EVENT_DETAIL_SELECT,
+			select: {
+				...EVENT_DETAIL_SELECT,
+				eventMembers: isSuperAdmin ? false : {
+					where: { userId: user.id },
+					select: { role: true }
+				}
+			},
 		});
 
 		if (!event) {
 			throw new HttpError(404, "EVENT_NOT_FOUND", "Evento no encontrado");
 		}
 
-		const [fieldsCount, registrationsCount, groupStatsRaw] = await Promise.all([
+		const [fieldsCount, registrationsCount, groupStatsRaw, statusStatsRaw] = await Promise.all([
 			prisma.eventField.count({ where: { eventId } }),
 			prisma.registration.count({ where: { eventId, status: { not: "CANCELLED" } } }),
 			prisma.registration.groupBy({
@@ -255,8 +261,26 @@ export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 					assignedGroup: { not: null }
 				},
 				_count: { assignedGroup: true }
+			}),
+			prisma.registration.groupBy({
+				by: ['status'],
+				where: { eventId },
+				_count: { status: true }
 			})
 		]);
+
+		const statusCounts = {
+			REGISTERED: 0,
+			CONFIRMED: 0,
+			ATTENDED: 0,
+			CANCELLED: 0,
+		};
+
+		statusStatsRaw.forEach((curr) => {
+			if (curr.status in statusCounts) {
+				statusCounts[curr.status as keyof typeof statusCounts] = curr._count.status;
+			}
+		});
 
 		let fieldOccupancy: Record<string, number> = {};
 		const groupingSettings = event.groupingSettings as any;
@@ -293,14 +317,9 @@ export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 
 		const memberRole = isSuperAdmin
 			? null
-			: (((event as any).eventMembers?.[0]?.role ?? null) as "EDITOR" | "VIEWER" | null);
+			: ((event as any).eventMembers?.[0]?.role ?? null);
 
-		const safeEvent = isSuperAdmin
-			? event
-			: (() => {
-				const { eventMembers, ...rest } = event as typeof event & { eventMembers?: unknown };
-				return rest;
-			})();
+		const { eventMembers, ...safeEvent } = event as any;
 
 		return res.json({
 			ok: true,
@@ -310,9 +329,8 @@ export const getEventHandler: RequestHandler<{ eventId: string }> = async (
 				stats: {
 					fieldsCount,
 					registrationsCount,
-					occupancy: event.capacity
-						? Math.round((registrationsCount / event.capacity) * 100)
-						: null,
+					occupancy: statusCounts.ATTENDED,
+					statusCounts,
 					groupsOccupancy,
 					fieldOccupancy,
 				},
@@ -404,5 +422,26 @@ export const deleteEventHandler: RequestHandler<{ eventId: string }> = async (re
 		res.json({ ok: true, message: "Evento eliminado correctamente" });
 	} catch (err) {
 		next(err);
+	}
+};
+
+export const quickRegistrationHandler: RequestHandler = async (req, res, next) => {
+	try {
+		const eventId = parseId(req.params.eventId);
+		const { name, contact, assignedGroup } = req.body;
+
+		if (!name || !contact) {
+			throw new HttpError(400, "MISSING_FIELDS", "Nombre y contacto son requeridos");
+		}
+
+		const data = await createQuickRegistration(eventId, { name, contact, assignedGroup });
+
+		res.status(201).json({
+			ok: true,
+			message: "Registro express completado con éxito",
+			data
+		});
+	} catch (e) {
+		next(e);
 	}
 };

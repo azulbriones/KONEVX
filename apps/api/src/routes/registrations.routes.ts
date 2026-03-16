@@ -1,6 +1,39 @@
 import { Router } from "express";
-import { listRegistrationsHandler } from "../controllers/registrations.controller.js";
+import {
+	deleteRegistrationHandler,
+	listRegistrationsHandler,
+	markAttendanceHandler,
+	undoAttendanceHandler
+} from "../controllers/registrations.controller.js";
+import { requireEventAdmin, requireEventCheckin, requireEventView } from "../lib/eventAccess.js";
+import { requireAuth } from "../middlewares/auth.js";
 
 export const registrationsRouter = Router({ mergeParams: true });
 
-registrationsRouter.get("/", listRegistrationsHandler);
+registrationsRouter.get(
+	"/",
+	requireAuth,
+	requireEventView,
+	listRegistrationsHandler
+);
+
+registrationsRouter.patch(
+	"/:registrationId/check-in",
+	requireAuth,
+	requireEventCheckin,
+	markAttendanceHandler
+);
+
+registrationsRouter.delete(
+	"/:registrationId/check-in",
+	requireAuth,
+	requireEventCheckin,
+	undoAttendanceHandler
+);
+
+registrationsRouter.delete(
+	"/:registrationId",
+	requireAuth,
+	requireEventAdmin,
+	deleteRegistrationHandler
+);
