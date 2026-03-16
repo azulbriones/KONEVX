@@ -139,3 +139,19 @@ export async function undoCheckInRegistration(eventId: number, registrationId: n
 	});
 }
 
+export async function deleteRegistration(eventId: number, registrationId: number) {
+	const registration = await prisma.registration.findFirst({
+		where: { id: registrationId, eventId },
+	});
+
+	if (!registration) {
+		throw new HttpError(404, "REGISTRATION_NOT_FOUND", "Registro no encontrado");
+	}
+
+	await prisma.$transaction([
+		prisma.registrationFieldValue.deleteMany({ where: { registrationId } }),
+		prisma.registration.delete({ where: { id: registrationId } })
+	]);
+
+	return { id: registrationId };
+}
