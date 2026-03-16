@@ -46,6 +46,7 @@ import { eventsKeys } from "../hooks/useEvents";
 import { useRegistrations } from "../hooks/useRegistrations";
 import type { Ctx } from "../types";
 
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
 	ExportConfigDialog,
 	type ExportOptions,
@@ -74,6 +75,12 @@ export function EventCheckInPage() {
 	const [exportDialogOpen, setExportDialogOpen] = useState(false);
 	const [exportType, setExportType] = useState<"xlsx" | "pdf">("xlsx");
 	const [isExporting, setIsExporting] = useState(false);
+
+	// 💡 Estado para el modal de confirmación de anulación
+	const [cancelDialog, setCancelDialog] = useState<{
+		open: boolean;
+		regId: number | null;
+	}>({ open: false, regId: null });
 
 	const queryKey = [
 		"registrations",
@@ -205,9 +212,15 @@ export function EventCheckInPage() {
 	});
 
 	const handleCancelCheckIn = (regId: number) => {
-		if (!window.confirm("¿Seguro que quieres anular esta entrada?")) return;
-		setLoadingId(regId);
-		cancelCheckInMutation.mutate(regId);
+		setCancelDialog({ open: true, regId });
+	};
+
+	const executeCancelCheckIn = () => {
+		if (cancelDialog.regId) {
+			setLoadingId(cancelDialog.regId);
+			cancelCheckInMutation.mutate(cancelDialog.regId);
+		}
+		setCancelDialog({ open: false, regId: null });
 	};
 
 	const handleQuickRegistration = async (payload: {
@@ -463,7 +476,6 @@ export function EventCheckInPage() {
 									},
 								}}
 							/>
-							{/* 💡 BOTONES ACCIÓN: Usan access.canCheckIn */}
 							{access.canCheckIn && (
 								<>
 									<Button
@@ -557,6 +569,17 @@ export function EventCheckInPage() {
 				open={qrScannerOpen}
 				onClose={() => setQrScannerOpen(false)}
 				onScan={handleQRScan}
+			/>
+
+			<ConfirmDialog
+				open={cancelDialog.open}
+				title="Anular Entrada"
+				description={`¿Seguro que quieres anular la entrada del ID #${cancelDialog.regId}? El participante volverá a estar como "Registrado".`}
+				confirmText="Anular entrada"
+				cancelText="Mantener entrada"
+				loading={cancelCheckInMutation.isPending}
+				onConfirm={executeCancelCheckIn}
+				onClose={() => setCancelDialog({ open: false, regId: null })}
 			/>
 		</Box>
 	);
@@ -708,6 +731,7 @@ function RegistrationCard({
 	event,
 }: any) {
 	const isAttended = reg.status === "ATTENDED";
+	const isCancelled = reg.status === "CANCELLED";
 	const [localNote, setLocalNote] = useState(reg.checkInNotes || "");
 
 	const sorted = Object.values(reg.answers).sort(
@@ -718,7 +742,7 @@ function RegistrationCard({
 	const others = sorted.slice(2);
 
 	const defaultMessage = encodeURIComponent(
-		`¡Hola ${primary?.value || ""}! Te escribimos del equipo de logística de *${event?.name || "Konevx"}*. Queríamos saludarte y confirmar tu asistencia (ID: #${reg.id}).`,
+		`¡Hola ${primary?.value || ""}! Te escribimos del equipo de logística de *${event?.name || "Konevx"}*. Queríamos saludarte y confirmar un detalle de tu registro (ID: #${reg.id}).`,
 	);
 
 	return (
@@ -726,11 +750,23 @@ function RegistrationCard({
 			elevation={0}
 			sx={{
 				borderRadius: "1.25rem",
-				border: isAttended ? "2px solid #16a34a" : "1px solid",
-				borderColor: localNote ? "warning.main" : "divider",
-				bgcolor: isAttended
-					? "rgba(22, 163, 74, 0.05)"
-					: "background.paper",
+				border: isCancelled
+					? "2px solid #ef4444"
+					: isAttended
+						? "2px solid #16a34a"
+						: "1px solid",
+				borderColor: isCancelled
+					? "#ef4444"
+					: isAttended
+						? "#16a34a"
+						: localNote
+							? "warning.main"
+							: "divider",
+				bgcolor: isCancelled
+					? "rgba(239, 68, 68, 0.05)"
+					: isAttended
+						? "rgba(22, 163, 74, 0.05)"
+						: "background.paper",
 				transition: "0.2s",
 			}}
 		>
@@ -739,14 +775,22 @@ function RegistrationCard({
 					<Stack direction="row" spacing={2} alignItems="center">
 						<Avatar
 							sx={{
-								bgcolor: isAttended
-									? "#16a34a"
-									: "primary.main",
+								bgcolor: isCancelled
+									? "#ef4444"
+									: isAttended
+										? "#16a34a"
+										: "primary.main",
 								width: 55,
 								height: 55,
 							}}
 						>
-							{isAttended ? <CheckCircle /> : <Person />}
+							{isCancelled ? (
+								<Cancel />
+							) : isAttended ? (
+								<CheckCircle />
+							) : (
+								<Person />
+							)}
 						</Avatar>
 						<Box sx={{ flexGrow: 1, minWidth: 0 }}>
 							<Typography
@@ -755,6 +799,12 @@ function RegistrationCard({
 									fontWeight: 950,
 									fontSize: "1.2rem",
 									lineHeight: 1.1,
+									color: isCancelled
+										? "text.secondary"
+										: "text.primary",
+									textDecoration: isCancelled
+										? "line-through"
+										: "none",
 								}}
 							>
 								{primary?.value || "---"}
@@ -787,7 +837,9 @@ function RegistrationCard({
 							value={localNote}
 							onChange={(e) => setLocalNote(e.target.value)}
 							disabled={
-								loadingId === reg.id || !access.canCheckIn
+								loadingId === reg.id ||
+								!access.canCheckIn ||
+								isCancelled
 							}
 							InputProps={{
 								startAdornment: (
@@ -896,7 +948,7 @@ function RegistrationCard({
 								<Chip
 									icon={<MeetingRoom />}
 									label={`DORMITORIO: ${reg.assignedGroup}`}
-									color="primary"
+									color={isCancelled ? "default" : "primary"}
 									sx={{
 										fontWeight: 900,
 										width: "100%",
@@ -908,7 +960,24 @@ function RegistrationCard({
 						)}
 					</Grid>
 
-					{!isAttended ? (
+					{isCancelled ? (
+						<Box
+							sx={{
+								py: 1.5,
+								borderRadius: "1rem",
+								bgcolor: "#ef4444",
+								color: "white",
+								textAlign: "center",
+								fontWeight: 900,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								gap: 1,
+							}}
+						>
+							<Cancel fontSize="small" /> CANCELADO
+						</Box>
+					) : !isAttended ? (
 						<Button
 							variant="contained"
 							fullWidth
@@ -973,7 +1042,6 @@ function RegistrationCard({
 		</Card>
 	);
 }
-
 // ==========================================
 // 4. COMPONENTE: TARJETA DE ESTADÍSTICA MINI
 // ==========================================

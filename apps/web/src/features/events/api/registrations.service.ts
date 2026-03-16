@@ -111,3 +111,11 @@ export async function quickRegistration(
 	if (!data.ok) throw data;
 	return data.data;
 }
+
+export async function deleteRegistration(eventId: number, registrationId: number) {
+	const { data } = await api.delete<ApiResponse<any>>(
+		`/events/${eventId}/registrations/${registrationId}`
+	);
+	if (!data.ok) throw data;
+	return data.data;
+}

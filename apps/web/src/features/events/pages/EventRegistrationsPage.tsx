@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 import { useMemo, useState } from "react";
 import { useOutletContext, useParams } from "react-router-dom";
 
+import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
 import EditIcon from "@mui/icons-material/Edit";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -21,8 +22,15 @@ import {
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
-import { useNotification } from "@/components/ui/NotificationContext";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
+	ExportConfigDialog,
+	ExportOptions,
+} from "@/components/ui/ExportConfigDialog";
+import { useNotification } from "@/components/ui/NotificationContext";
+
+import {
+	useDeleteRegistration,
 	useRegistrations,
 	useUpdateRegistrationStatus,
 } from "@/features/events/hooks/useRegistrations";
@@ -34,10 +42,6 @@ import type {
 import { getErrorMessage } from "@/features/utils/getErrorMessage";
 import { useDebounce } from "@/hooks/useDebounce";
 
-import {
-	ExportConfigDialog,
-	ExportOptions,
-} from "@/components/ui/ExportConfigDialog";
 import {
 	downloadRegistrationsExcel,
 	downloadRegistrationsPdf,
@@ -89,6 +93,11 @@ export function EventRegistrationsPage() {
 	const [exportDialogOpen, setExportDialogOpen] = useState(false);
 	const [exportType, setExportType] = useState<"xlsx" | "pdf">("xlsx");
 
+	const [deleteDialog, setDeleteDialog] = useState<{
+		open: boolean;
+		row: RegistrationItem | null;
+	}>({ open: false, row: null });
+
 	const { access, event } = useOutletContext<
 		EventOutletCtx & { event: any }
 	>();
@@ -128,6 +137,7 @@ export function EventRegistrationsPage() {
 		params,
 	);
 	const updateStatusMutation = useUpdateRegistrationStatus(id);
+	const deleteMutation = useDeleteRegistration(id);
 
 	const rows = data?.items ?? [];
 	const rowCount = data?.meta.total ?? 0;
@@ -215,6 +225,33 @@ export function EventRegistrationsPage() {
 				},
 			},
 		);
+	};
+
+	const onOpenDeleteConfirm = () => {
+		if (!activeRow || !canWrite) return;
+		setDeleteDialog({ open: true, row: activeRow });
+		closeMenu();
+	};
+
+	const handleConfirmDelete = () => {
+		if (!deleteDialog.row) return;
+
+		deleteMutation.mutate(deleteDialog.row.id, {
+			onSuccess: () => {
+				setDeleteDialog({ open: false, row: null });
+				showNotification(
+					"Registro eliminado permanentemente",
+					"success",
+				);
+			},
+			onError: (err) => {
+				setDeleteDialog({ open: false, row: null });
+				showNotification(
+					getErrorMessage(err) || "Error al eliminar el registro",
+					"error",
+				);
+			},
+		});
 	};
 
 	// ==========================================
@@ -627,7 +664,29 @@ export function EventRegistrationsPage() {
 						/>
 					</MenuItem>
 				))}
+
+				<Divider sx={{ my: 1 }} />
+				<MenuItem
+					onClick={onOpenDeleteConfirm}
+					sx={{ py: 1.5, color: "error.main" }}
+				>
+					<DeleteIcon fontSize="small" sx={{ mr: 1.5 }} />
+					<Typography variant="body2" fontWeight="bold">
+						Eliminar Registro
+					</Typography>
+				</MenuItem>
 			</Menu>
+
+			<ConfirmDialog
+				open={deleteDialog.open}
+				title="Eliminar Registro"
+				description={`¿Estás seguro de que deseas ELIMINAR permanentemente el registro #${deleteDialog.row?.id}? Esta acción destruirá todas sus respuestas y no se puede deshacer.`}
+				confirmText="Eliminar permanentemente"
+				cancelText="Cancelar"
+				loading={deleteMutation.isPending}
+				onConfirm={handleConfirmDelete}
+				onClose={() => setDeleteDialog({ open: false, row: null })}
+			/>
 		</Stack>
 	);
 }
