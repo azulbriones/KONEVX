@@ -84,6 +84,7 @@ export function PublicStats({
 					<span className="stat-date">{entry.date}</span>
 					<span className="stat-time">{entry.time}</span>
 				</div>
+				<div className="stat-sub">Venir desayunados</div>
 			</div>
 
 			<div className="stat-card">

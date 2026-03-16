@@ -7,7 +7,6 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import SearchOffIcon from "@mui/icons-material/SearchOff";
 import { useNavigate } from "react-router-dom";
-import { PublicAvailabilityBanner } from "../components/PublicAvailabilityBanner";
 import { PublicChecklist } from "../components/PublicChecklist";
 import { PublicFooter } from "../components/PublicFooter";
 import { PublicGallery } from "../components/PublicGallery";
@@ -125,13 +124,6 @@ export function PublicEventPage() {
 				backgroundImage={event.backgroundImage}
 				heroImage={event.heroImage}
 			/>
-
-			<div className="section section-tight">
-				<PublicAvailabilityBanner
-					capacity={event.capacity}
-					remaining={event.remaining}
-				/>
-			</div>
 
 			<PublicStats
 				startDate={event.startDate}

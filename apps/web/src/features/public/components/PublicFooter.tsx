@@ -4,12 +4,31 @@ import LanguageIcon from "@mui/icons-material/Language";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import XIcon from "@mui/icons-material/X";
 import YouTubeIcon from "@mui/icons-material/YouTube";
-import { IconButton, Tooltip } from "@mui/material";
+import { IconButton, SvgIcon, Tooltip } from "@mui/material";
+
+// 💡 Creamos el ícono de TikTok manualmente para asegurar compatibilidad
+const TikTokIcon = (props: any) => (
+	<SvgIcon {...props} viewBox="0 0 448 512">
+		<path d="M448,209.91a210.06,210.06,0,0,1-122.77-39.25V349.38A162.55,162.55,0,1,1,185,188.31V278.2a74.62,74.62,0,1,0,52.23,71.18V0l88,0a121.18,121.18,0,0,0,1.86,22.17h0A122.18,122.18,0,0,0,381,102.39a121.43,121.43,0,0,0,67,20.14Z" />
+	</SvgIcon>
+);
 
 function SocialIconItem({ linkText }: { linkText: string }) {
-	const lower = linkText.toLowerCase();
+	// Limpiamos caracteres invisibles
+	const cleanLink = linkText
+		.replace(/[\u200E\u200F\u202A-\u202E]/g, "")
+		.trim();
+	const lower = cleanLink.toLowerCase();
+
 	let Icon = LanguageIcon;
-	let href = linkText;
+	let href = cleanLink;
+
+	// Detectamos si es puramente un número de teléfono (más de 10 dígitos)
+	const digits = cleanLink.replace(/\D/g, "");
+	const isJustNumber =
+		digits.length >= 10 &&
+		!cleanLink.includes(".com") &&
+		!cleanLink.includes("/");
 
 	if (lower.includes("facebook")) Icon = FacebookIcon;
 	else if (lower.includes("instagram") || lower.includes("ig"))
@@ -17,15 +36,30 @@ function SocialIconItem({ linkText }: { linkText: string }) {
 	else if (lower.includes("twitter") || lower.includes("x.com")) Icon = XIcon;
 	else if (lower.includes("youtube") || lower.includes("youtu.be"))
 		Icon = YouTubeIcon;
-	else if (lower.includes("whatsapp") || lower.includes("wa.me"))
+	else if (lower.includes("tiktok"))
+		Icon = TikTokIcon; // 👈 ¡Aquí detectamos TikTok!
+	else if (
+		lower.includes("whatsapp") ||
+		lower.includes("wa.me") ||
+		isJustNumber
+	) {
 		Icon = WhatsAppIcon;
+		// Si solo pusieron el número, armamos el link de WhatsApp automáticamente
+		if (
+			isJustNumber &&
+			!lower.includes("wa.me") &&
+			!lower.includes("whatsapp.com")
+		) {
+			href = `https://wa.me/${digits}`;
+		}
+	}
 
 	if (!href.startsWith("http") && href.includes(".com")) {
 		href = `https://${href}`;
 	}
 
 	return (
-		<Tooltip title={linkText} arrow placement="top">
+		<Tooltip title={cleanLink} arrow placement="top">
 			<IconButton
 				component="a"
 				href={href}
@@ -94,11 +128,56 @@ export function PublicFooter({
 					<h5 style={{ fontWeight: 900, marginBottom: "0.75rem" }}>
 						Contacto
 					</h5>
-					{contacts.map((contact, index) => (
-						<p key={index} style={{ marginBottom: "0.3rem" }}>
-							{contact}
-						</p>
-					))}
+					{contacts.map((contact, index) => {
+						const cleanContact = contact
+							.replace(/[\u200E\u200F\u202A-\u202E]/g, "")
+							.trim();
+						const digits = cleanContact.replace(/\D/g, "");
+						const isPhone =
+							digits.length >= 10 && !cleanContact.includes("@");
+
+						return (
+							<div key={index} style={{ marginBottom: "0.5rem" }}>
+								{isPhone ? (
+									<a
+										href={`https://wa.me/${digits}`}
+										target="_blank"
+										rel="noopener noreferrer"
+										style={{
+											color: "inherit",
+											textDecoration: "none",
+											display: "inline-flex",
+											alignItems: "center",
+											gap: "0.4rem",
+											opacity: 0.85,
+										}}
+										onMouseEnter={(e) =>
+											(e.currentTarget.style.opacity =
+												"1")
+										}
+										onMouseLeave={(e) =>
+											(e.currentTarget.style.opacity =
+												"0.85")
+										}
+									>
+										<WhatsAppIcon
+											sx={{
+												color: "#25d366",
+												fontSize: "1.2rem",
+											}}
+										/>
+										<span style={{ fontWeight: 600 }}>
+											{cleanContact}
+										</span>
+									</a>
+								) : (
+									<p style={{ margin: 0, opacity: 0.85 }}>
+										{cleanContact}
+									</p>
+								)}
+							</div>
+						);
+					})}
 				</div>
 
 				{socials.length > 0 && (

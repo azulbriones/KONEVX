@@ -13,6 +13,7 @@ import {
 	CircularProgress,
 	Divider,
 	Stack,
+	SvgIcon,
 	Typography,
 } from "@mui/material";
 import confetti from "canvas-confetti";
@@ -38,6 +39,13 @@ type Props = {
 type Errors = Record<string, string | undefined>;
 type SubmittedStatus = "CREATED" | "EXISTS" | null;
 
+// 💡 Ícono de TikTok Personalizado
+const TikTokIcon = (props: any) => (
+	<SvgIcon {...props} viewBox="0 0 448 512">
+		<path d="M448,209.91a210.06,210.06,0,0,1-122.77-39.25V349.38A162.55,162.55,0,1,1,185,188.31V278.2a74.62,74.62,0,1,0,52.23,71.18V0l88,0a121.18,121.18,0,0,0,1.86,22.17h0A122.18,122.18,0,0,0,381,102.39a121.43,121.43,0,0,0,67,20.14Z" />
+	</SvgIcon>
+);
+
 // --- HELPERS ---
 function initialAnswers(fields: PublicEventField[]) {
 	const out: Record<string, unknown> = {};
@@ -50,33 +58,62 @@ function initialAnswers(fields: PublicEventField[]) {
 }
 
 function DynamicSocialLink({ link }: { link: string }) {
-	const lower = link.toLowerCase();
+	const cleanLink = link.replace(/[\u200E\u200F\u202A-\u202E]/g, "").trim();
+	const lower = cleanLink.toLowerCase();
+
 	let Icon = LanguageIcon;
-	let className = "social-link";
+	let className = "social-btn";
+	let href = cleanLink;
+
+	const digits = cleanLink.replace(/\D/g, "");
+	const isJustNumber =
+		digits.length >= 10 &&
+		!cleanLink.includes(".com") &&
+		!cleanLink.includes("/");
 
 	if (lower.includes("facebook")) {
 		Icon = FacebookIcon;
-		className += " face";
+		className += " facebook";
 	} else if (lower.includes("instagram") || lower.includes("ig")) {
 		Icon = InstagramIcon;
-		className += " insta";
+		className += " instagram";
 	} else if (lower.includes("twitter") || lower.includes("x.com")) {
 		Icon = XIcon;
 		className += " x-social";
-	} else if (lower.includes("whatsapp") || lower.includes("wa.me")) {
+	} else if (lower.includes("tiktok")) {
+		Icon = TikTokIcon; // 👈 Detección de TikTok
+		className += " tiktok"; // Puedes crear un .tiktok { background: black } en tu CSS
+	} else if (
+		lower.includes("whatsapp") ||
+		lower.includes("wa.me") ||
+		isJustNumber
+	) {
 		Icon = WhatsAppIcon;
-		className += " whats";
+		className += " whatsapp";
+		if (
+			isJustNumber &&
+			!lower.includes("wa.me") &&
+			!lower.includes("whatsapp.com")
+		) {
+			href = `https://wa.me/${digits}`;
+		}
 	} else if (lower.includes("youtube")) {
 		Icon = YouTubeIcon;
 		className += " youtube";
 	}
 
-	let href = link;
-	if (!href.startsWith("http") && href.includes(".com"))
+	if (!href.startsWith("http") && href.includes(".com")) {
 		href = `https://${href}`;
+	}
 
 	return (
-		<a href={href} target="_blank" rel="noreferrer" className={className}>
+		<a
+			href={href}
+			target="_blank"
+			rel="noreferrer"
+			className={className}
+			style={{ textDecoration: "none" }}
+		>
 			<Icon />
 		</a>
 	);
@@ -152,7 +189,6 @@ function SuccessView({
 						: "¡Registro exitoso!"}
 				</h2>
 
-				{/* 💡 AQUÍ ESTÁ LA MAGIA DEL BOLETO VIRTUAL CON QR */}
 				<Box
 					sx={{
 						mt: 3,
@@ -285,14 +321,21 @@ function SuccessView({
 					<>
 						<Divider className="divider" />
 						<div className="social-invite">
-							<p style={{ fontWeight: 700, color: "#64748b" }}>
-								Síguenos para avisos:
+							<p
+								style={{
+									fontWeight: 700,
+									color: "#64748b",
+									marginBottom: "1rem",
+								}}
+							>
+								¡No olvides seguirnos!
 							</p>
 							<Stack
 								direction="row"
 								spacing={2}
 								justifyContent="center"
-								mt={2}
+								flexWrap="wrap"
+								useFlexGap
 							>
 								{socials.map((link, index) => (
 									<DynamicSocialLink
