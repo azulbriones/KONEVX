@@ -61,7 +61,7 @@ function DynamicSocialLink({ link }: { link: string }) {
 	const cleanLink = link.replace(/[\u200E\u200F\u202A-\u202E]/g, "").trim();
 	const lower = cleanLink.toLowerCase();
 
-	let Icon = LanguageIcon;
+	let Icon: any = LanguageIcon;
 	let className = "social-btn";
 	let href = cleanLink;
 

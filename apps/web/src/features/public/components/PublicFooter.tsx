@@ -20,7 +20,7 @@ function SocialIconItem({ linkText }: { linkText: string }) {
 		.trim();
 	const lower = cleanLink.toLowerCase();
 
-	let Icon = LanguageIcon;
+	let Icon: any = LanguageIcon;
 	let href = cleanLink;
 
 	// Detectamos si es puramente un número de teléfono (más de 10 dígitos)
