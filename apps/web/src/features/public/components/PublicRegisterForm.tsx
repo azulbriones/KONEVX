@@ -251,9 +251,13 @@ function SuccessView({
 
 				<div className="screenshot-tip">
 					<p>
-						📸 <strong>¡Toma una captura de pantalla!</strong>{" "}
-						Muéstrale el Código QR al staff en la entrada para un
-						acceso rápido.
+						📸{" "}
+						<strong>
+							¡Guarda tú número de registro o imprime el codígo
+							QR!
+						</strong>{" "}
+						Llevalo contigo el día de la entrada para un acceso más
+						rápido.
 					</p>
 				</div>
 

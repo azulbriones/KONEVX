@@ -139,6 +139,60 @@ export async function undoCheckInRegistration(eventId: number, registrationId: n
 	});
 }
 
+export async function updateRegistrationData(
+	eventId: number,
+	registrationId: number,
+	data: { contact?: { email?: string; phone?: string }; answers?: Record<string, any> }
+) {
+	const registration = await prisma.registration.findFirst({
+		where: { id: registrationId, eventId },
+		include: { participant: true }
+	});
+
+	if (!registration) {
+		throw new HttpError(404, "REGISTRATION_NOT_FOUND", "Registro no encontrado");
+	}
+
+	await prisma.$transaction(async (tx) => {
+		if (data.contact) {
+			await tx.participant.update({
+				where: { id: registration.participantId },
+				data: {
+					emailNormalized: data.contact.email || registration.participant.emailNormalized,
+					phoneNormalized: data.contact.phone || registration.participant.phoneNormalized,
+				}
+			});
+		}
+
+		if (data.answers) {
+			const fields = await tx.eventField.findMany({ where: { eventId } });
+
+			await tx.registrationFieldValue.deleteMany({
+				where: { registrationId }
+			});
+
+			const newValues = [];
+			for (const field of fields) {
+				const val = data.answers[field.key];
+				if (val !== undefined && val !== null && val !== "") {
+					newValues.push({
+						registrationId,
+						eventId,
+						eventFieldId: field.id,
+						value: val
+					});
+				}
+			}
+
+			if (newValues.length > 0) {
+				await tx.registrationFieldValue.createMany({ data: newValues });
+			}
+		}
+	});
+
+	return { id: registrationId };
+}
+
 export async function deleteRegistration(eventId: number, registrationId: number) {
 	const registration = await prisma.registration.findFirst({
 		where: { id: registrationId, eventId },

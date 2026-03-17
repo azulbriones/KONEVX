@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	deleteRegistration,
 	listRegistrations,
+	updateRegistrationData,
 	updateRegistrationStatus,
 } from "../api/registrations.service";
 import type { ListRegistrationsQuery, RegistrationStatus } from "../types";
@@ -40,6 +41,21 @@ export function useUpdateRegistrationStatus(eventId: number) {
 				input.registrationId,
 				{ status: input.status, assignedGroup: input.assignedGroup }
 			),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: registrationsKeys.all(eventId) });
+			qc.invalidateQueries({ queryKey: eventsKeys.detail(eventId) });
+		},
+	});
+}
+
+export function useUpdateRegistrationData(eventId: number) {
+	const qc = useQueryClient();
+
+	return useMutation({
+		mutationFn: (input: {
+			registrationId: number;
+			payload: { contact?: { email?: string; phone?: string }; answers?: Record<string, any> };
+		}) => updateRegistrationData(eventId, input.registrationId, input.payload),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: registrationsKeys.all(eventId) });
 			qc.invalidateQueries({ queryKey: eventsKeys.detail(eventId) });
