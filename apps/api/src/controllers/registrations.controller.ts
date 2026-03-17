@@ -27,13 +27,44 @@ export const listRegistrationsHandler: RequestHandler<{ eventId: string }> = asy
 		if (q) {
 			const searchNormalized = q.trim();
 			const searchAsNumber = parseInt(searchNormalized);
-
 			const words = searchNormalized.split(/\s+/);
 
+			const getVariations = (word: string) => {
+				const cleanWord = word.replace(/\./g, "");
+
+				const base = cleanWord.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+				const charMap: Record<string, string[]> = {
+					'a': ['a', 'á'], 'e': ['e', 'é'], 'i': ['i', 'í'], 'o': ['o', 'ó'], 'u': ['u', 'ú', 'ü']
+				};
+
+				let lowers = [""];
+				for (const char of base) {
+					const options = charMap[char] || [char];
+					const next = [];
+					for (const prefix of lowers) {
+						for (const opt of options) {
+							next.push(prefix + opt);
+						}
+					}
+					lowers = next;
+				}
+
+				const result = new Set<string>();
+
+				result.add(word);
+
+				for (const v of lowers) {
+					result.add(v);
+					result.add(v.toUpperCase());
+					result.add(v.charAt(0).toUpperCase() + v.slice(1));
+				}
+
+				return Array.from(result);
+			};
+
 			const wordsConditions: Prisma.RegistrationWhereInput[] = words.map(word => {
-				const wordLower = word.toLowerCase();
-				const wordUpper = word.toUpperCase();
-				const wordCap = wordLower.charAt(0).toUpperCase() + wordLower.slice(1);
+				const variations = getVariations(word);
 
 				return {
 					OR: [
@@ -43,12 +74,7 @@ export const listRegistrationsHandler: RequestHandler<{ eventId: string }> = asy
 							fieldValues: {
 								some: {
 									...(fieldId ? { eventFieldId: fieldId } : {}),
-									OR: [
-										{ value: { string_contains: word } },
-										{ value: { string_contains: wordLower } },
-										{ value: { string_contains: wordUpper } },
-										{ value: { string_contains: wordCap } }
-									]
+									OR: variations.map(v => ({ value: { string_contains: v } }))
 								}
 							}
 						}
