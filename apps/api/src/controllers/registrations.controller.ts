@@ -4,7 +4,7 @@ import { prisma } from "../db/prisma.js";
 import { HttpError } from "../lib/httpError.js";
 import { parseId } from "../lib/parser.js";
 import { RegistrationsQuerySchema } from "../schemas/registrationsQuery.schema.js";
-import { checkInRegistration, deleteRegistration, undoCheckInRegistration } from "../services/registrations.service.js";
+import { checkInRegistration, deleteRegistration, undoCheckInRegistration, updateRegistrationData } from "../services/registrations.service.js";
 
 export const listRegistrationsHandler: RequestHandler<{ eventId: string }> = async (req, res, next) => {
 	try {
@@ -145,6 +145,24 @@ export const undoAttendanceHandler: RequestHandler = async (req, res, next) => {
 		res.json({
 			ok: true,
 			message: "Entrada anulada. El participante vuelve a estar como 'Registrado'."
+		});
+	} catch (e) {
+		next(e);
+	}
+};
+
+export const updateRegistrationDataHandler: RequestHandler = async (req, res, next) => {
+	try {
+		const eventId = parseId(req.params.eventId);
+		const registrationId = parseId(req.params.registrationId);
+
+		const { contact, answers } = req.body;
+
+		await updateRegistrationData(eventId, registrationId, { contact, answers });
+
+		res.json({
+			ok: true,
+			message: "Registro actualizado correctamente."
 		});
 	} catch (e) {
 		next(e);

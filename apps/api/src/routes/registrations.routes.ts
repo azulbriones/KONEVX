@@ -3,7 +3,8 @@ import {
 	deleteRegistrationHandler,
 	listRegistrationsHandler,
 	markAttendanceHandler,
-	undoAttendanceHandler
+	undoAttendanceHandler,
+	updateRegistrationDataHandler
 } from "../controllers/registrations.controller.js";
 import { requireEventAdmin, requireEventCheckin, requireEventView } from "../lib/eventAccess.js";
 import { requireAuth } from "../middlewares/auth.js";
@@ -22,6 +23,13 @@ registrationsRouter.patch(
 	requireAuth,
 	requireEventCheckin,
 	markAttendanceHandler
+);
+
+registrationsRouter.patch(
+	"/:registrationId/data",
+	requireAuth,
+	requireEventAdmin,
+	updateRegistrationDataHandler
 );
 
 registrationsRouter.delete(
