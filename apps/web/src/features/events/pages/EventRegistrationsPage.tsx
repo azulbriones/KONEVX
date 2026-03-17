@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useOutletContext, useParams } from "react-router-dom";
 
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -10,14 +10,21 @@ import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import {
 	Box,
 	Button,
+	Checkbox,
 	Chip,
 	CircularProgress,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogTitle,
 	Divider,
+	FormControlLabel,
 	IconButton,
 	Menu,
 	MenuItem,
 	Stack,
 	TextField,
+	Tooltip,
 	Typography,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
@@ -29,9 +36,11 @@ import {
 } from "@/components/ui/ExportConfigDialog";
 import { useNotification } from "@/components/ui/NotificationContext";
 
+import { useEventFields } from "@/features/events/hooks/useEventFields";
 import {
 	useDeleteRegistration,
 	useRegistrations,
+	useUpdateRegistrationData,
 	useUpdateRegistrationStatus,
 } from "@/features/events/hooks/useRegistrations";
 import type {
@@ -72,6 +81,295 @@ const STATUS_OPTIONS: RegistrationStatus[] = [
 	"ATTENDED",
 ];
 
+// ==========================================
+// COMPONENTE SECUNDARIO: MODAL DE EDICIÓN
+// ==========================================
+function EditRegistrationDialog({
+	open,
+	row,
+	event,
+	fields,
+	onClose,
+	onSave,
+	isPending,
+}: {
+	open: boolean;
+	row: RegistrationItem | null;
+	event: any;
+	fields: any[] | undefined;
+	onClose: () => void;
+	onSave: (payload: any) => void;
+	isPending: boolean;
+}) {
+	const [contact, setContact] = useState({ phone: "", email: "" });
+	const [answers, setAnswers] = useState<Record<string, any>>({});
+
+	const fieldsToRender = useMemo(() => {
+		if (fields && fields.length > 0) {
+			return [...fields].sort((a: any, b: any) => a.order - b.order);
+		}
+		if (row?.answers) {
+			return Object.entries(row.answers)
+				.map(([key, data]: any) => ({
+					key,
+					label: data.label,
+					type: data.type,
+					options: [],
+					order: data.order || 0,
+				}))
+				.sort((a, b) => a.order - b.order);
+		}
+		return [];
+	}, [fields, row]);
+
+	useEffect(() => {
+		if (row && open) {
+			setContact({
+				phone: row.contact?.phone || "",
+				email: row.contact?.email || "",
+			});
+			const initialAnswers: Record<string, any> = {};
+			if (row.answers) {
+				Object.keys(row.answers).forEach((k) => {
+					initialAnswers[k] = (row.answers as any)[k].value;
+				});
+			}
+			setAnswers(initialAnswers);
+		}
+	}, [row, open]);
+
+	if (!row) return null;
+
+	const handleSave = () => {
+		onSave({ contact, answers });
+	};
+
+	return (
+		<Dialog
+			open={open}
+			onClose={isPending ? undefined : onClose}
+			maxWidth="sm"
+			fullWidth
+		>
+			<DialogTitle fontWeight={800}>
+				Editar Datos del Registro
+			</DialogTitle>
+			<DialogContent dividers>
+				<Stack spacing={3} py={1}>
+					<Typography
+						variant="subtitle2"
+						color="primary"
+						fontWeight={700}
+					>
+						CONTACTO
+					</Typography>
+
+					{event?.contactRequirement === "EMAIL" && (
+						<TextField
+							label="Correo Electrónico"
+							fullWidth
+							value={contact.email}
+							onChange={(e) =>
+								setContact({
+									...contact,
+									email: e.target.value,
+								})
+							}
+						/>
+					)}
+
+					{event?.contactRequirement === "PHONE" && (
+						<TextField
+							label="Teléfono"
+							fullWidth
+							value={contact.phone}
+							onChange={(e) =>
+								setContact({
+									...contact,
+									phone: e.target.value,
+								})
+							}
+						/>
+					)}
+
+					<Divider />
+
+					<Typography
+						variant="subtitle2"
+						color="primary"
+						fontWeight={700}
+					>
+						RESPUESTAS
+					</Typography>
+
+					{fieldsToRender.map((field) => {
+						const key = field.key;
+						const type = field.type;
+						const value = answers[key];
+						const options = Array.isArray(field.options)
+							? field.options
+							: [];
+
+						if (type === "CHECKBOX") {
+							return (
+								<FormControlLabel
+									key={key}
+									control={
+										<Checkbox
+											checked={!!value}
+											onChange={(e) =>
+												setAnswers({
+													...answers,
+													[key]: e.target.checked,
+												})
+											}
+										/>
+									}
+									label={field.label}
+								/>
+							);
+						}
+
+						if (type === "SELECT") {
+							return (
+								<TextField
+									key={key}
+									select
+									label={field.label}
+									fullWidth
+									value={value || ""}
+									onChange={(e) =>
+										setAnswers({
+											...answers,
+											[key]: e.target.value,
+										})
+									}
+								>
+									<MenuItem value="">
+										<em>Seleccione...</em>
+									</MenuItem>
+									{options.map((opt: string) => (
+										<MenuItem key={opt} value={opt}>
+											{opt}
+										</MenuItem>
+									))}
+								</TextField>
+							);
+						}
+
+						if (type === "MULTI_SELECT") {
+							return (
+								<TextField
+									key={key}
+									select
+									SelectProps={{
+										multiple: true,
+										renderValue: (selected: any) =>
+											(selected as string[]).join(", "),
+									}}
+									label={field.label}
+									fullWidth
+									value={Array.isArray(value) ? value : []}
+									onChange={(e) =>
+										setAnswers({
+											...answers,
+											[key]: e.target.value,
+										})
+									}
+								>
+									{options.map((opt: string) => (
+										<MenuItem key={opt} value={opt}>
+											<Checkbox
+												checked={
+													Array.isArray(value) &&
+													value.includes(opt)
+												}
+											/>
+											{opt}
+										</MenuItem>
+									))}
+								</TextField>
+							);
+						}
+
+						if (type === "DATE") {
+							return (
+								<TextField
+									key={key}
+									type="date"
+									label={field.label}
+									fullWidth
+									InputLabelProps={{ shrink: true }}
+									value={value || ""}
+									onChange={(e) =>
+										setAnswers({
+											...answers,
+											[key]: e.target.value,
+										})
+									}
+								/>
+							);
+						}
+
+						if (type === "NUMBER") {
+							return (
+								<TextField
+									key={key}
+									type="number"
+									label={field.label}
+									fullWidth
+									value={value ?? ""}
+									onChange={(e) =>
+										setAnswers({
+											...answers,
+											[key]:
+												e.target.value === ""
+													? null
+													: Number(e.target.value),
+										})
+									}
+								/>
+							);
+						}
+
+						return (
+							<TextField
+								key={key}
+								label={field.label}
+								fullWidth
+								multiline={type === "TEXTAREA"}
+								rows={type === "TEXTAREA" ? 3 : 1}
+								value={value || ""}
+								onChange={(e) =>
+									setAnswers({
+										...answers,
+										[key]: e.target.value,
+									})
+								}
+							/>
+						);
+					})}
+				</Stack>
+			</DialogContent>
+			<DialogActions sx={{ p: 2 }}>
+				<Button onClick={onClose} disabled={isPending}>
+					Cancelar
+				</Button>
+				<Button
+					variant="contained"
+					onClick={handleSave}
+					disabled={isPending}
+				>
+					{isPending ? "Guardando..." : "Guardar Cambios"}
+				</Button>
+			</DialogActions>
+		</Dialog>
+	);
+}
+
+// ==========================================
+// COMPONENTE PRINCIPAL
+// ==========================================
 export function EventRegistrationsPage() {
 	const { eventId } = useParams();
 	const id = Number(eventId);
@@ -94,6 +392,11 @@ export function EventRegistrationsPage() {
 	const [exportType, setExportType] = useState<"xlsx" | "pdf">("xlsx");
 
 	const [deleteDialog, setDeleteDialog] = useState<{
+		open: boolean;
+		row: RegistrationItem | null;
+	}>({ open: false, row: null });
+
+	const [editDialog, setEditDialog] = useState<{
 		open: boolean;
 		row: RegistrationItem | null;
 	}>({ open: false, row: null });
@@ -132,12 +435,14 @@ export function EventRegistrationsPage() {
 		[page, pageSize, debouncedQ, status],
 	);
 
+	const { data: eventFields } = useEventFields(id);
 	const { data, isLoading, isError, error, isFetching } = useRegistrations(
 		id,
 		params,
 	);
 	const updateStatusMutation = useUpdateRegistrationStatus(id);
 	const deleteMutation = useDeleteRegistration(id);
+	const updateDataMutation = useUpdateRegistrationData(id);
 
 	const rows = data?.items ?? [];
 	const rowCount = data?.meta.total ?? 0;
@@ -254,6 +559,28 @@ export function EventRegistrationsPage() {
 		});
 	};
 
+	const handleSaveEditData = (payload: any) => {
+		if (!editDialog.row) return;
+		updateDataMutation.mutate(
+			{ registrationId: editDialog.row.id, payload },
+			{
+				onSuccess: () => {
+					setEditDialog({ open: false, row: null });
+					showNotification(
+						"Datos actualizados correctamente",
+						"success",
+					);
+				},
+				onError: (err) => {
+					showNotification(
+						getErrorMessage(err) || "Error al actualizar",
+						"error",
+					);
+				},
+			},
+		);
+	};
+
 	// ==========================================
 	// DEFINICIÓN DE COLUMNAS
 	// ==========================================
@@ -343,7 +670,25 @@ export function EventRegistrationsPage() {
 				field: "email",
 				headerName: "Email",
 				minWidth: 200,
-				valueGetter: (params) => params.row?.contact?.email || "-",
+				renderCell: (params) => {
+					const email = params.row?.contact?.email;
+					if (!email) return "-";
+					return (
+						<Tooltip title={email} placement="top" arrow>
+							<Typography
+								variant="body2"
+								sx={{
+									overflow: "hidden",
+									textOverflow: "ellipsis",
+									whiteSpace: "nowrap",
+									width: "100%",
+								}}
+							>
+								{email}
+							</Typography>
+						</Tooltip>
+					);
+				},
 			});
 		}
 
@@ -366,57 +711,79 @@ export function EventRegistrationsPage() {
 					headerName: fieldInfo.label,
 					width: isPhoneField ? 200 : 180,
 					sortable: false,
-					renderCell: isPhoneField
-						? (params) => {
-								const val = params.row?.answers?.[key]?.value;
-								if (!val) return "-";
-								const answers = Object.values(
-									params.row.answers || {},
-								);
-								const name = (answers[0] as any)?.value || "";
-								const msg = encodeURIComponent(
-									`¡Hola ${name}! 👋 Te escribimos de *${event?.name || "Konevx"}* con relación al dato: *${fieldInfo.label}* (${val}).`,
-								);
-								return (
-									<Stack
-										direction="row"
-										alignItems="center"
-										spacing={1}
+					renderCell: (params) => {
+						const val = params.row?.answers?.[key]?.value;
+						if (val === null || val === undefined || val === "")
+							return "-";
+
+						let displayValue = String(val);
+						if (typeof val === "boolean")
+							displayValue = val ? "Sí" : "No";
+						if (Array.isArray(val)) displayValue = val.join(", ");
+
+						if (isPhoneField) {
+							const answers = Object.values(
+								params.row.answers || {},
+							);
+							const name = (answers[0] as any)?.value || "";
+							const msg = encodeURIComponent(
+								`¡Hola ${name}! 👋 Te escribimos de *${event?.name || "Konevx"}* con relación al dato: *${fieldInfo.label}* (${val}).`,
+							);
+							return (
+								<Stack
+									direction="row"
+									alignItems="center"
+									spacing={1}
+								>
+									<Tooltip
+										title={displayValue}
+										arrow
+										placement="top"
 									>
-										<Typography variant="body2">
-											{val}
-										</Typography>
-										<IconButton
-											size="small"
-											sx={{ color: "#25d366" }}
-											onClick={() =>
-												window.open(
-													`https://wa.me/${String(val).replace(/\D/g, "")}?text=${msg}`,
-													"_blank",
-												)
-											}
+										<Typography
+											variant="body2"
+											sx={{
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												whiteSpace: "nowrap",
+												maxWidth: 130,
+											}}
 										>
-											<WhatsAppIcon fontSize="inherit" />
-										</IconButton>
-									</Stack>
-								);
-							}
-						: undefined,
-					valueGetter: !isPhoneField
-						? (params) => {
-								const val = params.row?.answers?.[key]?.value;
-								if (
-									val === null ||
-									val === undefined ||
-									val === ""
-								)
-									return "-";
-								if (typeof val === "boolean")
-									return val ? "Sí" : "No";
-								if (Array.isArray(val)) return val.join(", ");
-								return val;
-							}
-						: undefined,
+											{displayValue}
+										</Typography>
+									</Tooltip>
+									<IconButton
+										size="small"
+										sx={{ color: "#25d366" }}
+										onClick={() =>
+											window.open(
+												`https://wa.me/${String(val).replace(/\D/g, "")}?text=${msg}`,
+												"_blank",
+											)
+										}
+									>
+										<WhatsAppIcon fontSize="inherit" />
+									</IconButton>
+								</Stack>
+							);
+						}
+
+						return (
+							<Tooltip title={displayValue} placement="top" arrow>
+								<Typography
+									variant="body2"
+									sx={{
+										overflow: "hidden",
+										textOverflow: "ellipsis",
+										whiteSpace: "nowrap",
+										width: "100%",
+									}}
+								>
+									{displayValue}
+								</Typography>
+							</Tooltip>
+						);
+					},
 				});
 			});
 		}
@@ -635,6 +1002,25 @@ export function EventRegistrationsPage() {
 					)}
 				</Box>
 				<Divider sx={{ my: 1 }} />
+
+				<MenuItem
+					onClick={() => {
+						if (activeRow)
+							setEditDialog({ open: true, row: activeRow });
+						closeMenu();
+					}}
+					sx={{ py: 1.5 }}
+				>
+					<EditIcon
+						fontSize="small"
+						sx={{ mr: 1.5, color: "text.secondary" }}
+					/>
+					<Typography variant="body2" fontWeight="bold">
+						Editar Datos (Nombre, etc.)
+					</Typography>
+				</MenuItem>
+
+				<Divider sx={{ my: 1 }} />
 				<Typography
 					sx={{ px: 2, pt: 1, pb: 1 }}
 					variant="caption"
@@ -686,6 +1072,16 @@ export function EventRegistrationsPage() {
 				loading={deleteMutation.isPending}
 				onConfirm={handleConfirmDelete}
 				onClose={() => setDeleteDialog({ open: false, row: null })}
+			/>
+
+			<EditRegistrationDialog
+				open={editDialog.open}
+				row={editDialog.row}
+				event={event}
+				fields={eventFields}
+				onClose={() => setEditDialog({ open: false, row: null })}
+				onSave={handleSaveEditData}
+				isPending={updateDataMutation.isPending}
 			/>
 		</Stack>
 	);

@@ -112,6 +112,19 @@ export async function quickRegistration(
 	return data.data;
 }
 
+export async function updateRegistrationData(
+	eventId: number,
+	registrationId: number,
+	payload: { contact?: { email?: string; phone?: string }; answers?: Record<string, any> }
+) {
+	const { data } = await api.patch<ApiResponse<any>>(
+		`/events/${eventId}/registrations/${registrationId}/data`,
+		payload
+	);
+	if (!data.ok) throw data;
+	return data.data;
+}
+
 export async function deleteRegistration(eventId: number, registrationId: number) {
 	const { data } = await api.delete<ApiResponse<any>>(
 		`/events/${eventId}/registrations/${registrationId}`
