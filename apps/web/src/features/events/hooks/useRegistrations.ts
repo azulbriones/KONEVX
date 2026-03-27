@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	deleteRegistration,
 	listRegistrations,
@@ -24,6 +24,7 @@ export function useRegistrations(
 		queryFn: () => listRegistrations(eventId, query),
 		enabled: Number.isFinite(eventId) && eventId > 0,
 		staleTime: 15_000,
+		placeholderData: keepPreviousData,
 	});
 }
 

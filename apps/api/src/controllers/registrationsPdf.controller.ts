@@ -43,7 +43,7 @@ const generateRegistrationsPdf = (
 		{ key: "assignedGroup", header: "GRUPO" },
 		{ key: "createdAt", header: "FECHA" },
 		{ key: "contact", header: contactRequirement === "PHONE" ? "TELÉFONO" : "EMAIL" },
-		...dynamicFields.map(df => ({ key: df[0], header: df[1].toUpperCase() }))
+		...dynamicFields.map(df => ({ key: df[0], header: String(df[1] || "").toUpperCase() }))
 	];
 
 	const ALL_COLUMNS = options.columns && options.columns.length > 0
@@ -71,11 +71,25 @@ const generateRegistrationsPdf = (
 		const title = groupName || "SIN ASIGNAR";
 		doc.fillColor(C_PRIMARY).rect(MARGIN, doc.y, PAGE_WIDTH, 22).fill();
 		doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(10)
-			.text(`  SECCIÓN: ${title.toUpperCase()}`, MARGIN + 5, doc.y + 7);
+			.text(`  SECCIÓN: ${String(title).toUpperCase()}`, MARGIN + 5, doc.y + 7);
 		doc.moveDown(1.5);
 	};
 
 	drawDocumentHeader(true);
+
+	if (options.groupBy) {
+		rows.sort((a, b) => {
+			const getVal = (r: any) => {
+				if (options.groupBy === 'assignedGroup') return r.assignedGroup || "SIN ASIGNAR";
+				if (options.groupBy === 'groupBase') return r.assignedGroup ? r.assignedGroup.replace(/[0-9]/g, '') : "SIN ASIGNAR";
+				const fv = r.fieldValues.find((f: any) => f.eventField.key === options.groupBy);
+				return fv?.value || "SIN ESPECIFICAR";
+			};
+			const valA = String(getVal(a)).toUpperCase();
+			const valB = String(getVal(b)).toUpperCase();
+			return valA.localeCompare(valB);
+		});
+	}
 
 	let currentGroupValue: string | null = "INITIAL_NULL";
 	let rowCount = 0;
