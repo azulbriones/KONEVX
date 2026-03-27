@@ -1,4 +1,5 @@
 import {
+	AccessTime,
 	BarChart,
 	CalendarMonth,
 	Checkroom,
@@ -20,10 +21,14 @@ import {
 	Stack,
 	Typography,
 } from "@mui/material";
+import dayjs from "dayjs";
+import "dayjs/locale/es";
 import { useOutletContext } from "react-router-dom";
 import InfoRow from "../components/InfoRow";
 import StatCard from "../components/StatCard";
 import type { Ctx } from "../types";
+
+dayjs.locale("es");
 
 const CONTACT_LABELS: Record<string, string> = {
 	EMAIL: "Correo electrónico",
@@ -33,12 +38,30 @@ const CONTACT_LABELS: Record<string, string> = {
 export function EventOverviewPage() {
 	const { event, stats } = useOutletContext<Ctx & { stats: any }>();
 
-	const formatDate = (dateString?: Date | string | null) => {
-		if (!dateString) return "No definida";
-		return new Intl.DateTimeFormat("es-MX", {
-			dateStyle: "medium",
-			timeStyle: "short",
-		}).format(new Date(dateString));
+	const formatExactDate = (dateString?: Date | string | null) => {
+		if (!dateString) return null;
+		const cleanDate =
+			typeof dateString === "string"
+				? dateString.split("T")[0]
+				: dateString;
+		return dayjs(cleanDate).format("DD MMM YYYY");
+	};
+
+	const formatTime = (timeStr?: string | null) => {
+		if (!timeStr) return null;
+		return dayjs(`2000-01-01T${timeStr}`).format("hh:mm A");
+	};
+
+	const formatEventDateTime = (
+		date?: string | null,
+		time?: string | null,
+	) => {
+		const d = formatExactDate(date);
+		const t = formatTime(time);
+		if (d && t) return `${d}, ${t}`;
+		if (d) return d;
+		if (t) return t;
+		return "No definida";
 	};
 
 	const groupingFieldName =
@@ -97,7 +120,6 @@ export function EventOverviewPage() {
 			</Grid>
 
 			<Grid container sx={{ width: "100%" }} spacing={3}>
-				{/* 💡 SECCIÓN NUEVA: TOTALES POR CAMPO (Ej: Tallas) */}
 				{hasFieldStats && (
 					<Grid item xs={12} md={hasGroups ? 6 : 12}>
 						<Card
@@ -157,7 +179,6 @@ export function EventOverviewPage() {
 					</Grid>
 				)}
 
-				{/* 💡 SECCIÓN: DISTRIBUCIÓN POR GRUPOS (Logística) */}
 				{hasGroups && (
 					<Grid item xs={12} md={hasFieldStats ? 6 : 12}>
 						<Card
@@ -234,11 +255,40 @@ export function EventOverviewPage() {
 									label="Ubicación"
 									value={event.location || "No especificada"}
 								/>
-								<InfoRow
-									icon={<CalendarMonth color="action" />}
-									label="Inicio del evento"
-									value={formatDate(event.startDate)}
-								/>
+
+								<Box>
+									<Divider
+										sx={{ my: 2, borderStyle: "dashed" }}
+									/>
+									<Stack spacing={2} mt={2}>
+										<InfoRow
+											icon={
+												<CalendarMonth color="action" />
+											}
+											label="Inicio del evento"
+											value={formatEventDateTime(
+												event.startDate,
+												event.entryTime,
+											)}
+										/>
+										{(event.endDate || event.exitTime) && (
+											<InfoRow
+												icon={
+													<AccessTime color="action" />
+												}
+												label="Fin del evento"
+												value={formatEventDateTime(
+													event.endDate,
+													event.exitTime,
+												)}
+											/>
+										)}
+									</Stack>
+									<Divider
+										sx={{ mt: 2, borderStyle: "dashed" }}
+									/>
+								</Box>
+
 								<Box>
 									<Typography
 										variant="subtitle2"
