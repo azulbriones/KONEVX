@@ -15,6 +15,11 @@ export const errorMiddleware: ErrorRequestHandler = (
 	res: Response,
 	next: NextFunction,
 ) => {
+
+	if (res.headersSent) {
+		return next(err);
+	}
+
 	const rid = (req as Request & { requestId?: string }).requestId ?? "-";
 
 	if (err instanceof ZodError) {

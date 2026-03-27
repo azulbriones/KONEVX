@@ -43,7 +43,7 @@ const generateRegistrationsPdf = (
 		{ key: "assignedGroup", header: "GRUPO" },
 		{ key: "createdAt", header: "FECHA" },
 		{ key: "contact", header: contactRequirement === "PHONE" ? "TELÉFONO" : "EMAIL" },
-		...dynamicFields.map(df => ({ key: df[0], header: df[1].toUpperCase() }))
+		...dynamicFields.map(df => ({ key: df[0], header: String(df[1] || "").toUpperCase() }))
 	];
 
 	const ALL_COLUMNS = options.columns && options.columns.length > 0
@@ -71,7 +71,7 @@ const generateRegistrationsPdf = (
 		const title = groupName || "SIN ASIGNAR";
 		doc.fillColor(C_PRIMARY).rect(MARGIN, doc.y, PAGE_WIDTH, 22).fill();
 		doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(10)
-			.text(`  SECCIÓN: ${title.toUpperCase()}`, MARGIN + 5, doc.y + 7);
+			.text(`  SECCIÓN: ${String(title).toUpperCase()}`, MARGIN + 5, doc.y + 7);
 		doc.moveDown(1.5);
 	};
 
