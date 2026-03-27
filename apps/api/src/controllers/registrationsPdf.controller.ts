@@ -77,6 +77,20 @@ const generateRegistrationsPdf = (
 
 	drawDocumentHeader(true);
 
+	if (options.groupBy) {
+		rows.sort((a, b) => {
+			const getVal = (r: any) => {
+				if (options.groupBy === 'assignedGroup') return r.assignedGroup || "SIN ASIGNAR";
+				if (options.groupBy === 'groupBase') return r.assignedGroup ? r.assignedGroup.replace(/[0-9]/g, '') : "SIN ASIGNAR";
+				const fv = r.fieldValues.find((f: any) => f.eventField.key === options.groupBy);
+				return fv?.value || "SIN ESPECIFICAR";
+			};
+			const valA = String(getVal(a)).toUpperCase();
+			const valB = String(getVal(b)).toUpperCase();
+			return valA.localeCompare(valB);
+		});
+	}
+
 	let currentGroupValue: string | null = "INITIAL_NULL";
 	let rowCount = 0;
 
