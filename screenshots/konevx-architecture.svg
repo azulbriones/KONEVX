@@ -1,36 +1,52 @@
 <svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
-  <style>
-    .box { fill: #2563eb; stroke: #1e40af; stroke-width: 2; rx: 10; }
-    .text { fill: white; font-family: Arial; font-size: 14px; text-anchor: middle; }
-    .arrow { stroke: #0f172a; stroke-width: 2; marker-end: url(#arrowhead); }
-  </style>
+	<style>
+		.box {
+			fill: #2563eb;
+			stroke: #1e40af;
+			stroke-width: 2;
+			rx: 10;
+		}
 
-  <defs>
-    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#0f172a"/>
-    </marker>
-  </defs>
+		.text {
+			fill: white;
+			font-family: Arial;
+			font-size: 14px;
+			text-anchor: middle;
+		}
 
-  <!-- Boxes -->
-  <rect x="50" y="150" width="140" height="60" class="box"/>
-  <text x="120" y="185" class="text">User</text>
+		.arrow {
+			stroke: #0f172a;
+			stroke-width: 2;
+			marker-end: url(#arrowhead);
+		}
+	</style>
 
-  <rect x="220" y="150" width="140" height="60" class="box"/>
-  <text x="290" y="185" class="text">Caddy</text>
+	<defs>
+		<marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+			<polygon points="0 0, 10 3.5, 0 7" fill="#0f172a" />
+		</marker>
+	</defs>
 
-  <rect x="390" y="80" width="140" height="60" class="box"/>
-  <text x="460" y="115" class="text">Web (React)</text>
+	<!-- Boxes -->
+	<rect x="50" y="150" width="140" height="60" class="box" />
+	<text x="120" y="185" class="text">User</text>
 
-  <rect x="390" y="220" width="140" height="60" class="box"/>
-  <text x="460" y="255" class="text">API (Node)</text>
+	<rect x="220" y="150" width="140" height="60" class="box" />
+	<text x="290" y="185" class="text">Caddy</text>
 
-  <rect x="580" y="220" width="140" height="60" class="box"/>
-  <text x="650" y="255" class="text">PostgreSQL</text>
+	<rect x="390" y="80" width="140" height="60" class="box" />
+	<text x="460" y="115" class="text">Web (React)</text>
 
-  <!-- Arrows -->
-  <line x1="190" y1="180" x2="220" y2="180" class="arrow"/>
-  <line x1="360" y1="180" x2="390" y2="110" class="arrow"/>
-  <line x1="360" y1="180" x2="390" y2="250" class="arrow"/>
-  <line x1="530" y1="250" x2="580" y2="250" class="arrow"/>
+	<rect x="390" y="220" width="140" height="60" class="box" />
+	<text x="460" y="255" class="text">API (Node)</text>
+
+	<rect x="580" y="220" width="140" height="60" class="box" />
+	<text x="650" y="255" class="text">PostgreSQL</text>
+
+	<!-- Arrows -->
+	<line x1="190" y1="180" x2="220" y2="180" class="arrow" />
+	<line x1="360" y1="180" x2="390" y2="110" class="arrow" />
+	<line x1="360" y1="180" x2="390" y2="250" class="arrow" />
+	<line x1="530" y1="250" x2="580" y2="250" class="arrow" />
 
 </svg>

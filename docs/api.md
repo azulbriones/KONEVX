@@ -1,174 +1,66 @@
-# EventPlanner API
+# Guía de API: Konevx v2.0 (Estándar PEI)
 
-Base paths:
+Rutas base:
 
-- API: `/api`
-- Health: `GET /api/health`
+- API: `/api/v2`
+- Salud/Monitoreo: `GET /api/v2/health`
 
-## Convención de respuesta
+## Convención de Respuesta
 
-Éxito:
-
-```json
-{ "ok": true, "data": {} }
-```
-
-Error (vía middleware):
-
-```json
-{ "ok": false, "error": { "code": "SOME_CODE", "message": "Readable message" } }
-```
-
-## Auth (cookies httpOnly + CSRF)
-
-### Cookies
-
-- `ep_access` (httpOnly) — access token
-- `ep_refresh` (httpOnly) — refresh token
-- `ep_csrf` (NO httpOnly) — token CSRF para enviar en header
-
-### CSRF
-
-Para requests “mutables” (POST/PUT/PATCH/DELETE) protegidos:
-
-- header: `x-csrf-token: <valor de cookie ep_csrf>`
-
-> En local y demo el navegador maneja cookies automáticamente si `credentials: true`.
+Todas las respuestas siguen el sobre de resultados PEI:
+Éxito: `{ "ok": true, "data": {}, "latency": "145ms" }`
+Error: `{ "ok": false, "error": { "code": "ERR_CODE", "message": "Razón del error" } }`
 
 ---
 
-## Public (sin login)
+## 1. Autenticación (Basada en Cookies + JWT)
 
-### Obtener evento público por slug
+Usamos cookies httpOnly para la web y Tokens de Portador (Bearer Tokens) para Móvil/Tablet.
 
-`GET /api/public/events/:slug`
-
-Devuelve:
-
-- datos del evento (incluye `remaining`)
-- fields (campos dinámicos del formulario)
-
-Ejemplo:
-
-```bash
-curl -s http://localhost:3001/api/public/events/demo-event
-```
-
-### Registro público
-
-`POST /api/public/events/:slug/register`
-
-Body:
-
-```json
-{
-	"contact": { "email": "a@b.com", "phone": null },
-	"answers": { "empresa": "ACME", "talla": "M" }
-}
-```
-
-Ejemplo:
-
-```bash
-curl -s -X POST http://localhost:3001/api/public/events/demo-event/register   -H "Content-Type: application/json"   -d '{"contact":{"email":"a@b.com"},"answers":{"empresa":"ACME","talla":"M"}}'
-```
-
-Respuestas típicas:
-
-- `201 CREATED` si se creó la inscripción
-- `200 EXISTS` si ya existía
-- `409 EVENT_FULL` si se llegó al cupo
+- `POST /api/v2/auth/login`: Inicio de sesión.
+- `POST /api/v2/auth/refresh`: Renovación de tokens.
+- `GET /api/v2/auth/me`: Obtener perfil del usuario autenticado.
 
 ---
 
-## Auth (admin)
+## 2. Endpoints Públicos
 
-### Login
-
-`POST /api/auth/login`
-
-Body:
-
-```json
-{ "email": "admin@...", "password": "..." }
-```
-
-### Me
-
-`GET /api/auth/me`
-Devuelve el usuario autenticado (requiere cookie `ep_access` válida).
-
-### Refresh
-
-`POST /api/auth/refresh`
-Renueva cookies usando `ep_refresh`.
-
-### Logout
-
-`POST /api/auth/logout`
+- `GET /api/v2/public/events/:slug`: Devuelve datos del evento + campos dinámicos (`fields`).
+- `POST /api/v2/public/events/:slug/register`:
+    - Cuerpo: `{ "contact": {...}, "answers": {...} }`
+    - Devuelve: Objeto `Registration` con el `hashedId` para el QR.
 
 ---
 
-## Demo (solo si DEMO_MODE=true)
+## 3. Staff y Check-in (Alto Rendimiento)
 
-> Estos endpoints deben estar deshabilitados en prod si no estás en modo demo.
-
-- `POST /api/demo/reset` (interno) — resetea y siembra demo
-
----
-
-## Events (admin)
-
-### Listar eventos (scoped por membership)
-
-`GET /api/events`
-
-### Crear evento
-
-`POST /api/events`
-
-### Publicar / despublicar
-
-`PATCH /api/events/:eventId/publish`
-Body:
-
-```json
-{ "isPublished": true }
-```
+- `POST /api/v2/checkin/:hashedId`: Valida la asistencia en tiempo real.
+- `POST /api/v2/sync/checkins`: **Endpoint de Sincronización Offline**.
+    - Acepta un array de eventos de check-in registrados fuera de línea.
+    - Cuerpo: `[{ "hashedId": "...", "checkedAt": "FECHA-ISO", "deviceId": "..." }]`
 
 ---
 
-## Event Fields (admin)
+## 4. Módulo Financiero (Admin)
 
-Rutas:
-
-- `GET /api/events/:eventId/fields`
-- `PUT /api/events/:eventId/fields` (requiere CSRF)
-
----
-
-## Event Members (admin)
-
-- `GET /api/events/:eventId/members`
-- `POST /api/events/:eventId/members`
-- `PATCH /api/events/:eventId/members/:userId`
-- `DELETE /api/events/:eventId/members/:userId`
-
-Roles por evento:
-
-- `EDITOR` (puede modificar)
-- `VIEWER` (solo lectura)
+- `GET /api/v2/events/:eventId/registrations/:regId/transactions`: Listar pagos y cargos.
+- `POST /api/v2/events/:eventId/registrations/:regId/transactions`: Registrar un nuevo pago o descuento.
+    - Cuerpo: `{ "amount": 100, "type": "PAYMENT", "reference": "ID_STRIPE_O_PAYPAL" }`
 
 ---
 
-## Registrations (admin)
+## 5. Integración con Azul-Guard
 
-- `GET /api/events/:eventId/registrations?page=&limit=&status=&q=`
-- `PATCH /api/events/:eventId/registrations/:registrationId/status`
+Cada petición debe pasar por el `GuardMiddleware`.
+
+- Headers requeridos: `X-Device-ID`.
+- Métricas enviadas a Azul-Guard: Tiempo de respuesta, uso de memoria y estado de autenticación.
 
 ---
 
-## Reports (admin)
+## 5. Integración con Azul-Guard
 
-- EXCEL export
-- PDF export
+Cada petición debe pasar por el `GuardMiddleware`.
+
+- Headers requeridos: `X-Device-ID`.
+- Métricas enviadas a Azul-Guard: Tiempo de respuesta, uso de memoria y estado de autenticación.
