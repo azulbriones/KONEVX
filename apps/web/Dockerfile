@@ -6,15 +6,28 @@
 	# ---------- deps ----------
 	FROM base AS deps
 	WORKDIR /app/apps/web
-	COPY apps/web/package.json apps/web/pnpm-lock.yaml* ./
+	COPY apps/web/package.json ./
 	RUN pnpm install --frozen-lockfile || pnpm install
+
+	# ---------- web source manifest ----------
+	FROM base AS web-src
+	WORKDIR /app/apps/web
+	COPY apps/web/package.json ./
+	COPY apps/web/index.html ./
+	COPY apps/web/vite.config.ts ./
+	COPY apps/web/tsconfig.json ./
+	COPY apps/web/tsconfig.app.json ./
+	COPY apps/web/tsconfig.node.json ./
+	COPY apps/web/eslint.config.js ./
+	COPY apps/web/public ./public
+	COPY apps/web/src ./src
 
 	# ---------- dev ----------
 	FROM base AS dev
 	ENV NODE_ENV=development
 	WORKDIR /app/apps/web
 	COPY --from=deps /app/apps/web/node_modules ./node_modules
-	COPY apps/web ./
+	COPY --from=web-src /app/apps/web ./
 	EXPOSE 5173
 	CMD ["pnpm","dev","--host","0.0.0.0","--port","5173"]
 
@@ -24,7 +37,7 @@
 	ENV VITE_API_URL=$VITE_API_URL
 	WORKDIR /app/apps/web
 	COPY --from=deps /app/apps/web/node_modules ./node_modules
-	COPY apps/web ./
+	COPY --from=web-src /app/apps/web ./
 	RUN pnpm build
 
 	# ---------- runtime ----------
