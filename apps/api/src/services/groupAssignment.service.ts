@@ -1,4 +1,7 @@
-import { prisma } from "../db/prisma.js";
+import {
+	countRegistrationGroupOccupancy,
+	findRegistrationGroupAnswer,
+} from "../repositories/registrations.repository.js";
 
 export interface GroupDistribution {
 	prefix: string;
@@ -20,15 +23,7 @@ export async function getRecommendedGroup(
 
 	if (!settings.enabled) return null;
 
-	const answerRecord = await prisma.registrationFieldValue.findUnique({
-		where: {
-			registrationId_eventFieldId: {
-				registrationId: registrationId,
-				eventFieldId: settings.customFieldId,
-			}
-		},
-		select: { value: true }
-	});
+	const answerRecord = await findRegistrationGroupAnswer(registrationId, settings.customFieldId);
 
 	if (!answerRecord || !answerRecord.value) return null;
 
@@ -46,15 +41,7 @@ export async function getRecommendedGroup(
 		possibleGroups.push(`${distribution.prefix}${i}`);
 	}
 
-	const occupancy = await prisma.registration.groupBy({
-		by: ['assignedGroup'],
-		where: {
-			eventId: eventId,
-			status: { not: "CANCELLED" },
-			assignedGroup: { in: possibleGroups }
-		},
-		_count: { assignedGroup: true }
-	});
+	const occupancy = await countRegistrationGroupOccupancy(eventId, possibleGroups);
 
 	const currentCounts: Record<string, number> = {};
 	possibleGroups.forEach(g => currentCounts[g] = 0);

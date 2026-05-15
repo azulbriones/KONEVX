@@ -7,7 +7,7 @@ const ContactBase = z.object({
 export const ContactSchema = ContactBase.superRefine((data, ctx) => {
 	if (!data.email && !data.phone) {
 		ctx.addIssue({
-			code: z.ZodIssueCode.custom,
+			code: "custom",
 			message: "Either email or phone is required",
 			path: ["email"],
 		});

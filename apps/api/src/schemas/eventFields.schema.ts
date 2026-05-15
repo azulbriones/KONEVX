@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+type EventFieldInput = {
+	key: string;
+	type: string;
+	options?: string[];
+};
+
 export const FieldTypeSchema = z.enum([
 	"TEXT",
 	"TEXTAREA",
@@ -20,7 +26,7 @@ export const EventFieldInputSchema = z.object({
 	type: FieldTypeSchema,
 	required: z.boolean().default(false),
 	order: z.number().int().min(0),
-	options: z.any().optional(),
+	options: z.array(z.string().min(1)).optional(),
 });
 
 export const ReplaceEventFieldsSchema = z
@@ -29,11 +35,11 @@ export const ReplaceEventFieldsSchema = z
 	})
 	.superRefine(
 		(
-			val: { fields: any[] },
+			val: { fields: EventFieldInput[] },
 			ctx: {
 				addIssue: (arg0: {
-					code: any;
-					path: string[] | any[];
+					code: "custom";
+					path: (string | number)[];
 					message: string;
 				}) => void;
 			},
@@ -42,7 +48,7 @@ export const ReplaceEventFieldsSchema = z
 			const dup = keys.find((k, i) => keys.indexOf(k) !== i);
 			if (dup) {
 				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
+					code: "custom",
 					path: ["fields"],
 					message: `Duplicate key: ${dup}`,
 				});
@@ -53,15 +59,15 @@ export const ReplaceEventFieldsSchema = z
 					f.type === "SELECT" || f.type === "MULTI_SELECT";
 				if (isSelect) {
 					const ok =
-						Array.isArray(f.options) &&
-						f.options.length > 0 &&
-						f.options.every(
-							(o: string | any[]) =>
-								typeof o === "string" && o.length > 0,
-						);
+					Array.isArray(f.options) &&
+					f.options.length > 0 &&
+					f.options.every(
+						(o: unknown) =>
+							typeof o === "string" && o.length > 0,
+					);
 					if (!ok) {
 						ctx.addIssue({
-							code: z.ZodIssueCode.custom,
+							code: "custom",
 							path: ["fields", i, "options"],
 							message:
 								"options must be a non-empty string[] for SELECT/MULTI_SELECT",
@@ -69,7 +75,7 @@ export const ReplaceEventFieldsSchema = z
 					}
 				} else if (f.options !== undefined) {
 					ctx.addIssue({
-						code: z.ZodIssueCode.custom,
+						code: "custom",
 						path: ["fields", i, "options"],
 						message:
 							"options is only allowed for SELECT/MULTI_SELECT",

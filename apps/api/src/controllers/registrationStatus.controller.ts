@@ -13,7 +13,7 @@ type UpdateStatusBody = z.infer<typeof UpdateRegistrationStatusSchema>;
 
 export const updateRegistrationStatusHandler: RequestHandler<
 	{ eventId: string; registrationId: string },
-	any,
+	unknown,
 	UpdateStatusBody
 > = async (req, res, next) => {
 	try {

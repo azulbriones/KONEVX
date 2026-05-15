@@ -1,48 +1,17 @@
-import { prisma } from "../db/prisma.js";
 import { HttpError } from "../lib/httpError.js";
+import type { RegistrationStatus } from "@prisma/client";
+import { findEventRegistrationInfo, listRegistrationsForPdf } from "../repositories/registrations.repository.js";
 
 export async function getRegistrationsForPdf(eventId: number, filters: {
-	status?: string,
+	status?: RegistrationStatus,
 	groupBy?: string,
 	pageBreak?: boolean
 }) {
-	const event = await prisma.event.findUnique({
-		where: { id: eventId },
-		select: { id: true, name: true, contactRequirement: true },
-	});
+	const event = await findEventRegistrationInfo(eventId);
 
 	if (!event) throw new HttpError(404, "EVENT_NOT_FOUND", "Event not found");
 
-	const orderBy: any = [];
-
-	if (filters.groupBy === 'assignedGroup' || filters.groupBy === 'groupBase') {
-		orderBy.push({ assignedGroup: 'asc' });
-	} else if (filters.groupBy) {
-		orderBy.push({ assignedGroup: 'asc' });
-	}
-	orderBy.push({ createdAt: 'asc' });
-
-	const rows = await prisma.registration.findMany({
-		where: {
-			eventId,
-			status: (filters.status as any) || undefined,
-		},
-		orderBy,
-		select: {
-			id: true,
-			status: true,
-			assignedGroup: true,
-			checkInNotes: true,
-			createdAt: true,
-			participant: { select: { emailNormalized: true, phoneNormalized: true } },
-			fieldValues: {
-				select: {
-					value: true,
-					eventField: { select: { id: true, key: true, label: true, order: true } },
-				},
-			},
-		},
-	});
+	const rows: Awaited<ReturnType<typeof listRegistrationsForPdf>> = await listRegistrationsForPdf(eventId, filters.status, filters.groupBy);
 
 	const fieldMap = new Map<string, { label: string; order: number }>();
 	for (const r of rows) {

@@ -12,8 +12,19 @@ type Result = {
 	ok: boolean;
 	status: number;
 	bodyText: string;
-	parsed?: any;
+	parsed?: ParsedResult;
 	durationMs: number;
+};
+
+type RegisterPayload = {
+	contact: { email: string; phone: null };
+	answers: Record<string, never>;
+};
+
+type ParsedResult = {
+	ok?: boolean;
+	data?: { status?: string };
+	error?: { code?: string };
 };
 
 function pickEnv(name: string, fallback?: string) {
@@ -21,7 +32,7 @@ function pickEnv(name: string, fallback?: string) {
 	return (v && v.trim()) || fallback;
 }
 
-async function postRegister(url: string, payload: any): Promise<Result> {
+async function postRegister(url: string, payload: RegisterPayload): Promise<Result> {
 	let res: Response;
 	const start = Date.now();
 
@@ -34,21 +45,21 @@ async function postRegister(url: string, payload: any): Promise<Result> {
 			},
 			body: JSON.stringify(payload),
 		});
-	} catch (err: any) {
+	} catch (err: unknown) {
 		return {
 			ok: false,
 			status: 0,
-			bodyText: String(err?.message ?? err),
+			bodyText: String(err instanceof Error ? err.message : err),
 			durationMs: Date.now() - start,
 		};
 	}
 
 	const durationMs = Date.now() - start;
 	const bodyText = await res.text();
-	let parsed: any = undefined;
+	let parsed: ParsedResult | undefined;
 
 	try {
-		parsed = JSON.parse(bodyText);
+		parsed = JSON.parse(bodyText) as ParsedResult;
 	} catch {
 		parsed = undefined;
 	}
@@ -95,7 +106,7 @@ async function main(opts: RunOptions) {
 
 	const payloads = Array.from({ length: opts.concurrency }).map((_, i) => {
 		const email = `${opts.emailPrefix ?? "load"}-${Date.now()}-${i}@example.com`;
-		return { contact: { email, phone: null }, answers: {} };
+		return { contact: { email, phone: null }, answers: {} } satisfies RegisterPayload;
 	});
 
 	const t0 = Date.now();

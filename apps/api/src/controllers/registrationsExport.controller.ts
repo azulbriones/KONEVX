@@ -1,62 +1,35 @@
-import ExcelJS from "exceljs";
 import type { RequestHandler } from "express";
+import { RegistrationStatus } from "@prisma/client";
+import { z } from "zod";
+import { HttpError } from "../lib/httpError.js";
 import { parseId } from "../lib/parser.js";
 import { getRegistrationsGrouped } from "../services/registrationsExport.service.js";
+import { sendRegistrationsExcel } from "../services/registrationsExportPresentation.service.js";
+
+const RegistrationsExportQuerySchema = z.object({
+	status: z.nativeEnum(RegistrationStatus).optional(),
+	groupBy: z.string().optional(),
+	columns: z.preprocess((value) => {
+		if (typeof value === "string") return value.split(",");
+		return [];
+	}, z.array(z.string()).default([])),
+});
 
 export const exportRegistrationsExcelHandler: RequestHandler<{
 	eventId: string;
 }> = async (req, res, next) => {
 	try {
 		const eventId = parseId(req.params.eventId);
+		const parsed = RegistrationsExportQuerySchema.safeParse(req.query);
 
-		const options = {
-			status: req.query.status as string,
-			groupBy: req.query.groupBy as string,
-			columns: typeof req.query.columns === 'string' ? req.query.columns.split(',') : []
-		};
+		if (!parsed.success) {
+			throw new HttpError(400, "VALIDATION_ERROR", "Datos inválidos", parsed.error.flatten().fieldErrors);
+		}
+
+		const options = parsed.data;
 
 		const { eventName, header, sheets } = await getRegistrationsGrouped(eventId, options);
-
-		const workbook = new ExcelJS.Workbook();
-		const safeName = eventName.replace(/[^a-z0-9_-]+/gi, "_").toLowerCase();
-
-		Object.entries(sheets).forEach(([sheetName, records]) => {
-			const cleanSheetName = sheetName.substring(0, 31).replace(/[/*?:[\]]/g, "");
-			const sheet = workbook.addWorksheet(cleanSheetName);
-
-			const headerRow = sheet.addRow(header);
-			headerRow.eachCell((cell) => {
-				cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-				cell.fill = {
-					type: 'pattern',
-					pattern: 'solid',
-					fgColor: { argb: 'FF1E40AF' }
-				};
-				cell.alignment = { vertical: 'middle', horizontal: 'center' };
-			});
-
-			sheet.addRows(records);
-
-			sheet.columns.forEach((column, i) => {
-				column.width = 22;
-				if (header[i] === "FECHA DE REGISTRO") {
-					column.numFmt = 'dd/mm/yyyy hh:mm';
-				}
-			});
-		});
-
-		res.setHeader(
-			"Content-Type",
-			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-		);
-		res.setHeader(
-			"Content-Disposition",
-			`attachment; filename="${safeName}_registrations.xlsx"`
-		);
-
-		await workbook.xlsx.write(res);
-		res.end();
-
+		await sendRegistrationsExcel(res, eventName, header, sheets);
 	} catch (err) {
 		next(err);
 	}

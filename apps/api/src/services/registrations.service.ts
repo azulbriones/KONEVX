@@ -1,65 +1,57 @@
-import { prisma } from "../db/prisma.js";
+import { Prisma } from "@prisma/client";
 import { HttpError } from "../lib/httpError.js";
-import type { ListRegistrationsQuery } from "../schemas/registrations.schema.js";
+import { parseId } from "../lib/parser.js";
+import { listFieldsByEventId } from "../repositories/eventFields.repository.js";
+import { findEventById } from "../repositories/events.repository.js";
+import {
+	countRegistrations,
+	createRegistrationFieldValues,
+	deleteRegistrationById,
+	deleteRegistrationFieldValues,
+	findRegistrationByEventAndId,
+	findRegistrationForDataUpdate,
+	listRegistrations,
+	updateParticipantContact,
+	updateRegistrationStatusById,
+	updateRegistrationStatusByIdIfNotAttended,
+} from "../repositories/registrations.repository.js";
 import { getRecommendedGroup, type GroupingSettings } from "./groupAssignment.service.js";
 
 export async function listRegistrationsByEvent(
 	eventId: number,
-	query: ListRegistrationsQuery,
+	query: { page: number; limit: number; status?: "REGISTERED" | "CANCELLED" | "CONFIRMED" | "ATTENDED"; q?: string; fieldId?: string },
 ) {
-	const event = await prisma.event.findUnique({
-		where: { id: eventId },
-		select: { id: true },
-	});
-
+	const event = await findEventById(eventId);
 	if (!event) throw new HttpError(404, "EVENT_NOT_FOUND", "Event not found");
 
-	const where: any = {
+	const where: Prisma.RegistrationWhereInput = {
 		eventId,
 		...(query.status ? { status: query.status } : {}),
 	};
+	const fieldId = query.fieldId ? parseId(query.fieldId, "field") : undefined;
 
 	if (query.q) {
 		const search = query.q.toLowerCase();
 		where.OR = [
 			{ participant: { emailNormalized: { contains: search } } },
 			{ participant: { phoneNormalized: { contains: search } } },
-			{ fieldValues: { some: { value: { contains: search } } } }
-		];
-	}
-
-	const orderByField = query.orderBy || "createdAt";
-	const orderDirection = query.orderDir || "asc";
-
-	const [total, rows] = await prisma.$transaction([
-		prisma.registration.count({ where }),
-		prisma.registration.findMany({
-			where,
-			orderBy: { [orderByField]: orderDirection },
-			skip: query.skip,
-			take: query.take,
-			select: {
-				id: true,
-				status: true,
-				assignedGroup: true,
-				checkInNotes: true,
-				createdAt: true,
-				participant: {
-					select: {
-						emailNormalized: true,
-						phoneNormalized: true,
-					},
-				},
+			{
 				fieldValues: {
-					select: {
-						value: true,
-						eventField: {
-							select: { key: true, label: true, type: true, order: true },
-						},
+					some: {
+						...(fieldId ? { eventFieldId: fieldId } : {}),
+						value: { string_contains: search },
 					},
 				},
 			},
-		}),
+		];
+	}
+
+	const skip = (query.page - 1) * query.limit;
+	const take = query.limit;
+
+	const [total, rows] = await Promise.all([
+		countRegistrations(where),
+		listRegistrations(where, skip, take),
 	]);
 
 	const items = rows.map((r) => ({
@@ -88,16 +80,12 @@ export async function listRegistrationsByEvent(
 
 	return {
 		items,
-		page: { skip: query.skip, take: query.take, total },
+		page: { skip, take, total },
 	};
 }
 
 export async function checkInRegistration(eventId: number, registrationId: number, notes?: string) {
-	const registration = await prisma.registration.findFirst({
-		where: { id: registrationId, eventId },
-		include: { event: { select: { groupingSettings: true } } }
-	});
-
+	const registration = await findRegistrationByEventAndId(eventId, registrationId);
 	if (!registration) throw new HttpError(404, "REGISTRATION_NOT_FOUND", "Registro no encontrado");
 	if (registration.status === "ATTENDED") throw new HttpError(409, "ALREADY_ATTENDED", "Ya asistió");
 
@@ -108,14 +96,10 @@ export async function checkInRegistration(eventId: number, registrationId: numbe
 		groupToAssign = await getRecommendedGroup(eventId, registrationId, settings);
 	}
 
-	const result = await prisma.registration.updateMany({
-		where: { id: registrationId, status: { not: "ATTENDED" } },
-		data: {
-			status: "ATTENDED",
-			assignedGroup: groupToAssign,
-			checkInNotes: notes,
-			updatedAt: new Date()
-		}
+	const result = await updateRegistrationStatusByIdIfNotAttended(registrationId, {
+		status: "ATTENDED",
+		assignedGroup: groupToAssign,
+		checkInNotes: notes,
 	});
 
 	if (result.count === 0) throw new HttpError(409, "CONFLICT", "Error al procesar check-in");
@@ -124,88 +108,61 @@ export async function checkInRegistration(eventId: number, registrationId: numbe
 }
 
 export async function undoCheckInRegistration(eventId: number, registrationId: number) {
-	const registration = await prisma.registration.findFirst({
-		where: { id: registrationId, eventId },
-	});
-
+	const registration = await findRegistrationByEventAndId(eventId, registrationId);
 	if (!registration) throw new HttpError(404, "REGISTRATION_NOT_FOUND", "Registro no encontrado");
 
-	return await prisma.registration.update({
-		where: { id: registrationId },
-		data: {
-			status: "REGISTERED",
-			updatedAt: new Date()
-		}
+	return await updateRegistrationStatusById(registrationId, {
+		status: "REGISTERED",
+		assignedGroup: registration.assignedGroup ?? null,
 	});
 }
 
 export async function updateRegistrationData(
-	eventId: number,
-	registrationId: number,
-	data: { contact?: { email?: string; phone?: string }; answers?: Record<string, any> }
+		eventId: number,
+		registrationId: number,
+		data: { contact?: { email?: string | null; phone?: string | null }; answers?: Record<string, unknown> },
 ) {
-	const registration = await prisma.registration.findFirst({
-		where: { id: registrationId, eventId },
-		include: { participant: true }
-	});
+	const registration = await findRegistrationForDataUpdate(eventId, registrationId);
 
 	if (!registration) {
 		throw new HttpError(404, "REGISTRATION_NOT_FOUND", "Registro no encontrado");
 	}
 
-	await prisma.$transaction(async (tx) => {
-		if (data.contact) {
-			await tx.participant.update({
-				where: { id: registration.participantId },
-				data: {
-					emailNormalized: data.contact.email || registration.participant.emailNormalized,
-					phoneNormalized: data.contact.phone || registration.participant.phoneNormalized,
-				}
-			});
-		}
+	if (data.contact) {
+		await updateParticipantContact(registration.participantId, {
+			emailNormalized: data.contact.email ?? registration.participant.emailNormalized,
+			phoneNormalized: data.contact.phone ?? registration.participant.phoneNormalized,
+		});
+	}
 
-		if (data.answers) {
-			const fields = await tx.eventField.findMany({ where: { eventId } });
+	if (data.answers) {
+		const fields = await listFieldsByEventId(eventId);
+		await deleteRegistrationFieldValues(registrationId);
 
-			await tx.registrationFieldValue.deleteMany({
-				where: { registrationId }
-			});
-
-			const newValues = [];
-			for (const field of fields) {
-				const val = data.answers[field.key];
-				if (val !== undefined && val !== null && val !== "") {
-					newValues.push({
-						registrationId,
-						eventId,
-						eventFieldId: field.id,
-						value: val
-					});
-				}
-			}
-
-			if (newValues.length > 0) {
-				await tx.registrationFieldValue.createMany({ data: newValues });
+		const newValues: Array<{ registrationId: number; eventId: number; eventFieldId: number; value: Prisma.InputJsonValue }> = [];
+		for (const field of fields) {
+			const val = data.answers[field.key];
+			if (val !== undefined && val !== null && val !== "") {
+				newValues.push({ registrationId, eventId, eventFieldId: field.id, value: val as Prisma.InputJsonValue });
 			}
 		}
-	});
+
+		if (newValues.length > 0) {
+			await createRegistrationFieldValues(newValues);
+		}
+	}
 
 	return { id: registrationId };
 }
 
 export async function deleteRegistration(eventId: number, registrationId: number) {
-	const registration = await prisma.registration.findFirst({
-		where: { id: registrationId, eventId },
-	});
-
+	const registration = await findRegistrationByEventAndId(eventId, registrationId);
 	if (!registration) {
 		throw new HttpError(404, "REGISTRATION_NOT_FOUND", "Registro no encontrado");
 	}
 
-	await prisma.$transaction([
-		prisma.registrationFieldValue.deleteMany({ where: { registrationId } }),
-		prisma.registration.delete({ where: { id: registrationId } })
-	]);
+	await deleteRegistrationFieldValues(registrationId);
+	await deleteRegistrationById(registrationId);
 
 	return { id: registrationId };
 }

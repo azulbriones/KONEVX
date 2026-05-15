@@ -1,24 +1,18 @@
-import { prisma } from "../db/prisma.js";
 import { HttpError } from "../lib/httpError.js";
 import type { UpdateRegistrationStatusInput } from "../schemas/registrationStatus.schema.js";
 import { getRecommendedGroup, type GroupingSettings } from "./groupAssignment.service.js";
+import {
+	findRegistrationForListing,
+	updateRegistrationStatusById,
+	updateRegistrationStatusByIdIfNotAttended,
+} from "../repositories/registrations.repository.js";
 
 export async function updateRegistrationStatus(
 	eventId: number,
 	registrationId: number,
 	input: UpdateRegistrationStatusInput,
 ) {
-	const reg = await prisma.registration.findUnique({
-		where: { id: registrationId },
-		select: {
-			id: true,
-			eventId: true,
-			assignedGroup: true,
-			event: {
-				select: { groupingSettings: true }
-			}
-		},
-	});
+	const reg = await findRegistrationForListing(eventId, registrationId);
 
 	if (!reg || reg.eventId !== eventId) {
 		throw new HttpError(404, "REGISTRATION_NOT_FOUND", "Registration not found");
@@ -28,8 +22,7 @@ export async function updateRegistrationStatus(
 
 	if (input.assignedGroup !== undefined) {
 		finalGroup = input.assignedGroup;
-	}
-	else if (input.status === "ATTENDED" && !finalGroup && reg.event.groupingSettings) {
+	} else if (input.status === "ATTENDED" && !finalGroup && reg.event.groupingSettings) {
 		const settings = reg.event.groupingSettings as unknown as GroupingSettings;
 		const recommended = await getRecommendedGroup(eventId, registrationId, settings);
 
@@ -38,17 +31,21 @@ export async function updateRegistrationStatus(
 		}
 	}
 
-	return prisma.registration.update({
-		where: { id: registrationId },
-		data: {
+	if (input.status === "ATTENDED") {
+		const result = await updateRegistrationStatusByIdIfNotAttended(registrationId, {
 			status: input.status,
-			assignedGroup: finalGroup
-		},
-		select: {
-			id: true,
-			status: true,
-			assignedGroup: true,
-			updatedAt: true
-		},
+			assignedGroup: finalGroup,
+		});
+
+		if (result.count === 0) {
+			throw new HttpError(409, "CONFLICT", "Error al actualizar el registro");
+		}
+
+		return { id: registrationId, status: input.status, assignedGroup: finalGroup };
+	}
+
+	return updateRegistrationStatusById(registrationId, {
+		status: input.status,
+		assignedGroup: finalGroup,
 	});
 }

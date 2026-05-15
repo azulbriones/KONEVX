@@ -1,5 +1,6 @@
-import { prisma } from "../db/prisma.js";
 import { HttpError } from "../lib/httpError.js";
+import type { RegistrationStatus } from "@prisma/client";
+import { findEventRegistrationInfo, listRegistrationsWithDetails } from "../repositories/registrations.repository.js";
 
 const STATUS_LABEL: Record<string, string> = {
 	REGISTERED: "Registrado",
@@ -11,27 +12,14 @@ const STATUS_LABEL: Record<string, string> = {
 export async function getRegistrationsGrouped(eventId: number, options: {
 	groupBy?: string,
 	columns?: string[],
-	status?: string
+	status?: RegistrationStatus
 }) {
-	const event = await prisma.event.findUnique({
-		where: { id: eventId },
-		select: { id: true, name: true, contactRequirement: true },
-	});
+	const event = await findEventRegistrationInfo(eventId);
 	if (!event) throw new HttpError(404, "EVENT_NOT_FOUND", "Event not found");
 
-	const rows = await prisma.registration.findMany({
-		where: {
-			eventId,
-			status: options.status as any || undefined
-		},
-		include: {
-			participant: true,
-			fieldValues: { include: { eventField: true } }
-		},
-		orderBy: { createdAt: 'asc' }
-	});
+	const rows: Awaited<ReturnType<typeof listRegistrationsWithDetails>> = await listRegistrationsWithDetails(eventId, options.status);
 
-	const fieldMap = new Map();
+	const fieldMap = new Map<string, { label: string; order: number }>();
 	rows.forEach(r => r.fieldValues.forEach(fv => {
 		if (!fieldMap.has(fv.eventField.key)) {
 			fieldMap.set(fv.eventField.key, { label: fv.eventField.label, order: fv.eventField.order });
@@ -56,7 +44,7 @@ export async function getRegistrationsGrouped(eventId: number, options: {
 
 	const header = selectedKeys.map(key => columnDefinitions[key] || key);
 
-	const sheets: Record<string, any[][]> = {};
+  const sheets: Record<string, Array<Record<string, unknown>>> = {};
 
 	rows.forEach(r => {
 		let sheetName = "General";
@@ -72,20 +60,21 @@ export async function getRegistrationsGrouped(eventId: number, options: {
 
 		if (!sheets[sheetName]) sheets[sheetName] = [];
 
-		const answers: Record<string, any> = {};
+		const answers: Record<string, unknown> = {};
 		r.fieldValues.forEach(fv => {
 			const val = fv.value;
 			answers[fv.eventField.key] = Array.isArray(val) ? val.join(", ") : val;
 		});
 
-		const rowData = selectedKeys.map(key => {
-			if (key === 'id') return r.id;
-			if (key === 'status') return STATUS_LABEL[r.status] || r.status;
-			if (key === 'assignedGroup') return r.assignedGroup || "-";
-			if (key === 'createdAt') return r.createdAt;
-			if (key === 'contact') return event.contactRequirement === "PHONE" ? r.participant.phoneNormalized : r.participant.emailNormalized;
-			return answers[key] ?? "";
-		});
+		const rowData = selectedKeys.reduce((acc, key) => {
+			if (key === "id") acc[key] = r.id;
+			else if (key === "status") acc[key] = STATUS_LABEL[r.status] || r.status;
+			else if (key === "assignedGroup") acc[key] = r.assignedGroup || "-";
+			else if (key === "createdAt") acc[key] = r.createdAt;
+			else if (key === "contact") acc[key] = event.contactRequirement === "PHONE" ? r.participant.phoneNormalized : r.participant.emailNormalized;
+			else acc[key] = answers[key] ?? "";
+			return acc;
+		}, {} as Record<string, unknown>);
 
 		sheets[sheetName].push(rowData);
 	});
