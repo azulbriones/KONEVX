@@ -1,0 +1,37 @@
+# Gentleman Guardian Angel Configuration
+# https://github.com/your-org/gga
+
+# AI Provider (required)
+PROVIDER="opencode"
+
+# Tu API Key de OpenCode (NO subir a git, ya está en .gitignore)
+OPENCODE_API_KEY="sk-TJaYLB2PycJgkF4oDPfAIxq7oINkMRHj0puDgxUSTvQIXxeuOX17Fy3BZuwpse4h"
+
+# File patterns to include in review (comma-separated)
+# Default: * (all files)
+# Konevx uses TypeScript across apps/web and apps/api.
+FILE_PATTERNS="*.ts,*.tsx,*.js,*.jsx"
+
+# File patterns to exclude from review (comma-separated)
+# Default: none
+# Examples:
+#   EXCLUDE_PATTERNS="*.test.ts,*.spec.ts"
+#   EXCLUDE_PATTERNS="*_test.go,*.mock.ts"
+EXCLUDE_PATTERNS="*.test.ts,*.spec.ts,*.test.tsx,*.spec.tsx,*.d.ts,dist/*,build/*,coverage/*,node_modules/*"
+
+# File containing code review rules
+# Default: AGENTS.md
+RULES_FILE="AGENTS.md"
+
+# Strict mode: fail if AI response is ambiguous
+# Default: true
+STRICT_MODE="true"
+
+# Timeout in seconds for AI provider response
+# Default: 300 (5 minutes)
+# Increase for large changesets or slow connections
+TIMEOUT="300"
+
+# Base branch for --pr-mode (auto-detects main/master/develop if empty)
+# Default: auto-detect
+# PR_BASE_BRANCH="main"

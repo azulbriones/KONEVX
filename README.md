@@ -73,8 +73,6 @@
 
 ### Infrastructure
 
-### Infrastructure
-
 - Docker
 - Caddy (HTTPS)
 - Nginx
@@ -84,8 +82,15 @@
 ## ⚙️ Local Setup
 
 ```bash
-pnpm install
-pnpm dev
+cp .env.example .env
+docker compose -f docker-compose.local.yml up --build
+```
+
+O, en desarrollo local sin Docker:
+
+```bash
+pnpm --dir apps/api dev
+pnpm --dir apps/web dev
 ```
 
 ---
