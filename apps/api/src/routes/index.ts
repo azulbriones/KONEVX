@@ -5,7 +5,6 @@ import { demoRouter } from "./demo.routes.js";
 import { demoAuthRouter } from "./demoAuth.routes.js";
 import { eventsRouter } from "./events.routes.js";
 import { publicRouter } from "./public.routes.js";
-import { registrationsRouter } from "./registrations.routes.js";
 import { usersRouter } from "./users.routes.js";
 
 export const router = Router();
@@ -16,13 +15,13 @@ router.use("/users", usersRouter);
 
 router.use("/events", eventsRouter);
 router.use("/public", publicRouter);
-eventsRouter.use("/:eventId/registrations", registrationsRouter);
 
 const demoEnabled = process.env.DEMO_MODE === "true";
 
-router.use("/auth", authLimiter, authRouter);
+router.use("/auth", authLimiter);
+router.use("/auth", authRouter);
 
 if (demoEnabled) {
-	router.use("/auth", authLimiter, demoAuthRouter);
+	router.use("/auth", demoAuthRouter);
 	router.use("/demo", demoRouter);
 }

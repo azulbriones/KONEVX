@@ -18,7 +18,7 @@ declare global {
 }
 
 export const requireAuth: RequestHandler = (
-	req: Request & { cookies?: Record<string, any>; user?: AuthUser },
+	req: Request & { cookies?: Record<string, string | undefined>; user?: AuthUser },
 	_res: Response,
 	next: NextFunction,
 ) => {

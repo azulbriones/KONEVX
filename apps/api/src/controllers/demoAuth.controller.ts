@@ -1,48 +1,13 @@
-import type { RequestHandler, Response } from "express";
+import type { RequestHandler } from "express";
 import { z } from "zod";
-import { prisma } from "../db/prisma.js";
-import {
-	ACCESS_COOKIE,
-	CSRF_COOKIE,
-	REFRESH_COOKIE,
-	baseCookieOptions,
-	csrfCookieOptions,
-} from "../lib/cookies.js";
-import { generateCsrfToken } from "../lib/crypto.js";
+import { findUserByEmail } from "../repositories/user.repository.js";
+import { issueAuthCookies } from "../lib/authCookies.js";
 import { HttpError } from "../lib/httpError.js";
 import { issueTokensForUser } from "../services/auth.service.js";
-
-const ACCESS_TOKEN_AGE_MS = 15 * 60 * 1000;
-const REFRESH_TOKEN_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 const DemoLoginQuerySchema = z.object({
 	as: z.enum(["editor", "admin", "viewer"]).default("editor"),
 });
-
-/**
- * Helper para setear cookies de Auth.
- */
-export function setAuthCookies(
-	res: Response,
-	accessToken: string,
-	refreshToken: string,
-	csrfToken: string,
-) {
-	res.cookie(ACCESS_COOKIE, accessToken, {
-		...baseCookieOptions(),
-		maxAge: ACCESS_TOKEN_AGE_MS,
-	});
-
-	res.cookie(REFRESH_COOKIE, refreshToken, {
-		...baseCookieOptions(),
-		maxAge: REFRESH_TOKEN_AGE_MS,
-	});
-
-	res.cookie(CSRF_COOKIE, csrfToken, {
-		...csrfCookieOptions(),
-		maxAge: REFRESH_TOKEN_AGE_MS,
-	});
-}
 
 export const demoLoginHandler: RequestHandler<
 	unknown,
@@ -77,10 +42,7 @@ export const demoLoginHandler: RequestHandler<
 		const email =
 			process.env.DEMO_EDITOR_EMAIL || "demo_editor@eventplanner.demo";
 
-		const user = await prisma.user.findUnique({
-			where: { email },
-			select: { id: true, email: true, role: true },
-		});
+		const user = await findUserByEmail(email);
 
 		if (!user) {
 			console.error(
@@ -97,14 +59,14 @@ export const demoLoginHandler: RequestHandler<
 			{
 				id: user.id,
 				role: user.role,
-				email: user.email,
 			},
 			true,
 		);
 
-		const csrfToken = generateCsrfToken();
-
-		setAuthCookies(res, tokens.accessToken, tokens.refreshToken, csrfToken);
+		const { csrfToken } = issueAuthCookies(res, {
+			accessToken: tokens.accessToken,
+			refreshToken: tokens.refreshToken,
+		});
 
 		res.json({
 			ok: true,

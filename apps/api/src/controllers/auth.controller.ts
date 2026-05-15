@@ -1,66 +1,32 @@
-import bcrypt from "bcrypt";
-import type { RequestHandler, Response } from "express";
-import { prisma } from "../db/prisma.js";
-import {
-	ACCESS_COOKIE,
-	CSRF_COOKIE,
-	REFRESH_COOKIE,
-	baseCookieOptions,
-	clearLegacyAndScopedCookies,
-	csrfCookieOptions,
-} from "../lib/cookies.js";
-import { generateCsrfToken } from "../lib/crypto.js";
+import type { RequestHandler } from "express";
+import { REFRESH_COOKIE } from "../lib/cookies.js";
 import { HttpError } from "../lib/httpError.js";
+import { clearAuthCookies, issueAuthCookies } from "../lib/authCookies.js";
 import { LoginSchema, RegisterSchema } from "../schemas/auth.schema.js";
 import {
 	loginWithCredentials,
+	registerUser,
 	logoutSession,
 	refreshSession
 } from "../services/auth.service.js";
-
-const ACCESS_TOKEN_AGE_MS = 15 * 60 * 1000; // 15 minutos
-const REFRESH_TOKEN_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 días
-
-/**
- * Helper para establecer todas las cookies de autenticación de una sola vez.
- * Esto evita repetir código y asegura consistencia en los flags de seguridad.
- */
-const setAuthCookies = (
-	res: Response,
-	accessToken: string,
-	refreshToken: string,
-) => {
-	clearLegacyAndScopedCookies(res);
-	const csrf = generateCsrfToken();
-
-	res.cookie(ACCESS_COOKIE, accessToken, {
-		...baseCookieOptions(),
-		maxAge: ACCESS_TOKEN_AGE_MS,
-	});
-
-	res.cookie(REFRESH_COOKIE, refreshToken, {
-		...baseCookieOptions(),
-		maxAge: REFRESH_TOKEN_AGE_MS,
-	});
-
-	res.cookie(CSRF_COOKIE, csrf, {
-		...csrfCookieOptions(),
-		maxAge: REFRESH_TOKEN_AGE_MS,
-	});
-};
 
 export const loginHandler: RequestHandler = async (req, res, next) => {
 	try {
 		const parsed = LoginSchema.safeParse(req.body);
 
 		if (!parsed.success) {
-			return next(new HttpError(400, "VALIDATION_ERROR", "Datos inválidos", parsed.error.flatten()));
+			return next(
+				new HttpError(400, "VALIDATION_ERROR", "Datos inválidos", parsed.error.flatten()),
+			);
 		}
 
 		const { identifier, password } = parsed.data;
 		const result = await loginWithCredentials(identifier, password);
 
-		setAuthCookies(res, result.accessToken, result.refreshToken);
+		issueAuthCookies(res, {
+			accessToken: result.accessToken,
+			refreshToken: result.refreshToken,
+		});
 
 		res.json({ ok: true, data: { user: result.user } });
 	} catch (err) {
@@ -73,63 +39,23 @@ export const registerHandler: RequestHandler = async (req, res, next) => {
 		const parsed = RegisterSchema.safeParse(req.body);
 
 		if (!parsed.success) {
-			return res.status(400).json({
-				ok: false,
-				error: {
-					code: "VALIDATION_ERROR",
-					message: "Datos inválidos",
-					details: parsed.error.flatten().fieldErrors
-				},
-			});
+			return next(
+				new HttpError(
+					400,
+					"VALIDATION_ERROR",
+					"Datos inválidos",
+					parsed.error.flatten().fieldErrors,
+				),
+			);
 		}
 
-		const { username, email, password } = parsed.data;
-
-		const emailNormalized = email.trim().toLowerCase();
-		const usernameNormalized = username.trim().toLowerCase();
-
-		const existingUser = await prisma.user.findFirst({
-			where: {
-				OR: [
-					{ email: emailNormalized },
-					{ username: usernameNormalized }
-				]
-			},
-		});
-
-		if (existingUser) {
-			const isEmail = existingUser.email === emailNormalized;
-			return res.status(400).json({
-				ok: false,
-				error: {
-					code: "USER_EXISTS",
-					message: isEmail ? "Este correo electrónico ya está registrado." : "Este nombre de usuario ya está en uso.",
-				},
-			});
-		}
-
-		const saltRounds = 10;
-		const passwordHash = await bcrypt.hash(password, saltRounds);
-
-		const newUser = await prisma.user.create({
-			data: {
-				username: usernameNormalized,
-				email: emailNormalized,
-				passwordHash,
-			},
-		});
+		const user = await registerUser(parsed.data);
 
 		return res.status(201).json({
 			ok: true,
-			data: {
-				id: newUser.id,
-				username: newUser.username,
-				email: newUser.email,
-				role: newUser.role,
-			},
+			data: user,
 		});
 	} catch (error) {
-		console.error("Error en registerHandler:", error);
 		next(error);
 	}
 };
@@ -143,7 +69,10 @@ export const refreshHandler: RequestHandler = async (req, res, next) => {
 
 		const result = await refreshSession(refresh);
 
-		setAuthCookies(res, result.accessToken, result.refreshToken);
+		issueAuthCookies(res, {
+			accessToken: result.accessToken,
+			refreshToken: result.refreshToken,
+		});
 
 		res.json({ ok: true, data: { user: result.user } });
 	} catch (err) {
@@ -155,10 +84,7 @@ export const logoutHandler: RequestHandler = async (req, res, next) => {
 	try {
 		const refresh = req.cookies?.[REFRESH_COOKIE] ?? null;
 		await logoutSession(refresh);
-		clearLegacyAndScopedCookies(res);
-		res.clearCookie(ACCESS_COOKIE, baseCookieOptions());
-		res.clearCookie(REFRESH_COOKIE, baseCookieOptions());
-		res.clearCookie(CSRF_COOKIE, csrfCookieOptions());
+		clearAuthCookies(res);
 
 		res.json({ ok: true });
 	} catch (err) {

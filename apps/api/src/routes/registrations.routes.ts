@@ -6,8 +6,12 @@ import {
 	undoAttendanceHandler,
 	updateRegistrationDataHandler
 } from "../controllers/registrations.controller.js";
+import { updateRegistrationStatusHandler } from "../controllers/registrationStatus.controller.js";
 import { requireEventAdmin, requireEventCheckin, requireEventView } from "../lib/eventAccess.js";
-import { requireAuth } from "../middlewares/auth.js";
+import { requireAuth, requireCsrf } from "../middlewares/auth.js";
+import { writeLimiter } from "../middlewares/rateLimiters.js";
+import { validateBody } from "../middlewares/validate.js";
+import { UpdateRegistrationStatusSchema } from "../schemas/registrationStatus.schema.js";
 
 export const registrationsRouter = Router({ mergeParams: true });
 
@@ -26,8 +30,19 @@ registrationsRouter.patch(
 );
 
 registrationsRouter.patch(
+	"/:registrationId",
+	writeLimiter,
+	requireCsrf,
+	requireEventAdmin,
+	validateBody(UpdateRegistrationStatusSchema),
+	updateRegistrationStatusHandler,
+);
+
+registrationsRouter.patch(
 	"/:registrationId/data",
+	writeLimiter,
 	requireAuth,
+	requireCsrf,
 	requireEventAdmin,
 	updateRegistrationDataHandler
 );

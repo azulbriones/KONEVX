@@ -17,7 +17,6 @@ import { SetPublishSchema } from "../schemas/eventPublish.schema.js";
 import { CreateEventSchema, UpdateEventSchema } from "../schemas/events.schema.js";
 import { eventFieldsRouter } from "./eventFields.routes.js";
 import { eventMembersRouter } from "./eventMembers.routes.js";
-import { registrationStatusRouter } from "./registrationStatus.routes.js";
 import { registrationsRouter } from "./registrations.routes.js";
 import { registrationsExportRouter } from "./registrationsExport.routes.js";
 import { registrationsPdfRouter } from "./registrationsPdf.routes.js";
@@ -81,13 +80,6 @@ eventsRouter.use(
 	requireAuth,
 	requireEventView,
 	registrationsRouter,
-);
-
-eventsRouter.use(
-	"/:eventId/registrations",
-	requireAuth,
-	requireEventView,
-	registrationStatusRouter,
 );
 
 eventsRouter.use("/:eventId/members", eventMembersRouter);

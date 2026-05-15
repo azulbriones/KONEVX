@@ -1,10 +1,16 @@
-import { Prisma } from "@prisma/client";
 import type { RequestHandler } from "express";
-import { prisma } from "../db/prisma.js";
 import { HttpError } from "../lib/httpError.js";
 import { parseId } from "../lib/parser.js";
+import { RegistrationCheckInSchema } from "../schemas/registrationCheckIn.schema.js";
+import { RegistrationDataUpdateSchema } from "../schemas/registrationDataUpdate.schema.js";
 import { RegistrationsQuerySchema } from "../schemas/registrationsQuery.schema.js";
-import { checkInRegistration, deleteRegistration, undoCheckInRegistration, updateRegistrationData } from "../services/registrations.service.js";
+import {
+	checkInRegistration,
+	deleteRegistration,
+	listRegistrationsByEvent,
+	undoCheckInRegistration,
+	updateRegistrationData,
+} from "../services/registrations.service.js";
 
 export const listRegistrationsHandler: RequestHandler<{ eventId: string }> = async (req, res, next) => {
 	try {
@@ -15,127 +21,18 @@ export const listRegistrationsHandler: RequestHandler<{ eventId: string }> = asy
 			throw new HttpError(400, "VALIDATION_ERROR", "Consulta inválida", parsed.error.flatten().fieldErrors);
 		}
 
-		const { page = 1, limit = 20, status, q, fieldId: rawFieldId } = parsed.data;
-		const skip = (page - 1) * limit;
-		const fieldId = rawFieldId ? parseId(rawFieldId) : undefined;
-
-		const where: Prisma.RegistrationWhereInput = {
-			eventId,
-			status: status || undefined,
-		};
-
-		if (q) {
-			const searchNormalized = q.trim();
-			const searchAsNumber = parseInt(searchNormalized);
-			const words = searchNormalized.split(/\s+/);
-
-			const getVariations = (word: string) => {
-				const cleanWord = word.replace(/\./g, "");
-
-				const base = cleanWord.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-
-				const charMap: Record<string, string[]> = {
-					'a': ['a', 'á'], 'e': ['e', 'é'], 'i': ['i', 'í'], 'o': ['o', 'ó'], 'u': ['u', 'ú', 'ü']
-				};
-
-				let lowers = [""];
-				for (const char of base) {
-					const options = charMap[char] || [char];
-					const next = [];
-					for (const prefix of lowers) {
-						for (const opt of options) {
-							next.push(prefix + opt);
-						}
-					}
-					lowers = next;
-				}
-
-				const result = new Set<string>();
-
-				result.add(word);
-
-				for (const v of lowers) {
-					result.add(v);
-					result.add(v.toUpperCase());
-					result.add(v.charAt(0).toUpperCase() + v.slice(1));
-				}
-
-				return Array.from(result);
-			};
-
-			const wordsConditions: Prisma.RegistrationWhereInput[] = words.map(word => {
-				const variations = getVariations(word);
-
-				return {
-					OR: [
-						{ participant: { emailNormalized: { contains: word, mode: "insensitive" } } },
-						{ participant: { phoneNormalized: { contains: word } } },
-						{
-							fieldValues: {
-								some: {
-									...(fieldId ? { eventFieldId: fieldId } : {}),
-									OR: variations.map(v => ({ value: { string_contains: v } }))
-								}
-							}
-						}
-					]
-				};
-			});
-
-			if (!isNaN(searchAsNumber) && words.length === 1) {
-				where.OR = [
-					{ id: searchAsNumber },
-					...(wordsConditions[0].OR as Prisma.RegistrationWhereInput[])
-				];
-			} else {
-				where.AND = wordsConditions;
-			}
-		}
-
-		const [total, rows] = await prisma.$transaction([
-			prisma.registration.count({ where }),
-			prisma.registration.findMany({
-				where,
-				orderBy: { createdAt: "desc" },
-				skip,
-				take: limit,
-				select: {
-					id: true,
-					status: true,
-					assignedGroup: true,
-					checkInNotes: true,
-					createdAt: true,
-					participant: { select: { id: true, emailNormalized: true, phoneNormalized: true } },
-					fieldValues: {
-						select: {
-							value: true,
-							eventField: { select: { key: true, label: true, type: true, order: true } }
-						}
-					}
-				},
-			}),
-		]);
-
-		const items = rows.map((r) => ({
-			id: r.id,
-			status: r.status,
-			assignedGroup: r.assignedGroup,
-			checkInNotes: r.checkInNotes,
-			createdAt: r.createdAt,
-			contact: { id: r.participant.id, email: r.participant.emailNormalized, phone: r.participant.phoneNormalized },
-			answers: Object.fromEntries(
-				r.fieldValues.map((fv) => [
-					fv.eventField.key,
-					{ label: fv.eventField.label, type: fv.eventField.type, value: fv.value, order: fv.eventField.order },
-				])
-			),
-		}));
+		const data = await listRegistrationsByEvent(eventId, parsed.data);
 
 		res.json({
 			ok: true,
 			data: {
-				meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
-				items,
+				meta: {
+					page: Math.floor(data.page.skip / data.page.take) + 1,
+					limit: data.page.take,
+					total: data.page.total,
+					totalPages: Math.ceil(data.page.total / data.page.take),
+				},
+				items: data.items,
 			},
 		});
 	} catch (e) {
@@ -147,14 +44,17 @@ export const markAttendanceHandler: RequestHandler<{ eventId: string; registrati
 	try {
 		const eventId = parseId(req.params.eventId);
 		const registrationId = parseId(req.params.registrationId);
-		const { checkInNotes } = req.body;
+		const parsed = RegistrationCheckInSchema.safeParse(req.body);
+		if (!parsed.success) {
+			throw new HttpError(400, "VALIDATION_ERROR", "Datos inválidos", parsed.error.flatten().fieldErrors);
+		}
 
-		const data = await checkInRegistration(eventId, registrationId, checkInNotes);
+		const data = await checkInRegistration(eventId, registrationId, parsed.data.checkInNotes);
 
 		res.json({
 			ok: true,
 			message: "Asistencia confirmada correctamente",
-			data
+			data,
 		});
 	} catch (e) {
 		next(e);
@@ -170,7 +70,7 @@ export const undoAttendanceHandler: RequestHandler = async (req, res, next) => {
 
 		res.json({
 			ok: true,
-			message: "Entrada anulada. El participante vuelve a estar como 'Registrado'."
+			message: "Entrada anulada. El participante vuelve a estar como 'Registrado'.",
 		});
 	} catch (e) {
 		next(e);
@@ -181,14 +81,16 @@ export const updateRegistrationDataHandler: RequestHandler = async (req, res, ne
 	try {
 		const eventId = parseId(req.params.eventId);
 		const registrationId = parseId(req.params.registrationId);
+		const parsed = RegistrationDataUpdateSchema.safeParse(req.body);
+		if (!parsed.success) {
+			throw new HttpError(400, "VALIDATION_ERROR", "Datos inválidos", parsed.error.flatten().fieldErrors);
+		}
 
-		const { contact, answers } = req.body;
-
-		await updateRegistrationData(eventId, registrationId, { contact, answers });
+		await updateRegistrationData(eventId, registrationId, parsed.data);
 
 		res.json({
 			ok: true,
-			message: "Registro actualizado correctamente."
+			message: "Registro actualizado correctamente.",
 		});
 	} catch (e) {
 		next(e);
@@ -204,7 +106,7 @@ export const deleteRegistrationHandler: RequestHandler = async (req, res, next) 
 
 		res.json({
 			ok: true,
-			message: "Registro eliminado permanentemente."
+			message: "Registro eliminado permanentemente.",
 		});
 	} catch (e) {
 		next(e);

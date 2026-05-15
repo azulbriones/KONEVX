@@ -1,12 +1,7 @@
 import type { NextFunction, Request, RequestHandler, Response } from "express";
-import { prisma } from "../db/prisma.js";
+import type { AuthUser } from "../middlewares/auth.js";
+import { findUserById } from "../repositories/user.repository.js";
 import { HttpError } from "../lib/httpError.js";
-
-interface AuthUser {
-	id: number;
-	role: string;
-	demo?: boolean;
-}
 
 interface AuthenticatedRequest extends Request {
 	user?: AuthUser;
@@ -23,16 +18,7 @@ export const meHandler: RequestHandler = async (
 			throw new HttpError(401, "UNAUTHENTICATED", "Not authenticated");
 		}
 
-		const dbUser = await prisma.user.findUnique({
-			where: { id: user.id },
-			select: {
-				id: true,
-				username: true,
-				email: true,
-				role: true,
-				createdAt: true,
-			},
-		});
+		const dbUser = await findUserById(user.id);
 
 		if (!dbUser) {
 			throw new HttpError(
