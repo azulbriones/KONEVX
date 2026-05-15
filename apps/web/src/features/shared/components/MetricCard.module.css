@@ -1,0 +1,44 @@
+.card {
+	height: 100%;
+	border-radius: 16px !important;
+	border-color: var(--metric-border) !important;
+	overflow: hidden;
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 16px 34px rgba(23, 32, 51, 0.08);
+}
+
+.topBar {
+	height: 5px;
+	background: var(--metric-accent);
+}
+
+.iconWrap {
+	min-width: 56px;
+	min-height: 56px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 12px;
+	border-radius: 12px;
+	color: var(--metric-accent);
+	background: var(--metric-bg);
+}
+
+.content {
+	min-width: 0;
+}
+
+.title {
+	display: block;
+	margin-bottom: 4px;
+	letter-spacing: 0.9px !important;
+}
+
+.description {
+	margin-top: 4px !important;
+	max-width: 220px;
+}

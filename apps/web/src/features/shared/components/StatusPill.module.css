@@ -1,0 +1,33 @@
+.pill {
+	font-weight: 800;
+}
+
+.primary {
+	background: var(--color-primary-soft);
+	color: #0f766e;
+	border: 0;
+}
+
+.success {
+	background: #dcfce7;
+	color: #16a34a;
+	border: 0;
+}
+
+.warning {
+	background: #fef3c7;
+	color: #d97706;
+	border: 0;
+}
+
+.danger {
+	background: #fee2e2;
+	color: #dc2626;
+	border: 0;
+}
+
+.neutral {
+	background: #f7f3ea;
+	color: #64748b;
+	border: 1px solid #e7dfd2;
+}

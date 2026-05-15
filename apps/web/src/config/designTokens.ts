@@ -1,0 +1,21 @@
+export const designTokens = {
+  colors: {
+    bgMain: "#F7F3EA",
+    bgSidebar: "#172033",
+    bgSidebarCard: "#22304A",
+    bgPanel: "#FFFCF5",
+    bgCard: "#FFFCF5",
+    primary: "#0F766E",
+    primaryHover: "#115E59",
+    primarySoft: "rgba(15, 118, 110, 0.12)",
+    accent: "#D97706",
+    success: "#16A34A",
+    warning: "#D97706",
+    danger: "#DC2626",
+    textMain: "#172033",
+    textMuted: "#64748B",
+    textOnDark: "#F8FAFC",
+    textOnDarkMuted: "#A7B0C2",
+    borderSoft: "#E7DFD2",
+  },
+} as const;
