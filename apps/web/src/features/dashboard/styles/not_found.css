@@ -15,19 +15,18 @@
 	font-weight: 900;
 	margin-bottom: 10px;
 	line-height: 1;
-	background: linear-gradient(135deg, #c2410c, #ea580c);
+	background: linear-gradient(135deg, #0f766e, #14b8a6);
 	-webkit-background-clip: text;
 	-webkit-text-fill-color: transparent;
 }
 
 .not-found-container h2 {
-	color: #ffffff;
 	font-size: 28px;
 	margin-bottom: 15px;
 }
 
 .not-found-container p.subtitle {
-	color: #94a3b8;
+	color: #636d7a;
 	font-size: 16px;
 	margin-bottom: 40px;
 	line-height: 1.5;

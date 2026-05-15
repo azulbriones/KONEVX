@@ -1,0 +1,14 @@
+.wrapper {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.title {
+	letter-spacing: 0.14em !important;
+	font-weight: 800 !important;
+}
+
+.grid {
+	width: 100%;
+}

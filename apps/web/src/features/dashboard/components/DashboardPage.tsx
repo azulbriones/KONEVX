@@ -1,147 +1,80 @@
-import { EventCard } from "@/features/events/components/EventCard";
+import { EventCard } from "@/features/events/components/cards/EventCard";
+import { useLogout } from "@/features/auth/hooks/useAuth";
 import { useEvents } from "@/features/events/hooks/useEvents";
+import { DashboardEmptyState } from "./DashboardEmptyState";
+import { DashboardErrorState } from "./DashboardErrorState";
+import { DashboardHeader } from "./DashboardHeader";
+import { DashboardMetrics } from "./DashboardMetrics";
 import { getErrorMessage } from "@/features/utils/getErrorMessage";
-
-import { Add } from "@mui/icons-material";
-import EventNoteIcon from "@mui/icons-material/EventNote";
-import {
-	Box,
-	Button,
-	CircularProgress,
-	Grid,
-	Stack,
-	Typography,
-} from "@mui/material";
+import { Box, CircularProgress, Grid, Stack } from "@mui/material";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
-export function DashboardPage() {
-	const navigate = useNavigate();
-	const { data, isLoading, isError, error } = useEvents();
+import styles from "./DashboardPage.module.css";
 
-	const goCreate = () => navigate("/events/new");
+export const DashboardPage = () => {
+  const navigate = useNavigate();
+  const logoutMutation = useLogout();
+  const { data, isLoading, isError, error, refetch } = useEvents();
+  const events = useMemo(() => data ?? [], [data]);
+  const metrics = useMemo(() => {
+    const totalEvents = events.length;
+    const publishedEvents = events.filter((event) => event.isPublished).length;
+    const draftEvents = totalEvents - publishedEvents;
+    const totalCapacity = events.reduce(
+      (sum, event) => sum + event.capacity,
+      0,
+    );
 
-	if (isLoading) {
-		return (
-			<Box
-				sx={{
-					display: "flex",
-					justifyContent: "center",
-					alignItems: "center",
-					minHeight: "50vh",
-				}}
-			>
-				<CircularProgress />
-			</Box>
-		);
-	}
+    return { totalEvents, publishedEvents, draftEvents, totalCapacity };
+  }, [events]);
 
-	if (isError) {
-		return (
-			<Box
-				sx={{
-					p: 3,
-					bgcolor: "#fee2e2",
-					borderRadius: 2,
-					color: "#991b1b",
-				}}
-			>
-				<Typography fontWeight="bold">
-					Error al cargar los eventos:
-				</Typography>
-				<Typography variant="body2">
-					{getErrorMessage(error)}
-				</Typography>
-			</Box>
-		);
-	}
+  const goCreate = () => navigate("/events/new");
 
-	const events = data ?? [];
+  if (isLoading) {
+    return (
+      <Box className={styles.loading}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
-	return (
-		<Stack spacing={4}>
-			<Stack
-				direction={{ xs: "column", sm: "row" }}
-				justifyContent="space-between"
-				alignItems={{ xs: "flex-start", sm: "center" }}
-				gap={2}
-			>
-				<Box>
-					<Typography
-						variant="h4"
-						fontWeight={800}
-						color="text.primary"
-					>
-						Mis Eventos
-					</Typography>
-					<Typography variant="body1" color="text.secondary">
-						Administra y supervisa todos tus registros.
-					</Typography>
-				</Box>
+  if (isError) {
+    return (
+      <DashboardErrorState
+        message={getErrorMessage(error)}
+        onRetry={() => void refetch()}
+      />
+    );
+  }
 
-				<Button
-					variant="contained"
-					startIcon={<Add />}
-					onClick={goCreate}
-					sx={{
-						borderRadius: 2,
-						px: 3,
-						py: 1,
-						textTransform: "none",
-						fontSize: "1rem",
-					}}
-				>
-					Nuevo Evento
-				</Button>
-			</Stack>
+  return (
+    <Stack spacing={4}>
+      <DashboardHeader
+        onCreate={goCreate}
+        onLogout={() => logoutMutation.mutate()}
+      />
 
-			{events.length > 0 ? (
-				<Grid container sx={{ width: "100%" }} spacing={3}>
-					{events.map((e) => (
-						<Grid item xs={12} sm={6} md={4} key={e.id}>
-							<EventCard event={e} />
-						</Grid>
-					))}
-				</Grid>
-			) : (
-				<Box
-					sx={{
-						display: "flex",
-						flexDirection: "column",
-						alignItems: "center",
-						justifyContent: "center",
-						textAlign: "center",
-						p: 6,
-						bgcolor: "background.paper",
-						borderRadius: 4,
-						border: "2px dashed",
-						borderColor: "divider",
-						minHeight: "40vh",
-					}}
-				>
-					<EventNoteIcon
-						sx={{ fontSize: 64, color: "text.disabled", mb: 2 }}
-					/>
-					<Typography variant="h6" fontWeight={700} gutterBottom>
-						Aún no tienes eventos
-					</Typography>
-					<Typography
-						variant="body1"
-						color="text.secondary"
-						sx={{ mb: 3, maxWidth: 400 }}
-					>
-						Crea tu primer evento para empezar a recibir registros y
-						organizar a tus participantes.
-					</Typography>
-					<Button
-						variant="outlined"
-						startIcon={<Add />}
-						onClick={goCreate}
-						sx={{ borderRadius: 2 }}
-					>
-						Crear mi primer evento
-					</Button>
-				</Box>
-			)}
-		</Stack>
-	);
-}
+      {events.length > 0 && (
+        <DashboardMetrics
+          totalEvents={metrics.totalEvents}
+          publishedEvents={metrics.publishedEvents}
+          draftEvents={metrics.draftEvents}
+          totalCapacity={metrics.totalCapacity}
+        />
+      )}
+
+      {events.length > 0 ? (
+        <Grid container spacing={3} className={styles.grid}>
+          {events.map((e) => (
+            <Grid item xs={12} sm={6} md={4} key={e.id}>
+              <EventCard event={e} />
+            </Grid>
+          ))}
+        </Grid>
+      ) : (
+        <DashboardEmptyState onCreate={goCreate} />
+      )}
+    </Stack>
+  );
+};

@@ -1,0 +1,14 @@
+.secondaryButton {
+	border-radius: 9999px !important;
+	padding-left: 18px !important;
+	padding-right: 18px !important;
+	text-transform: none !important;
+}
+
+.primaryButton {
+	border-radius: 9999px !important;
+	padding: 8px 20px !important;
+	text-transform: none !important;
+	font-size: 1rem !important;
+	box-shadow: 0 10px 24px rgba(15, 118, 110, 0.18) !important;
+}
