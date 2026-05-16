@@ -1,0 +1,51 @@
+.paper {
+	border-radius: 20px !important;
+	padding: 8px !important;
+}
+
+.content {
+	padding: 16px;
+}
+
+.error {
+	margin-bottom: 16px;
+}
+
+.header {
+	margin-bottom: 24px;
+}
+
+.avatar {
+	width: 40px !important;
+	height: 40px !important;
+	background: #16a34a !important;
+}
+
+.field :global(.MuiFilledInput-root) {
+	border-radius: 12px;
+}
+
+.field :global(.MuiFilledInput-root)::before,
+.field :global(.MuiFilledInput-root)::after {
+	display: none;
+}
+
+.actions {
+	margin-top: 16px;
+}
+
+.cancelButton {
+	font-weight: 800 !important;
+}
+
+.confirmButton {
+	padding-top: 12px !important;
+	padding-bottom: 12px !important;
+	font-weight: 900 !important;
+	border-radius: 16px !important;
+	background: #16a34a !important;
+}
+
+.confirmButton:hover {
+	background: #15803d !important;
+}

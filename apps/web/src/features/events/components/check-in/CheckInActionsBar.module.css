@@ -1,0 +1,54 @@
+.excelButton {
+	border-radius: 8px !important;
+	font-weight: 800 !important;
+	color: #16a34a !important;
+	border-color: #16a34a !important;
+}
+
+.pdfButton {
+	border-radius: 8px !important;
+	font-weight: 800 !important;
+	color: #dc2626 !important;
+	border-color: #dc2626 !important;
+}
+
+.searchField :global(.MuiInputBase-root) {
+	height: 60px;
+	border-radius: 16px;
+	background: #ffffff;
+	font-size: 1.1rem;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.searchField :global(fieldset) {
+	border: none;
+}
+
+.searchIcon {
+	color: #64748b;
+}
+
+.scanButton,
+.quickButton {
+	border-radius: 16px !important;
+	min-width: 60px !important;
+	height: 60px !important;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+	color: #ffffff !important;
+}
+
+.scanButton {
+	background: #2563eb !important;
+}
+
+.scanButton:hover {
+	background: #1d4ed8 !important;
+}
+
+.quickButton {
+	background: #16a34a !important;
+}
+
+.quickButton:hover {
+	background: #15803d !important;
+}

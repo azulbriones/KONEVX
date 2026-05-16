@@ -1,0 +1,23 @@
+.card {
+	border-radius: 16px !important;
+	border-left: 5px solid var(--stat-accent);
+	background: var(--color-surface);
+}
+
+.content {
+	padding: 10px 12px !important;
+}
+
+.icon {
+	color: var(--stat-accent);
+	display: flex;
+}
+
+.label {
+	text-transform: uppercase;
+	font-size: 0.6rem !important;
+}
+
+.value {
+	margin-top: 4px !important;
+}

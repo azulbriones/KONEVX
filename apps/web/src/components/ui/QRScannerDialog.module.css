@@ -1,0 +1,25 @@
+.paper {
+	border-radius: 20px !important;
+}
+
+.content {
+	padding: 24px;
+	text-align: center;
+}
+
+.title {
+	margin-bottom: 8px !important;
+}
+
+.subtitle {
+	margin-bottom: 16px !important;
+}
+
+.reader {
+	width: 100%;
+	min-height: 300px;
+}
+
+.closeButton {
+	margin-top: 16px !important;
+}

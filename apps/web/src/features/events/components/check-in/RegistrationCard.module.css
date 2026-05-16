@@ -1,0 +1,142 @@
+.card {
+	border-radius: 20px !important;
+	border: 1px solid var(--reg-border);
+	background: var(--reg-bg);
+	transition: 0.2s;
+}
+
+.content {
+	padding: 16px !important;
+}
+
+.avatar {
+	width: 55px !important;
+	height: 55px !important;
+	background: var(--reg-avatar) !important;
+}
+
+.headerCopy {
+	flex-grow: 1;
+	min-width: 0;
+}
+
+.primaryText {
+	font-weight: 950 !important;
+	font-size: 1.2rem !important;
+	line-height: 1.1 !important;
+	color: var(--color-text);
+	text-decoration: none;
+}
+
+.secondaryText {
+	color: var(--color-text-muted);
+	font-weight: 700 !important;
+}
+
+.idChip {
+	margin-top: 8px !important;
+	font-weight: 800 !important;
+}
+
+.noteField :global(.MuiInputBase-root) {
+	border-radius: 12px;
+	font-size: 0.85rem;
+	background: rgba(255, 255, 255, 0.75);
+}
+
+.noteField :global(.MuiInputBase-root)::before,
+.noteField :global(.MuiInputBase-root)::after {
+	display: none;
+}
+
+.noteLabel {
+	font-weight: 800;
+	font-size: 0.8rem;
+}
+
+.divider {
+	border-style: dashed !important;
+}
+
+.contactRow {
+	flex-wrap: wrap;
+}
+
+.phoneIcon {
+	font-size: 16px !important;
+	color: var(--color-text-muted);
+}
+
+.waButton {
+	min-width: 0 !important;
+	padding: 0 !important;
+	margin-left: 8px !important;
+	color: #25d366 !important;
+}
+
+.answersGrid {
+	padding: 12px !important;
+	border-radius: 12px;
+	background: var(--color-bg);
+	border: 1px solid var(--color-divider);
+}
+
+.answerLabel {
+	display: block;
+	color: var(--color-text-muted);
+	font-weight: 900 !important;
+	text-transform: uppercase;
+	font-size: 0.6rem !important;
+}
+
+.answerValue {
+	font-weight: 800 !important;
+	font-size: 0.85rem !important;
+}
+
+.groupChip {
+	font-weight: 900 !important;
+	width: 100%;
+	padding: 20px 0 !important;
+	border-radius: 8px !important;
+}
+
+.cancelledBanner {
+	padding: 12px 0;
+	border-radius: 16px;
+	background: #ef4444;
+	color: white;
+	text-align: center;
+	font-weight: 900;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+}
+
+.checkInButton {
+	border-radius: 16px !important;
+	padding-top: 14px !important;
+	padding-bottom: 14px !important;
+	font-weight: 950 !important;
+	font-size: 1.1rem !important;
+}
+
+.attendedBanner {
+	padding: 12px 0;
+	border-radius: 16px;
+	background: #16a34a;
+	color: white;
+	text-align: center;
+	font-weight: 900;
+}
+
+.noteSaveButton {
+	font-weight: 800 !important;
+	border-radius: 8px !important;
+}
+
+.cancelButton {
+	font-weight: 800 !important;
+	align-self: center;
+}
