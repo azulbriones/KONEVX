@@ -1,0 +1,14 @@
+.memberAvatar {
+	width: 30px;
+	height: 30px;
+	font-size: 0.85rem;
+	background-color: var(--color-primary) !important;
+}
+
+.memberEmail {
+	font-weight: 500 !important;
+}
+
+.roleChip {
+	font-weight: 600 !important;
+}

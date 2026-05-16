@@ -1,0 +1,36 @@
+.menuPaper {
+	min-width: 160px;
+	border-radius: 8px;
+	margin-top: 4px;
+}
+
+.menuHeading {
+	padding: 8px 16px;
+	display: block;
+	font-weight: 700 !important;
+}
+
+.divider {
+	margin: 8px 0;
+	height: 1px;
+	background: var(--color-divider);
+}
+
+.dangerItem {
+	color: var(--color-danger) !important;
+}
+
+.itemIcon {
+	margin-right: 12px;
+}
+
+.drawer {
+	width: 320px;
+	padding: 24px;
+}
+
+@media (min-width: 600px) {
+	.drawer {
+		width: 420px;
+	}
+}
