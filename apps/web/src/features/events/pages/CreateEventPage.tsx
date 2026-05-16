@@ -4,26 +4,33 @@ import { EventForm } from "../components/EventForm";
 import type { CreateEventInput } from "../types";
 import { prepareEventFormData } from "../utils/eventFormData";
 
-export function CreateEventPage() {
-	const navigate = useNavigate();
-	const createMutation = useCreateEvent();
+export const CreateEventPage = () => {
+  const navigate = useNavigate();
+  const createMutation = useCreateEvent();
 
-	const handleCreate = (values: CreateEventInput) => {
-		const { isPublished, id, ...cleanValues } = values as any;
+  const handleCreate = (values: CreateEventInput) => {
+    const {
+      isPublished: _isPublished,
+      id: _id,
+      ...cleanValues
+    } = values as CreateEventInput & {
+      id?: number;
+      isPublished?: boolean;
+    };
 
-		const formData = prepareEventFormData(cleanValues);
-		createMutation.mutate(formData as any, {
-			onSuccess: (created) =>
-				navigate(`/events/${created.id}`, { replace: true }),
-		});
-	};
+    const formData = prepareEventFormData(cleanValues);
+    createMutation.mutate(formData, {
+      onSuccess: (created) =>
+        navigate(`/events/${created.id}`, { replace: true }),
+    });
+  };
 
-	return (
-		<EventForm
-			onSubmit={handleCreate}
-			isPending={createMutation.isPending}
-			submitLabel="Crear Evento"
-			onCancel={() => navigate("/")}
-		/>
-	);
-}
+  return (
+    <EventForm
+      onSubmit={handleCreate}
+      isPending={createMutation.isPending}
+      submitLabel="Crear Evento"
+      onCancel={() => navigate("/")}
+    />
+  );
+};

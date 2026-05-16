@@ -1,0 +1,1 @@
+export { EventCheckInPage } from "./EventCheckInPageContent";

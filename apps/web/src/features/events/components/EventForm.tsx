@@ -1,11 +1,11 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import {
-	Box,
-	Button,
-	CircularProgress,
-	Paper,
-	Stack,
-	Typography,
+  Box,
+  Button,
+  CircularProgress,
+  Paper,
+  Stack,
+  Typography,
 } from "@mui/material";
 import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -18,119 +18,120 @@ import { LocationTimeFields } from "./form-sections/LocationTimeFields";
 import { MediaConfigFields } from "./form-sections/MediaConfigFields";
 import { PublicLinkFields } from "./form-sections/PublicLinkFields";
 
-const sanitizeData = (data: any) => {
-	if (!data) return data;
-	const clean: any = { ...data };
-	Object.keys(clean).forEach((key) => {
-		if (clean[key] === null) {
-			clean[key] = undefined;
-		}
-	});
-	return clean;
+import styles from "./EventForm.module.css";
+
+const sanitizeData = (data?: Partial<CreateEventInput> | null) => {
+  if (!data) return data;
+  const clean = { ...data } as Record<string, unknown>;
+  Object.keys(clean).forEach((key) => {
+    if (clean[key] === null) {
+      clean[key] = undefined;
+    }
+  });
+  return clean as Partial<CreateEventInput>;
 };
 
 interface EventFormProps {
-	defaultValues?: any;
-	onSubmit: (data: CreateEventInput) => void;
-	isPending: boolean;
-	submitLabel: string;
-	onCancel: () => void;
+  defaultValues?: Partial<CreateEventInput> & { id?: number };
+  onSubmit: (data: CreateEventInput) => void;
+  isPending: boolean;
+  submitLabel: string;
+  onCancel: () => void;
 }
 
-export function EventForm({
-	defaultValues,
-	onSubmit,
-	isPending,
-	submitLabel,
-	onCancel,
-}: EventFormProps) {
-	const methods = useForm<CreateEventInput>({
-		resolver: yupResolver(schema) as any,
-		defaultValues: {
-			name: "",
-			slug: "",
-			capacity: 100,
-			contactRequirement: "EMAIL",
-			groupingSettings: {
-				enabled: false,
-				hasSubgroups: false,
-			},
-			...sanitizeData(defaultValues),
-		},
-	});
+export const EventForm = ({
+  defaultValues,
+  onSubmit,
+  isPending,
+  submitLabel,
+  onCancel,
+}: EventFormProps) => {
+  const methods = useForm<CreateEventInput>({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      name: "",
+      slug: "",
+      capacity: 100,
+      contactRequirement: "EMAIL",
+      groupingSettings: {
+        enabled: false,
+        hasSubgroups: false,
+      },
+      ...sanitizeData(defaultValues),
+    },
+  });
 
-	useEffect(() => {
-		if (defaultValues) {
-			methods.reset(sanitizeData(defaultValues));
-		}
-	}, [defaultValues, methods]);
+  useEffect(() => {
+    if (defaultValues) {
+      methods.reset(sanitizeData(defaultValues));
+    }
+  }, [defaultValues, methods]);
 
-	const isEdit = !!(defaultValues as any)?.id;
-	const title = isEdit ? "Editar" : "Crear";
+  const isEdit = !!defaultValues?.id;
+  const title = isEdit ? "Editar" : "Crear";
 
-	return (
-		<Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-			<Paper
-				sx={{
-					width: "100%",
-					maxWidth: 900,
-					p: { xs: 3, md: 5 },
-					borderRadius: 3,
-					boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-				}}
-				variant="outlined"
-			>
-				<Typography variant="h4" fontWeight={800} gutterBottom px={2}>
-					{`${title} evento`}
-				</Typography>
+  return (
+    <Box className={styles.wrapper}>
+      <Paper variant="outlined" className={styles.paper}>
+        <Stack spacing={1.25} className={styles.header}>
+          <Typography
+            variant="overline"
+            color="primary"
+            className={styles.overline}
+          >
+            Gestión de eventos
+          </Typography>
+          <Typography variant="h4" className={styles.title}>
+            {`${title} evento`}
+          </Typography>
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            className={styles.subtitle}
+          >
+            Configurá la información principal, recursos visuales y reglas de
+            acceso desde un solo lugar.
+          </Typography>
+        </Stack>
 
-				<FormProvider {...methods}>
-					<Box
-						component="form"
-						onSubmit={methods.handleSubmit(onSubmit)}
-						noValidate
-						sx={{ width: "100%" }}
-					>
-						<Stack spacing={4}>
-							<GeneralInfoFields disabled={isPending} />
-							<LocationTimeFields disabled={isPending} />
-							<MediaConfigFields disabled={isPending} />
-							<PublicLinkFields disabled={isPending} />
-							<GroupingSettingsFields disabled={isPending} />
-							<Stack
-								direction="row"
-								spacing={2}
-								justifyContent="flex-end"
-							>
-								<Button
-									variant="outlined"
-									color="inherit"
-									onClick={onCancel}
-									disabled={isPending}
-								>
-									Cancelar
-								</Button>
-								<Button
-									type="submit"
-									variant="contained"
-									disabled={isPending}
-									sx={{ px: 4 }}
-									startIcon={
-										isPending && (
-											<CircularProgress
-												size={18}
-												color="inherit"
-											/>
-										)
-									}
-								>
-									{isPending ? "Procesando..." : submitLabel}
-								</Button>
-							</Stack>
-						</Stack>
-					</Box>
-				</FormProvider>
-			</Paper>
-		</Box>
-	);
-}
+        <FormProvider {...methods}>
+          <Box
+            component="form"
+            onSubmit={methods.handleSubmit(onSubmit)}
+            noValidate
+            className={styles.form}
+          >
+            <Stack spacing={3}>
+              <GeneralInfoFields disabled={isPending} />
+              <LocationTimeFields disabled={isPending} />
+              <MediaConfigFields disabled={isPending} />
+              <PublicLinkFields disabled={isPending} />
+              <GroupingSettingsFields disabled={isPending} />
+              <Stack direction="row" spacing={2} justifyContent="flex-end">
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  onClick={onCancel}
+                  disabled={isPending}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={isPending}
+                  className={styles.submitButton}
+                  startIcon={
+                    isPending && <CircularProgress size={18} color="inherit" />
+                  }
+                >
+                  {isPending ? "Procesando..." : submitLabel}
+                </Button>
+              </Stack>
+            </Stack>
+          </Box>
+        </FormProvider>
+      </Paper>
+    </Box>
+  );
+};

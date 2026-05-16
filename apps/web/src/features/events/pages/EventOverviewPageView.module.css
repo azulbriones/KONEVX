@@ -1,0 +1,20 @@
+.publicButton {
+	border-radius: 8px !important;
+	font-weight: 600 !important;
+}
+
+.fullWidthGrid {
+	width: 100%;
+}
+
+.peopleIcon {
+	color: #3b82f6;
+}
+
+.occupancyIcon {
+	color: #10b981;
+}
+
+.fieldsIcon {
+	color: #14b8a6;
+}

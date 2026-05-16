@@ -1,0 +1,47 @@
+.wrapper {
+	display: flex;
+	justify-content: center;
+	padding: 32px 0;
+}
+
+.paper {
+	width: 100%;
+	max-width: 900px;
+	padding: 20px;
+	border-radius: 16px !important;
+	box-shadow: 0 10px 40px rgba(15, 23, 42, 0.08);
+	border-color: var(--color-divider) !important;
+}
+
+@media (min-width: 900px) {
+	.paper {
+		padding: 32px;
+	}
+}
+
+.header {
+	margin-bottom: 32px;
+}
+
+.overline {
+	letter-spacing: 0.18em !important;
+	font-weight: 800 !important;
+}
+
+.title {
+	font-weight: 950 !important;
+	line-height: 1.05 !important;
+}
+
+.subtitle {
+	max-width: 640px;
+}
+
+.form {
+	width: 100%;
+}
+
+.submitButton {
+	padding-left: 32px !important;
+	padding-right: 32px !important;
+}

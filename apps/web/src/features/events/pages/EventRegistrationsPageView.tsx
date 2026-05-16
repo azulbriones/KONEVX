@@ -1,0 +1,1 @@
+export { EventRegistrationsPage } from "./EventRegistrationsPageContent";

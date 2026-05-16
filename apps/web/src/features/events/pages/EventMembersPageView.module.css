@@ -1,0 +1,15 @@
+.paper {
+	height: 620px;
+	width: 100%;
+	background: var(--color-surface);
+	border-radius: 16px !important;
+}
+
+.grid {
+	border: none;
+}
+
+.grid :global(.MuiDataGrid-cell:focus),
+.grid :global(.MuiDataGrid-columnHeader:focus) {
+	outline: none;
+}

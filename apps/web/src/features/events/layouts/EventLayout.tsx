@@ -1,145 +1,120 @@
 import { useEvent, useSetPublish } from "@/features/events/hooks/useEvents";
 import { getErrorMessage } from "@/features/utils/getErrorMessage";
 import {
-	Box,
-	Button,
-	CircularProgress,
-	Container,
-	Paper,
-	Stack,
-	Tab,
-	Tabs,
-	Typography,
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  Paper,
+  Stack,
+  Typography,
 } from "@mui/material";
+import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
-	Outlet,
-	Link as RouterLink,
-	useLocation,
-	useParams,
-} from "react-router-dom";
+  EventSectionTabs,
+  type EventSectionTab,
+} from "../components/sections/EventSectionTabs";
+import type { EventAccess } from "../types";
+
+import styles from "./EventLayout.module.css";
 
 const TABS = [
-	{ label: "Resumen", path: "overview", gate: (a: any) => a?.canView },
-	{ label: "Check-in", path: "check-in", gate: (a: any) => a?.canCheckIn },
-	{ label: "Registros", path: "registrations", gate: (a: any) => a?.canView },
-	{ label: "Campos", path: "fields", gate: (a: any) => a?.canWrite },
-	{ label: "Miembros", path: "members", gate: (a: any) => a?.canWrite },
-	{ label: "Ajustes", path: "edit", gate: (a: any) => a?.canWrite },
+  { label: "Resumen", path: "overview", gate: (a: EventAccess) => a?.canView },
+  {
+    label: "Check-in",
+    path: "check-in",
+    gate: (a: EventAccess) => a?.canCheckIn,
+  },
+  {
+    label: "Registros",
+    path: "registrations",
+    gate: (a: EventAccess) => a?.canView,
+  },
+  { label: "Campos", path: "fields", gate: (a: EventAccess) => a?.canWrite },
+  { label: "Miembros", path: "members", gate: (a: EventAccess) => a?.canWrite },
+  { label: "Ajustes", path: "edit", gate: (a: EventAccess) => a?.canWrite },
 ] as const;
 
-export function EventLayout() {
-	const { eventId } = useParams();
-	const id = Number(eventId);
-	const location = useLocation();
+export const EventLayout = () => {
+  const { eventId } = useParams();
+  const id = Number(eventId);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-	const { data, isLoading, isError, error } = useEvent(id);
-	const publishMutation = useSetPublish(id);
+  const { data, isLoading, isError, error } = useEvent(id);
+  const publishMutation = useSetPublish(id);
 
-	const currentTab =
-		TABS.find((t) => location.pathname.endsWith(t.path))?.path ||
-		"overview";
+  const currentTab =
+    TABS.find((t) => location.pathname.endsWith(t.path))?.path || "overview";
 
-	if (isLoading) {
-		return (
-			<Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-				<CircularProgress />
-			</Box>
-		);
-	}
+  if (isLoading) {
+    return (
+      <Box className={styles.loading}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
-	if (isError) {
-		return (
-			<Container maxWidth="md" sx={{ py: 4 }}>
-				<Typography color="error" variant="h6">
-					{getErrorMessage(error)}
-				</Typography>
-				<Button component={RouterLink} to="/" sx={{ mt: 2 }}>
-					Volver al Dashboard
-				</Button>
-			</Container>
-		);
-	}
+  if (isError) {
+    return (
+      <Container maxWidth="md" className={styles.errorContainer}>
+        <Typography color="error" variant="h6">
+          {getErrorMessage(error)}
+        </Typography>
+        <Button onClick={() => navigate("/")} className={styles.backButton}>
+          Volver al Dashboard
+        </Button>
+      </Container>
+    );
+  }
 
-	if (!data) return null;
+  if (!data) return null;
 
-	const { event, stats, access } = data;
+  const { event, stats, access } = data;
 
-	return (
-		<Stack spacing={0}>
-			<Paper
-				elevation={0}
-				sx={{
-					borderBottom: 1,
-					borderColor: "divider",
-					bgcolor: "transparent",
-					px: 1,
-				}}
-			>
-				<Stack
-					direction="row"
-					justifyContent="space-between"
-					alignItems="flex-end"
-					flexWrap="wrap-reverse"
-					gap={2}
-				>
-					<Tabs
-						value={currentTab}
-						textColor="primary"
-						indicatorColor="primary"
-						variant="scrollable"
-						scrollButtons="auto"
-						sx={{ minHeight: 48 }}
-					>
-						{TABS.map((tab) => {
-							const enabled = tab.gate(access);
-							if (!enabled) return null;
+  const visibleTabs: EventSectionTab[] = TABS.map((tab) => ({
+    label: tab.label,
+    path: tab.path,
+    enabled: Boolean(tab.gate(access)),
+  }));
 
-							return (
-								<Tab
-									key={tab.path}
-									label={tab.label}
-									value={tab.path}
-									component={RouterLink}
-									to={tab.path}
-									sx={{
-										textTransform: "none",
-										fontWeight: 600,
-										fontSize: "0.95rem",
-										minWidth: 100,
-									}}
-								/>
-							);
-						})}
-					</Tabs>
+  return (
+    <Stack spacing={2.5}>
+      <Paper elevation={0} className={styles.headerPaper}>
+        <Stack spacing={0.75} className={styles.headerCopy}>
+          <Typography
+            variant="overline"
+            color="text.secondary"
+            className={styles.overline}
+          >
+            Evento activo
+          </Typography>
+          <Typography variant="h5" className={styles.eventTitle}>
+            {event.name}
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            className={styles.description}
+          >
+            {event.description}
+          </Typography>
+        </Stack>
 
-					{access.canWrite && (
-						<Box sx={{ pb: 1 }}>
-							<Button
-								variant={
-									event.isPublished ? "outlined" : "contained"
-								}
-								color={
-									event.isPublished ? "warning" : "primary"
-								}
-								onClick={() =>
-									publishMutation.mutate(!event.isPublished)
-								}
-								disabled={publishMutation.isPending}
-								size="small"
-								sx={{ borderRadius: 2, fontWeight: 700 }}
-							>
-								{event.isPublished
-									? "Pasar a borrador"
-									: "Publicar evento"}
-							</Button>
-						</Box>
-					)}
-				</Stack>
-			</Paper>
+        <EventSectionTabs
+          tabs={visibleTabs}
+          currentTab={currentTab}
+          isPublished={event.isPublished}
+          canWrite={access.canWrite}
+          isPublishing={publishMutation.isPending}
+          onNavigate={(path) => navigate(path)}
+          onTogglePublish={() => publishMutation.mutate(!event.isPublished)}
+        />
+      </Paper>
 
-			<Box sx={{ py: 4 }}>
-				<Outlet context={{ event, stats, access }} />
-			</Box>
-		</Stack>
-	);
-}
+      <Box className={styles.outletWrap}>
+        <Outlet context={{ event, stats, access }} />
+      </Box>
+    </Stack>
+  );
+};

@@ -1,0 +1,49 @@
+.loading {
+	display: flex;
+	justify-content: center;
+	padding: 64px 0;
+}
+
+.errorContainer {
+	padding: 32px 0;
+}
+
+.backButton {
+	margin-top: 16px !important;
+}
+
+.headerPaper {
+	padding: 20px;
+	border-radius: 16px !important;
+	border: 1px solid var(--color-divider);
+	background: var(--color-surface);
+	box-shadow: 0 10px 24px rgba(23, 32, 51, 0.05);
+}
+
+@media (min-width: 600px) {
+	.headerPaper {
+		padding: 24px;
+	}
+}
+
+.headerCopy {
+	margin-bottom: 16px;
+}
+
+.overline {
+	letter-spacing: 0.14em !important;
+	font-weight: 800 !important;
+}
+
+.description {
+	max-width: 860px;
+}
+
+.eventTitle {
+	font-weight: 950 !important;
+	line-height: 1.1 !important;
+}
+
+.outletWrap {
+	padding-top: 8px;
+}
