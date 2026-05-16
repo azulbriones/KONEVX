@@ -1,0 +1,12 @@
+.paper {
+	border-radius: 24px;
+}
+
+.title {
+	font-weight: 800 !important;
+}
+
+.actions {
+	padding: 16px;
+	gap: 8px;
+}

@@ -1,0 +1,112 @@
+.summaryCard,
+.technicalCard,
+.groupCard,
+.fieldCard {
+	height: 100%;
+	border-radius: 16px !important;
+}
+
+.summaryCard,
+.technicalCard,
+.groupCard,
+.fieldCard {
+	border-left-width: 6px !important;
+}
+
+.summaryCard {
+	border-left-color: #3b82f6 !important;
+}
+
+.technicalCard {
+	border-left-color: #14b8a6 !important;
+	background: var(--color-bg);
+}
+
+.groupCard {
+	border-left-color: #6366f1 !important;
+}
+
+.fieldCard {
+	border-left-color: #14b8a6 !important;
+}
+
+.cardContent {
+	padding: 24px !important;
+}
+
+.cardHeader {
+	margin-bottom: 16px;
+}
+
+.dividerLarge {
+	margin-bottom: 24px !important;
+}
+
+.dashedDivider,
+.dashedDividerBottom {
+	margin: 16px 0 !important;
+	border-style: dashed !important;
+}
+
+.dashedDividerBottom {
+	margin-top: 16px !important;
+}
+
+.clampedText {
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.innerStack {
+	margin-top: 16px;
+}
+
+.slugChip {
+	margin-top: 4px !important;
+	font-weight: 600 !important;
+	font-family: monospace !important;
+}
+
+.capitalize {
+	text-transform: capitalize;
+}
+
+.mono {
+	font-family: monospace;
+}
+
+.fieldAccent,
+.groupAccent {
+	font-size: 20px;
+}
+
+.fieldAccent {
+	color: #14b8a6;
+}
+
+.groupAccent {
+	color: #6366f1;
+}
+
+.metricRow,
+.chipWrap {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 8px;
+	background: var(--color-bg);
+	border-radius: 4px;
+}
+
+.chipWrap {
+	flex-wrap: wrap;
+	gap: 8px;
+	background: transparent;
+	padding: 0;
+}
+
+.groupChip {
+	font-weight: 700 !important;
+}
