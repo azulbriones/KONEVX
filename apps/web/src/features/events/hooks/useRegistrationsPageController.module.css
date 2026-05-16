@@ -1,0 +1,28 @@
+.statusChip {
+	font-weight: 600 !important;
+}
+
+.assignedGroupActive {
+	font-weight: 700 !important;
+	color: var(--color-primary) !important;
+}
+
+.assignedGroupEmpty {
+	font-weight: 400 !important;
+	color: var(--color-text-muted) !important;
+}
+
+.truncatedText {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	width: 100%;
+}
+
+.truncatedTextNarrow {
+	max-width: 130px;
+}
+
+.whatsappButton {
+	color: #25d366 !important;
+}

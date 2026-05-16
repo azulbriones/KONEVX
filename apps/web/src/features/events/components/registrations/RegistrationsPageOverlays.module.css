@@ -1,0 +1,56 @@
+.menuPaper {
+	border-radius: 8px;
+	min-width: 260px;
+	margin-top: 4px;
+}
+
+.menuHeader {
+	padding: 12px 16px 8px;
+}
+
+.editIcon {
+	font-size: 16px !important;
+}
+
+.divider {
+	margin: 8px 0;
+}
+
+.menuItem {
+	padding-top: 8px;
+	padding-bottom: 8px;
+}
+
+.sectionLabel {
+	padding: 8px 16px;
+	font-weight: 700 !important;
+}
+
+.groupEditorRow {
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.groupValue {
+	font-weight: 700 !important;
+	margin-top: 4px !important;
+}
+
+.menuItemText {
+	font-weight: 700 !important;
+}
+
+.statusChip {
+	margin-right: 12px;
+	min-width: 90px;
+}
+
+.deleteItem {
+	padding-top: 8px;
+	padding-bottom: 8px;
+	color: var(--color-danger) !important;
+}
+
+.itemIcon {
+	margin-right: 12px;
+}
