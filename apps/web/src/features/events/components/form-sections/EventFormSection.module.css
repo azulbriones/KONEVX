@@ -1,0 +1,21 @@
+.paper {
+	width: 100%;
+	padding: 16px;
+	border-radius: 16px !important;
+	background: var(--color-surface);
+}
+
+@media (min-width: 900px) {
+	.paper {
+		padding: 24px;
+	}
+}
+
+.description {
+	margin-top: 4px !important;
+	margin-bottom: 16px !important;
+}
+
+.divider {
+	margin-bottom: 24px !important;
+}

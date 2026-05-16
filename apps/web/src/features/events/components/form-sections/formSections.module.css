@@ -1,0 +1,53 @@
+.fullWidthGrid {
+	width: 100%;
+}
+
+.sectionTitle {
+	margin-top: 8px !important;
+}
+
+.sectionDivider {
+	margin: 8px 0 !important;
+}
+
+.groupingToggleWrap {
+	margin-top: 16px;
+}
+
+.groupingPanel {
+	margin-top: 24px;
+	padding: 16px;
+	background: var(--color-bg);
+	border-radius: 8px;
+}
+
+.subgroupsToggle {
+	margin-top: 8px;
+}
+
+.distributionTitle {
+	margin-top: 16px !important;
+}
+
+.distributionRow {
+	display: flex;
+	gap: 16px;
+	align-items: center;
+	margin-bottom: 16px;
+	padding: 16px;
+	border: 1px solid var(--color-divider);
+	border-radius: 8px;
+}
+
+.optionLabel {
+	min-width: 120px;
+	font-weight: 700 !important;
+}
+
+.subgroupsField {
+	width: 180px;
+}
+
+.linkIcon {
+	margin-right: 4px;
+}
