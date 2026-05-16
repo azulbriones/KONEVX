@@ -1,0 +1,30 @@
+.paper {
+	height: 640px;
+	width: 100%;
+	background: var(--color-surface);
+	border-radius: 16px;
+}
+
+.dataGrid {
+	border: none;
+}
+
+.dataGrid :global(.MuiDataGrid-cell:focus),
+.dataGrid :global(.MuiDataGrid-columnHeader:focus) {
+	outline: none;
+}
+
+.keyCell {
+	font-family: monospace;
+	color: var(--color-text-muted);
+}
+
+.typeChip {
+	font-size: 0.75rem !important;
+}
+
+.loadingWrap {
+	display: flex;
+	justify-content: center;
+	padding: 64px 0;
+}
