@@ -77,7 +77,7 @@ export function PublicStats({
 		<section className="stats" aria-label="Detalles del evento">
 			<div className="stat-card">
 				<div style={{ display: "flex", justifyContent: "center" }}>
-					<AccessTimeIcon htmlColor="#f97316" />
+					<AccessTimeIcon htmlColor="#14b8a6" />
 				</div>
 				<div className="stat-label">Fecha de entrada</div>
 				<div className="stat-value stat-value--stacked">
@@ -89,7 +89,7 @@ export function PublicStats({
 
 			<div className="stat-card">
 				<div style={{ display: "flex", justifyContent: "center" }}>
-					<AccessTimeIcon htmlColor="#f97316" />
+					<AccessTimeIcon htmlColor="#14b8a6" />
 				</div>
 				<div className="stat-label">Santa misa de clausura</div>
 				<div className="stat-value stat-value--stacked">
@@ -103,7 +103,7 @@ export function PublicStats({
 
 			<div className="stat-card">
 				<div style={{ display: "flex", justifyContent: "center" }}>
-					<PlaceIcon htmlColor="#f97316" />
+					<PlaceIcon htmlColor="#14b8a6" />
 				</div>
 				<div className="stat-label">Lugar</div>
 				<div className="stat-value" style={{ fontSize: "1.1rem" }}>
@@ -113,7 +113,7 @@ export function PublicStats({
 
 			<div className="stat-card">
 				<div style={{ display: "flex", justifyContent: "center" }}>
-					<ConfirmationNumberIcon htmlColor="#f97316" />
+					<ConfirmationNumberIcon htmlColor="#14b8a6" />
 				</div>
 				<div className="stat-label">Donativo</div>
 				<div className="stat-value">
@@ -124,7 +124,7 @@ export function PublicStats({
 
 			<div className="stat-card">
 				<div style={{ display: "flex", justifyContent: "center" }}>
-					<FaceIcon htmlColor="#f97316" />
+					<FaceIcon htmlColor="#14b8a6" />
 				</div>
 				<div className="stat-label">Edad</div>
 				<div className="stat-value">
@@ -134,7 +134,7 @@ export function PublicStats({
 
 			<div className="stat-card">
 				<div style={{ display: "flex", justifyContent: "center" }}>
-					<PeopleIcon htmlColor="#f97316" />
+					<PeopleIcon htmlColor="#14b8a6" />
 				</div>
 				<div className="stat-label">Cupo</div>
 				<div className="stat-value">

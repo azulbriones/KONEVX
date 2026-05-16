@@ -3,6 +3,7 @@ import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import { Box, Paper, Stack, Typography } from "@mui/material";
 
 export function PublicChecklist({
 	thingsToBring,
@@ -33,21 +34,20 @@ export function PublicChecklist({
 
 	return (
 		<section className="section" aria-label="Checklist">
-			<div className="checklists">
-				<div className="check-card good">
-					<div className="check-head">
+			<Box className="checklists">
+				<Paper variant="outlined" className="check-card good" sx={{ p: 3, borderRadius: 4 }}>
+					<Stack direction="row" alignItems="center" spacing={1.25} mb={2}>
 						<BackpackIcon htmlColor="#16a34a" />
-						<span>¿Qué llevar?</span>
-					</div>
+						<Typography variant="h6" fontWeight={900}>
+							¿Qué llevar?
+						</Typography>
+					</Stack>
 
 					<ul className="list">
 						{bringList.length > 0 ? (
 							bringList.map((item, index) => (
 								<li key={index}>
-									<CheckCircleIcon
-										fontSize="small"
-										htmlColor="#16a34a"
-									/>
+									<CheckCircleIcon fontSize="small" htmlColor="#16a34a" />
 									<span>{item}</span>
 								</li>
 							))
@@ -57,22 +57,21 @@ export function PublicChecklist({
 							</li>
 						)}
 					</ul>
-				</div>
+				</Paper>
 
-				<div className="check-card bad">
-					<div className="check-head">
+				<Paper variant="outlined" className="check-card bad" sx={{ p: 3, borderRadius: 4 }}>
+					<Stack direction="row" alignItems="center" spacing={1.25} mb={2}>
 						<BlockIcon htmlColor="#ef4444" />
-						<span>Evita traer</span>
-					</div>
+						<Typography variant="h6" fontWeight={900}>
+							Evita traer
+						</Typography>
+					</Stack>
 
 					<ul className="list">
 						{avoidList.length > 0 ? (
 							avoidList.map((item, index) => (
 								<li key={index}>
-									<ErrorOutlineIcon
-										fontSize="small"
-										htmlColor="#ef4444"
-									/>
+									<ErrorOutlineIcon fontSize="small" htmlColor="#ef4444" />
 									<span>{item}</span>
 								</li>
 							))
@@ -84,15 +83,15 @@ export function PublicChecklist({
 					</ul>
 
 					{note && (
-						<div
-							style={{
-								marginTop: "1.25rem",
+						<Box
+							sx={{
+								mt: 2,
 								background: "#fffbeb",
-								padding: "1rem",
-								borderRadius: "1rem",
+								p: 2,
+								borderRadius: 3,
 								border: "1px solid #fef3c7",
 								display: "flex",
-								gap: "0.6rem",
+								gap: 1,
 								alignItems: "center",
 								color: "#92400e",
 								fontWeight: 800,
@@ -100,10 +99,10 @@ export function PublicChecklist({
 						>
 							<InfoOutlinedIcon htmlColor="#92400e" />
 							<span>{note}</span>
-						</div>
+						</Box>
 					)}
-				</div>
-			</div>
+				</Paper>
+			</Box>
 		</section>
 	);
 }

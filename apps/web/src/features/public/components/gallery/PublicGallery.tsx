@@ -55,30 +55,41 @@ export function PublicGallery({
 		<section id="info" className="section">
 			<div className="section-title">
 				<CameraAltIcon htmlColor="var(--primary)" />
-				<h2>Vive la experiencia</h2>
+				<div>
+					<h2>Vive la experiencia</h2>
+					<p style={{ marginTop: 6, color: "var(--muted)", fontWeight: 600 }}>
+						Un vistazo rápido a lo que te espera.
+					</p>
+				</div>
 			</div>
 
 			<div className="bento">
 				{/* --- ITEM PRINCIPAL (Video o Foto Destacada) --- */}
 				<div className="bento-item bento-main">
 					{promotionalVideo ? (
-						<video
-							ref={videoRef}
-							src={getMediaUrl(promotionalVideo, 0)}
-							muted
-							loop
-							playsInline
-							controls
-							style={{
-								width: "100%",
-								height: "100%",
-								objectFit: "cover",
-								display: "block",
-							}}
-						/>
-					) : (
 						<>
-							<div
+							<video
+								ref={videoRef}
+								src={getMediaUrl(promotionalVideo, 0)}
+								muted
+								loop
+								playsInline
+								controls
+								style={{
+									width: "100%",
+									height: "100%",
+									objectFit: "cover",
+									display: "block",
+								}}
+							/>
+							<div className="bento-caption">
+								<small>Contenido destacado</small>
+								<h3>Reproduce el trailer del evento</h3>
+							</div>
+						</>
+					) : (
+					<>
+						<div
 								className="bento-overlay"
 								style={{
 									background:

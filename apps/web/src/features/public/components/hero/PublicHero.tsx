@@ -28,16 +28,21 @@ export function PublicHero({
 			className={`hero ${heroImgUrl ? "hero--with-image" : "hero--centered"}`}
 			style={{
 				backgroundImage: bgUrl
-					? `linear-gradient(135deg, rgba(29, 78, 216, 0.85) 0%, rgba(37, 99, 235, 0.75) 50%, rgba(67, 56, 202, 0.95) 100%), url('${bgUrl}')`
-					: "linear-gradient(135deg, rgba(29, 78, 216, 0.9) 0%, rgba(37, 99, 235, 0.9) 50%, rgba(67, 56, 202, 0.95) 100%)",
+					? `var(--public-hero-gradient), url('${bgUrl}')`
+					: "var(--public-hero-gradient)",
 				backgroundSize: "cover",
 				backgroundPosition: "center",
-				backgroundAttachment: "fixed",
+				backgroundAttachment: "scroll",
 			}}
 		>
 			<div className="hero-inner">
 				<div className="hero-text">
-					<div className="hero-tag">{tag}</div>
+					<div className="hero-meta">
+						<div className="hero-tag">{tag}</div>
+						<div className={`hero-status ${ctaDisabled ? "is-closed" : "is-open"}`}>
+							{ctaDisabled ? "Registro cerrado" : "Registro abierto"}
+						</div>
+					</div>
 
 					<h1>{title}</h1>
 					{subtitle ? <p>{subtitle}</p> : null}

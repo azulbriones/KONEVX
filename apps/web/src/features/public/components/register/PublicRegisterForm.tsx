@@ -12,18 +12,21 @@ import {
 	Box,
 	CircularProgress,
 	Divider,
+	Paper,
 	Stack,
 	SvgIcon,
 	Typography,
 } from "@mui/material";
 import confetti from "canvas-confetti";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import QRCode from "react-qr-code";
+import type { ComponentType, FormEvent } from "react";
+import type { SvgIconProps } from "@mui/material/SvgIcon";
 
 import { getErrorMessage } from "@/features/utils/getErrorMessage";
-import { FieldInput } from "../fields/FieldInput";
-import { usePublicRegister } from "../hooks/usePublicRegister";
-import type { ContactRequirement, PublicEventField } from "../types";
+import { FieldInput } from "../../fields/FieldInput";
+import { usePublicRegister } from "../../hooks/usePublicRegister";
+import type { ContactRequirement, PublicEventField } from "../../types";
 
 // --- TIPOS ---
 type Props = {
@@ -40,11 +43,24 @@ type Errors = Record<string, string | undefined>;
 type SubmittedStatus = "CREATED" | "EXISTS" | null;
 
 // 💡 Ícono de TikTok Personalizado
-const TikTokIcon = (props: any) => (
+const TikTokIcon = (props: SvgIconProps) => (
 	<SvgIcon {...props} viewBox="0 0 448 512">
 		<path d="M448,209.91a210.06,210.06,0,0,1-122.77-39.25V349.38A162.55,162.55,0,1,1,185,188.31V278.2a74.62,74.62,0,1,0,52.23,71.18V0l88,0a121.18,121.18,0,0,0,1.86,22.17h0A122.18,122.18,0,0,0,381,102.39a121.43,121.43,0,0,0,67,20.14Z" />
 	</SvgIcon>
 );
+
+type RegisterMutationError = {
+	code?: string;
+	error?: {
+		code?: string;
+	};
+};
+
+function hasEventFullCode(error: unknown): error is RegisterMutationError {
+	if (!error || typeof error !== "object") return false;
+	const candidate = error as RegisterMutationError;
+	return candidate.code === "EVENT_FULL" || candidate.error?.code === "EVENT_FULL";
+}
 
 // --- HELPERS ---
 function initialAnswers(fields: PublicEventField[]) {
@@ -61,7 +77,7 @@ function DynamicSocialLink({ link }: { link: string }) {
 	const cleanLink = link.replace(/[\u200E\u200F\u202A-\u202E]/g, "").trim();
 	const lower = cleanLink.toLowerCase();
 
-	let Icon: any = LanguageIcon;
+	let Icon: ComponentType<SvgIconProps> = LanguageIcon;
 	let className = "social-btn";
 	let href = cleanLink;
 
@@ -137,7 +153,7 @@ function SuccessView({
 }) {
 	useEffect(() => {
 		const end = Date.now() + 3 * 1000;
-		const colors = ["#2563eb", "#f97316", "#16a34a"];
+		const colors = ["#14b8a6", "#38bdf8", "#22c55e"];
 
 		const frame = () => {
 			confetti({
@@ -183,11 +199,16 @@ function SuccessView({
 					<CheckCircleIcon sx={{ fontSize: 48 }} />
 				</div>
 
-				<h2 className="success-title">
-					{status === "EXISTS"
-						? "Ya estabas registrado"
-						: "¡Registro exitoso!"}
-				</h2>
+				<Stack spacing={1} sx={{ mb: 2 }}>
+					<Typography variant="overline" fontWeight={900} color="primary.main" letterSpacing={1}>
+						Registro confirmado
+					</Typography>
+					<h2 className="success-title">
+						{status === "EXISTS"
+							? "Ya estabas registrado"
+							: "¡Registro exitoso!"}
+					</h2>
+				</Stack>
 
 				<Box
 					sx={{
@@ -195,8 +216,10 @@ function SuccessView({
 						mb: 2,
 						p: 3,
 						bgcolor: "background.paper",
-						borderRadius: "1.5rem",
-						border: "2px dashed #cbd5e1",
+						borderRadius: 4,
+						border: "1px solid",
+						borderColor: "divider",
+						boxShadow: "0 12px 30px rgba(15, 23, 42, 0.08)",
 						display: "flex",
 						flexDirection: "column",
 						alignItems: "center",
@@ -241,25 +264,22 @@ function SuccessView({
 							margin: 0,
 							border: "none",
 							padding: "0.5rem",
-							background: "rgba(37,99,235,0.05)",
-						}}
+						background: "rgba(37,99,235,0.05)",
+					}}
 					>
 						<span className="id-label">ID DE REGISTRO</span>
 						<strong className="id-number">#{regId || "---"}</strong>
 					</div>
 				</Box>
 
-				<div className="screenshot-tip">
-					<p>
-						📸{" "}
-						<strong>
-							¡Guarda tú número de registro o imprime el codígo
-							QR!
-						</strong>{" "}
-						Llevalo contigo el día de la entrada para un acceso más
-						rápido.
-					</p>
-				</div>
+				<Paper variant="outlined" sx={{ p: 2.5, mb: 2, borderRadius: 4, bgcolor: "#fffbeb", borderColor: "#fde68a", textAlign: "left" }}>
+					<Typography variant="body2" fontWeight={800} color="#92400e">
+						📸 Guarda tu número de registro o imprime el código QR.
+					</Typography>
+					<Typography variant="body2" sx={{ mt: 0.5, color: "#92400e" }}>
+						Llévalo contigo el día de la entrada para un acceso más rápido.
+					</Typography>
+				</Paper>
 
 				<Divider className="divider" />
 
@@ -352,10 +372,7 @@ function SuccessView({
 					</>
 				)}
 
-				<div
-					className="success-actions"
-					style={{ marginTop: "2.5rem" }}
-				>
+				<Stack className="success-actions" direction={{ xs: "column", sm: "row" }} sx={{ mt: 3 }}>
 					<button
 						className="public-cta"
 						type="button"
@@ -373,7 +390,7 @@ function SuccessView({
 					>
 						Ver detalles
 					</button>
-				</div>
+				</Stack>
 			</div>
 		</div>
 	);
@@ -394,6 +411,8 @@ export function PublicRegisterForm({
 		useState<SubmittedStatus>(null);
 	const [contact, setContact] = useState({ email: "", phone: "" });
 	const [errors, setErrors] = useState<Errors>({});
+	const [submitAttempted, setSubmitAttempted] = useState(false);
+	const validationBannerRef = useRef<HTMLDivElement>(null);
 
 	const sortedFields = useMemo(
 		() => [...fields].sort((a, b) => a.order - b.order),
@@ -401,19 +420,51 @@ export function PublicRegisterForm({
 	);
 	const [answers, setAnswers] = useState(() => initialAnswers(sortedFields));
 
-	const isFullError =
-		(registerMutation.error as any)?.code === "EVENT_FULL" ||
-		(registerMutation.error as any)?.error?.code === "EVENT_FULL";
+	const isFullError = hasEventFullCode(registerMutation.error);
 
 	const busy = registerMutation.isPending || !!disabled || isFullError;
 
-	const validate = (): boolean => {
+	const focusFirstError = (nextErrors: Errors) => {
+		const firstKey =
+			nextErrors.contact_email ? "contact" :
+			nextErrors.contact_phone ? "contact" :
+			Object.keys(nextErrors)[0];
+
+		if (!firstKey) return;
+
+		const selector = `[data-field-key="${firstKey}"]`;
+		const el = document.querySelector(selector) as HTMLElement | null;
+		el?.scrollIntoView({ behavior: "smooth", block: "center" });
+		const focusable = el?.querySelector(
+			"input, textarea, select, button",
+		) as HTMLElement | null;
+		focusable?.focus?.();
+	};
+
+	const clearError = (key: string) => {
+		setErrors((prev) => {
+			if (!(key in prev)) return prev;
+			const next = { ...prev };
+			delete next[key];
+			return next;
+		});
+	};
+
+	const validate = (): Errors | null => {
 		const next: Errors = {};
 		if (contactRequirement === "EMAIL") {
-			if (!contact.email.trim()) next.contact_email = "Email requerido";
+			const email = contact.email.trim();
+			if (!email) next.contact_email = "Email requerido";
+			else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+				next.contact_email = "Email inválido";
+			}
 		} else {
-			if (!contact.phone.trim())
+			const phone = contact.phone.trim();
+			if (!phone)
 				next.contact_phone = "Teléfono requerido";
+			else if (phone.replace(/\D/g, "").length < 10) {
+				next.contact_phone = "Teléfono inválido";
+			}
 		}
 
 		for (const f of sortedFields) {
@@ -425,16 +476,25 @@ export function PublicRegisterForm({
 				(!Array.isArray(v) || v.length === 0)
 			)
 				next[f.key] = "Selecciona uno";
-			else if (v === null || v === undefined || String(v).trim() === "")
-				next[f.key] = "Requerido";
+				else if (v === null || v === undefined || String(v).trim() === "")
+					next[f.key] = "Requerido";
 		}
 		setErrors(next);
-		return Object.keys(next).length === 0;
+		return Object.keys(next).length === 0 ? null : next;
 	};
 
-	const onSubmit = async (e: React.FormEvent) => {
+	const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		if (busy || !validate()) return;
+		setSubmitAttempted(true);
+		const validationErrors = validate();
+		if (busy || validationErrors) {
+			if (validationErrors) focusFirstError(validationErrors);
+			validationBannerRef.current?.scrollIntoView({
+				behavior: "smooth",
+				block: "center",
+			});
+			return;
+		}
 		registerMutation.mutate(
 			{
 				contact: {
@@ -444,10 +504,8 @@ export function PublicRegisterForm({
 				answers,
 			},
 			{
-				onSuccess: (res: any) =>
-					setSubmittedStatus(
-						res?.status === "EXISTS" ? "EXISTS" : "CREATED",
-					),
+				onSuccess: (res) =>
+					setSubmittedStatus(res.status === "EXISTS" ? "EXISTS" : "CREATED"),
 			},
 		);
 	};
@@ -457,6 +515,7 @@ export function PublicRegisterForm({
 		setContact({ email: "", phone: "" });
 		setAnswers(initialAnswers(sortedFields));
 		setErrors({});
+		setSubmitAttempted(false);
 		registerMutation.reset?.();
 	};
 
@@ -464,7 +523,7 @@ export function PublicRegisterForm({
 		return (
 			<SuccessView
 				status={submittedStatus}
-				regId={(registerMutation.data as any)?.registration?.id}
+				regId={registerMutation.data?.registration?.id}
 				onReset={resetForm}
 				thingsToBring={thingsToBring}
 				thingsNotToBring={thingsNotToBring}
@@ -477,6 +536,9 @@ export function PublicRegisterForm({
 		<section id="registro" className="form-wrap">
 			<div className="form-card">
 				<div className="form-title">
+					<Typography variant="overline" fontWeight={900} color="primary.main" letterSpacing={1}>
+						Registro público
+					</Typography>
 					<h2>Inscripción</h2>
 					<p>Asegura tu lugar completando tus datos.</p>
 				</div>
@@ -490,10 +552,21 @@ export function PublicRegisterForm({
 					</div>
 				)}
 
-				<form onSubmit={onSubmit}>
+				{submitAttempted && Object.keys(errors).length > 0 && (
+					<div
+						ref={validationBannerRef}
+						className="banner banner--warn"
+						style={{ marginBottom: "1.5rem" }}
+						aria-live="polite"
+					>
+						<strong>Revisa el formulario.</strong> Hay campos obligatorios sin completar.
+					</div>
+				)}
+
+				<form onSubmit={onSubmit} noValidate>
 					<span className="group-label">Contacto</span>
 					<div className="form-grid">
-						<div className="field full">
+						<div className="field full" data-field-key="contact">
 							<label>
 								{contactRequirement === "EMAIL"
 									? "Correo Electrónico *"
@@ -511,12 +584,20 @@ export function PublicRegisterForm({
 										: contact.phone
 								}
 								onChange={(e) =>
-									setContact((p) => ({
-										...p,
-										[contactRequirement === "EMAIL"
-											? "email"
-											: "phone"]: e.target.value,
-									}))
+									{
+										setContact((p) => ({
+											...p,
+											[contactRequirement === "EMAIL"
+												? "email"
+												: "phone"]: e.target.value,
+										}));
+										clearError(
+											contactRequirement === "EMAIL"
+												? "contact_email"
+												: "contact_phone",
+										);
+										if (registerMutation.isError) registerMutation.reset();
+									}
 								}
 								disabled={busy}
 								placeholder={
@@ -527,8 +608,7 @@ export function PublicRegisterForm({
 							/>
 							{(errors.contact_email || errors.contact_phone) && (
 								<div className="field-error">
-									{errors.contact_email ||
-										errors.contact_phone}
+									{errors.contact_email || errors.contact_phone}
 								</div>
 							)}
 						</div>
@@ -550,10 +630,14 @@ export function PublicRegisterForm({
 									field={f}
 									value={answers[f.key]}
 									onChange={(next) =>
-										setAnswers((p) => ({
-											...p,
-											[f.key]: next,
-										}))
+										{
+											setAnswers((p) => ({
+												...p,
+												[f.key]: next,
+											}));
+											clearError(f.key);
+											if (registerMutation.isError) registerMutation.reset();
+										}
 									}
 									error={errors[f.key]}
 								/>

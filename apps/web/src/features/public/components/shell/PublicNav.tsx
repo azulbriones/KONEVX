@@ -14,6 +14,7 @@ export function PublicNav({
 	ctaDisabled,
 }: Props) {
 	const label = ctaDisabled ? "Cupo lleno" : "Inscribirme ahora";
+	const placeholder = brand.trim().slice(0, 2).toUpperCase() || "KV";
 
 	return (
 		<nav className="public-nav" aria-label="Navegación">
@@ -28,12 +29,17 @@ export function PublicNav({
 								(e.target as HTMLImageElement).style.display =
 									"none";
 							}}
-						/>
+							/>
 					) : (
-						<div className="public-logo-placeholder">EP</div>
+						<div className="public-logo-placeholder">{placeholder}</div>
 					)}
 				</div>
-				<span className="public-brand-name">{brand}</span>
+				<div>
+					<span className="public-brand-name">{brand}</span>
+					<div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 700 }}>
+						{slug}
+					</div>
+				</div>
 			</div>
 
 			<a
