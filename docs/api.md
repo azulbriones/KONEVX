@@ -1,66 +1,46 @@
-# Guía de API: Konevx v2.0 (Estándar PEI)
+# Guía de API: Konevx
 
-Rutas base:
+Base: `/api`
 
-- API: `/api/v2`
-- Salud/Monitoreo: `GET /api/v2/health`
+## Salud
 
-## Convención de Respuesta
+- `GET /api/health`
 
-Todas las respuestas siguen el sobre de resultados PEI:
-Éxito: `{ "ok": true, "data": {}, "latency": "145ms" }`
-Error: `{ "ok": false, "error": { "code": "ERR_CODE", "message": "Razón del error" } }`
+## Respuesta
 
----
+- Éxito: `{ "ok": true, "data": ... }`
+- Error: `{ "ok": false, "error": { "code": "...", "message": "...", "details?": ... } }`
 
-## 1. Autenticación (Basada en Cookies + JWT)
+## Auth (cookies + CSRF)
 
-Usamos cookies httpOnly para la web y Tokens de Portador (Bearer Tokens) para Móvil/Tablet.
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/refresh`
+- `GET /api/auth/me`
+- `POST /api/auth/logout`
 
-- `POST /api/v2/auth/login`: Inicio de sesión.
-- `POST /api/v2/auth/refresh`: Renovación de tokens.
-- `GET /api/v2/auth/me`: Obtener perfil del usuario autenticado.
+## Eventos
 
----
+- `GET /api/events`
+- `POST /api/events`
+- `GET /api/events/:eventId`
+- `PATCH /api/events/:eventId`
+- `DELETE /api/events/:eventId`
+- `PATCH /api/events/:eventId/publish`
 
-## 2. Endpoints Públicos
+## Subrecursos de evento
 
-- `GET /api/v2/public/events/:slug`: Devuelve datos del evento + campos dinámicos (`fields`).
-- `POST /api/v2/public/events/:slug/register`:
-    - Cuerpo: `{ "contact": {...}, "answers": {...} }`
-    - Devuelve: Objeto `Registration` con el `hashedId` para el QR.
+- `GET /api/events/:eventId/fields`
+- `GET /api/events/:eventId/registrations`
+- `PATCH /api/events/:eventId/registrations/:registrationId`
+- `PATCH /api/events/:eventId/registrations/:registrationId/check-in`
+- `DELETE /api/events/:eventId/registrations/:registrationId/check-in`
+- `POST /api/events/:eventId/registrations/quick`
+- `GET /api/events/:eventId/registrations.xlsx`
+- `GET /api/events/:eventId/registrations.pdf`
+- `GET /api/events/:eventId/members`
 
----
+## Público
 
-## 3. Staff y Check-in (Alto Rendimiento)
-
-- `POST /api/v2/checkin/:hashedId`: Valida la asistencia en tiempo real.
-- `POST /api/v2/sync/checkins`: **Endpoint de Sincronización Offline**.
-    - Acepta un array de eventos de check-in registrados fuera de línea.
-    - Cuerpo: `[{ "hashedId": "...", "checkedAt": "FECHA-ISO", "deviceId": "..." }]`
-
----
-
-## 4. Módulo Financiero (Admin)
-
-- `GET /api/v2/events/:eventId/registrations/:regId/transactions`: Listar pagos y cargos.
-- `POST /api/v2/events/:eventId/registrations/:regId/transactions`: Registrar un nuevo pago o descuento.
-    - Cuerpo: `{ "amount": 100, "type": "PAYMENT", "reference": "ID_STRIPE_O_PAYPAL" }`
-
----
-
-## 5. Integración con Azul-Guard
-
-Cada petición debe pasar por el `GuardMiddleware`.
-
-- Headers requeridos: `X-Device-ID`.
-- Métricas enviadas a Azul-Guard: Tiempo de respuesta, uso de memoria y estado de autenticación.
-
----
-
-## 5. Integración con Azul-Guard
-
-Cada petición debe pasar por el `GuardMiddleware`.
-
-- Headers requeridos: `X-Device-ID`.
-- Métricas enviadas a Azul-Guard: Tiempo de respuesta, uso de memoria y estado de autenticación.
+- `GET /api/public/events/:slug`
+- `POST /api/public/events/:slug/register`

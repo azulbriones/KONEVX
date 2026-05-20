@@ -54,3 +54,11 @@ Expected:
 - CSRF protection
 - Secure cookies
 - Firewall (UFW)
+
+## Local parity
+
+For local development, copy `.env.example` to `.env` and use `docker-compose.local.yml` so the API base URL stays `/api` and the browser auth flow matches production.
+
+## Local parity
+
+For local development, use `docker-compose.local.yml` with `.env.example` so the API base URL remains `/api` and cookies/CSRF settings match the runtime.
